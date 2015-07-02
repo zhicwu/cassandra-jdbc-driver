@@ -20,15 +20,20 @@ This is nothing but a JDBC driver build on top of existing popular java clients(
 #### Hello World
 ```java
 ...
-Driver driver = new com.github.cassandra.jdbc.CassandraDriver();
+// Driver driver = new com.github.cassandra.jdbc.CassandraDriver();
 Properties props = new Properties();
 props.setProperty("user", "cassandra");
 props.setProperty("password", "cassandra");
 
-Connection conn = driver.connect("java:c*:datastax://localhost/system_auth?consistency=ONE");
+// ":datastax" in the URL is optional, it suggests to use DataStax Java driver as the provider to connect to Cassandra
+Connection conn = DriverManager.connect("java:c*:datastax://localhost/system_auth?consistency=ONE", props);
+// change current keyspace from system_auth to system
 conn.setCatalog("system");
 
-ResultSet rs = conn.createStatement().executeQuery("select * from peers limit 10");
+// query peers table in current keyspace, by default the SQL below will be translated into the following CQL:
+// SELECT * FROM peers LIMIT 10000
+// Please be aware that the original SQL does not work in Cassandra as table alias is not supported
+ResultSet rs = conn.createStatement().executeQuery("select p.* from peers p");
 while (rs.next()) {
 ...
 }
@@ -49,4 +54,4 @@ while (rs.next()) {
 #### SQuirrel SQL
 1. Configure Apache Cassandra Driver by including all required libs and set _com.github.cassandra.jdbc.CassandraDriver_ as driver
 2. Create a new alias using Aapche Cassandra Driver with a valid URL like _java:c*://localhost/system_ and credentials
-3. That's it! You should be able to connect to Cassandra using this driver, issue simple query and see meta data like any other database in SQuirrel SQL
+3. That's it! You should now be able to connect to Cassandra using this driver, issue simple queries and browse meta data(columns, indices and primary keys) like any other database in SQuirrel SQL
