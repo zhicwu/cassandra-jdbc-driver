@@ -26,7 +26,7 @@ props.setProperty("user", "cassandra");
 props.setProperty("password", "cassandra");
 
 // ":datastax" in the URL is optional, it suggests to use DataStax Java driver as the provider to connect to Cassandra
-Connection conn = DriverManager.connect("java:c*:datastax://host1,host2/system_auth?consistencyLevel=one", props);
+Connection conn = DriverManager.connect("jdbc:c*:datastax://host1,host2/system_auth?consistencyLevel=one", props);
 // change current keyspace from system_auth to system
 conn.setCatalog("system");
 
