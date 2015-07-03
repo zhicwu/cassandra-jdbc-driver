@@ -39,22 +39,14 @@ while (rs.next()) {
 }
 ...
 ```
+
 #### Connection Properties
-| Property         | Description                                | Default Value |
-|:-----------------|:-------------------------------------------|:--------------|
-| port             | Port number                                | 9042 |
-| compression      | Enable compression(snappy/lz4), which required additional libs | none |
-| consistencyLevel | Default consistency level for all requests | one |
-| connectTimeout   | Connect time out in milliseconds           | 5000 |
-| readTimeout      | Read time out in milliseconds              | 30000 |
-| fetchSize        | Default fetch size                         | 100 |
-| localDc          | Name of local Datacenter, this will enable DCAwareRoundRobinPolicy in DataStax Java Driver | NULL | 
-| quiet            | Whether to swollow exception for unsupported features or not | true |
-| sqlFriendly      | Whether to translate given SQL to CQL      | true |
+![Connection Properties](../../raw/master/resources/images/connection_properties.png)
+
 #### SQuirrel SQL
 1. Configure Apache Cassandra Driver by including all required libs and set _com.github.cassandra.jdbc.CassandraDriver_ as driver
-![Configure Driver](../../raw/master/resources/images/configure_driver.png)
+    ![Configure Driver](../../raw/master/resources/images/configure_driver.png)
 2. Create a new alias using Aapche Cassandra Driver with a valid URL like _java:c*://localhost/system_ and credentials
-![Configure Alias](../../raw/master/resources/images/configure_alias.png)
+    ![Configure Alias](../../raw/master/resources/images/configure_alias.png)
 3. That's it! You should now be able to connect to Cassandra using this driver, issue simple queries and browse meta data(columns, indices and primary keys) like any other database in SQuirrel SQL
-![Query Trace](../../raw/master/resources/images/query_trace.png)
+    ![Query Trace](../../raw/master/resources/images/query_trace.png)
