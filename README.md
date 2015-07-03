@@ -53,5 +53,8 @@ while (rs.next()) {
 | sqlFriendly      | Whether to translate given SQL to CQL      | true |
 #### SQuirrel SQL
 1. Configure Apache Cassandra Driver by including all required libs and set _com.github.cassandra.jdbc.CassandraDriver_ as driver
+![Configure Driver](../../raw/master/resources/images/configure_driver.png)
 2. Create a new alias using Aapche Cassandra Driver with a valid URL like _java:c*://localhost/system_ and credentials
+![Configure Alias](../../raw/master/resources/images/configure_alias.png)
 3. That's it! You should now be able to connect to Cassandra using this driver, issue simple queries and browse meta data(columns, indices and primary keys) like any other database in SQuirrel SQL
+![Query Trace](../../raw/master/resources/images/query_trace.png)
