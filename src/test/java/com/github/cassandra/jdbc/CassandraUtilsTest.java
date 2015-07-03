@@ -1,15 +1,33 @@
 package com.github.cassandra.jdbc;
 
-import static com.github.cassandra.jdbc.CassandraUtils.*;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_COMPRESSION;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_CONNECT_TIMEOUT;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_CONSISTENCY_LEVEL;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_HOSTS;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_KEYSPACE;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_LOCAL_DC;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_PROVIDER;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_READ_TIMEOUT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import java.sql.SQLException;
 import java.util.Properties;
 
 import org.junit.Test;
 
 public class CassandraUtilsTest {
+
+	@Test
+	public void testNormalizeSql() {
+		String sql = "select tbl.key,tbl.bootstrapped,tbl.cluster_name,tbl.cql_version,tbl.data_center,tbl.dse_version,tbl.gossip_generation,tbl.host_id,tbl.native_protocol_version,tbl.partitioner,tbl.rack,tbl.release_version,tbl.schema_version,tbl.thrift_version,tbl.tokens,tbl.truncated_at,tbl.workload from \"system\".\"local\" tbl";
+
+		try {
+			CassandraUtils.normalizeSql(sql, true, false);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail("Exception happened during test: " + e.getMessage());
+		}
+	}
 
 	@Test
 	public void testParseConnectionURL() {
@@ -54,18 +72,6 @@ public class CassandraUtilsTest {
 			assertEquals("10", props.getProperty(KEY_CONNECT_TIMEOUT));
 			assertEquals("50", props.getProperty(KEY_READ_TIMEOUT));
 			assertEquals("DD", props.getProperty(KEY_LOCAL_DC));
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail("Exception happened during test: " + e.getMessage());
-		}
-	}
-
-	@Test
-	public void testNormalizeSql() {
-		String sql = "select tbl.key,tbl.bootstrapped,tbl.cluster_name,tbl.cql_version,tbl.data_center,tbl.dse_version,tbl.gossip_generation,tbl.host_id,tbl.native_protocol_version,tbl.partitioner,tbl.rack,tbl.release_version,tbl.schema_version,tbl.thrift_version,tbl.tokens,tbl.truncated_at,tbl.workload from \"system\".\"local\" tbl";
-
-		try {
-			CassandraUtils.normalizeSql(sql, true, false);
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail("Exception happened during test: " + e.getMessage());

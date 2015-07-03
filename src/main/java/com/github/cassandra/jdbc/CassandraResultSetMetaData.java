@@ -30,8 +30,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.cassandra.jdbc.provider.datastax.CassandraConnection;
-
 /**
  * This represents meta data of a {@link java.sql.ResultSet}.
  *
@@ -45,23 +43,8 @@ public class CassandraResultSetMetaData extends BaseJdbcObject implements
 	protected final List<CassandraColumnDefinition> columnDefinitions = new ArrayList<CassandraColumnDefinition>();
 	protected final Map<String, Integer> columnNameIndices = new HashMap<String, Integer>();
 
-	@Override
-	protected Object unwrap() {
-		return this;
-	}
-
-	@Override
-	protected SQLException tryClose() {
-		return null;
-	}
-
 	public CassandraResultSetMetaData() {
 		super(true);
-	}
-
-	public void clear() {
-		columnNameIndices.clear();
-		columnDefinitions.clear();
 	}
 
 	public void addColumnDefinition(CassandraColumnDefinition def) {
@@ -71,13 +54,21 @@ public class CassandraResultSetMetaData extends BaseJdbcObject implements
 		}
 	}
 
-	public int getColumnIndex(String columnLabel) throws SQLException {
-		if (!columnNameIndices.containsKey(columnLabel)) {
-			throw new SQLException("Column label \"" + columnLabel
-					+ "\" does not exists");
-		}
+	public void clear() {
+		columnNameIndices.clear();
+		columnDefinitions.clear();
+	}
 
-		return columnNameIndices.get(columnLabel);
+	public String getCatalogName(int column) throws SQLException {
+		return getColumnDefinition(column).getCatalogName();
+	}
+
+	public String getColumnClassName(int column) throws SQLException {
+		return getColumnDefinition(column).getColumnClassName();
+	}
+
+	public int getColumnCount() throws SQLException {
+		return columnDefinitions.size();
 	}
 
 	public CassandraColumnDefinition getColumnDefinition(int column)
@@ -108,36 +99,17 @@ public class CassandraResultSetMetaData extends BaseJdbcObject implements
 		throw new SQLException("Column " + columnName + " does not exists!");
 	}
 
-	public int getColumnCount() throws SQLException {
-		return columnDefinitions.size();
-	}
-
-	public boolean isAutoIncrement(int column) throws SQLException {
-		return getColumnDefinition(column).isAutoIncrement();
-	}
-
-	public boolean isCaseSensitive(int column) throws SQLException {
-		return getColumnDefinition(column).isCaseSensitive();
-	}
-
-	public boolean isSearchable(int column) throws SQLException {
-		return getColumnDefinition(column).isSearchable();
-	}
-
-	public boolean isCurrency(int column) throws SQLException {
-		return getColumnDefinition(column).isCurrency();
-	}
-
-	public int isNullable(int column) throws SQLException {
-		return getColumnDefinition(column).isNullable();
-	}
-
-	public boolean isSigned(int column) throws SQLException {
-		return getColumnDefinition(column).isSigned();
-	}
-
 	public int getColumnDisplaySize(int column) throws SQLException {
 		return getColumnDefinition(column).getColumnDisplaySize();
+	}
+
+	public int getColumnIndex(String columnLabel) throws SQLException {
+		if (!columnNameIndices.containsKey(columnLabel)) {
+			throw new SQLException("Column label \"" + columnLabel
+					+ "\" does not exists");
+		}
+
+		return columnNameIndices.get(columnLabel);
 	}
 
 	public String getColumnLabel(int column) throws SQLException {
@@ -148,8 +120,12 @@ public class CassandraResultSetMetaData extends BaseJdbcObject implements
 		return getColumnDefinition(column).getColumnName();
 	}
 
-	public String getSchemaName(int column) throws SQLException {
-		return getColumnDefinition(column).getSchemaName();
+	public int getColumnType(int column) throws SQLException {
+		return getColumnDefinition(column).getColumnType();
+	}
+
+	public String getColumnTypeName(int column) throws SQLException {
+		return getColumnDefinition(column).getColumnTypeName();
 	}
 
 	public int getPrecision(int column) throws SQLException {
@@ -160,35 +136,57 @@ public class CassandraResultSetMetaData extends BaseJdbcObject implements
 		return getColumnDefinition(column).getScale();
 	}
 
+	public String getSchemaName(int column) throws SQLException {
+		return getColumnDefinition(column).getSchemaName();
+	}
+
 	public String getTableName(int column) throws SQLException {
 		return getColumnDefinition(column).getTableName();
 	}
 
-	public String getCatalogName(int column) throws SQLException {
-		return getColumnDefinition(column).getCatalogName();
+	public boolean isAutoIncrement(int column) throws SQLException {
+		return getColumnDefinition(column).isAutoIncrement();
 	}
 
-	public int getColumnType(int column) throws SQLException {
-		return getColumnDefinition(column).getColumnType();
+	public boolean isCaseSensitive(int column) throws SQLException {
+		return getColumnDefinition(column).isCaseSensitive();
 	}
 
-	public String getColumnTypeName(int column) throws SQLException {
-		return getColumnDefinition(column).getColumnTypeName();
-	}
-
-	public boolean isReadOnly(int column) throws SQLException {
-		return getColumnDefinition(column).isReadOnly();
-	}
-
-	public boolean isWritable(int column) throws SQLException {
-		return getColumnDefinition(column).isWritable();
+	public boolean isCurrency(int column) throws SQLException {
+		return getColumnDefinition(column).isCurrency();
 	}
 
 	public boolean isDefinitelyWritable(int column) throws SQLException {
 		return getColumnDefinition(column).isDefinitelyWritable();
 	}
 
-	public String getColumnClassName(int column) throws SQLException {
-		return getColumnDefinition(column).getColumnClassName();
+	public int isNullable(int column) throws SQLException {
+		return getColumnDefinition(column).isNullable();
+	}
+
+	public boolean isReadOnly(int column) throws SQLException {
+		return getColumnDefinition(column).isReadOnly();
+	}
+
+	public boolean isSearchable(int column) throws SQLException {
+		return getColumnDefinition(column).isSearchable();
+	}
+
+	public boolean isSigned(int column) throws SQLException {
+		return getColumnDefinition(column).isSigned();
+	}
+
+	public boolean isWritable(int column) throws SQLException {
+		return getColumnDefinition(column).isWritable();
+	}
+
+	@Override
+	protected SQLException tryClose() {
+		return null;
+	}
+
+	@Override
+	protected Object unwrap() {
+		return this;
 	}
 }

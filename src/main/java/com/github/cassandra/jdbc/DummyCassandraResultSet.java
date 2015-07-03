@@ -20,17 +20,13 @@
  */
 package com.github.cassandra.jdbc;
 
-import static com.github.cassandra.jdbc.CassandraDataTypeMappings.TEXT;
 import static com.github.cassandra.jdbc.CassandraUtils.EMPTY_STRING;
 
-import java.lang.reflect.Array;
 import java.sql.SQLException;
 import java.util.Arrays;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.github.cassandra.jdbc.provider.datastax.CassandraConnection;
 
 /**
  * Dummy result set that only supports String. It's mainly be used to return
@@ -42,8 +38,12 @@ public class DummyCassandraResultSet extends BaseCassandraResultSet {
 	private static final Logger logger = LoggerFactory
 			.getLogger(DummyCassandraResultSet.class);
 
-	private final Object[][] _data;
 	private Object[] _currentRow;
+	private final Object[][] _data;
+
+	public DummyCassandraResultSet() {
+		this(new String[0][], null);
+	}
 
 	public DummyCassandraResultSet(String[][] columns, Object[][] data) {
 		super(null);
@@ -85,8 +85,13 @@ public class DummyCassandraResultSet extends BaseCassandraResultSet {
 		}
 	}
 
-	public DummyCassandraResultSet() {
-		this(new String[0][], null);
+	public int getColumnCount() {
+		return _data != null && _data.length > 0 && _data[0] != null ? _data[0].length
+				: 0;
+	}
+
+	public int getRowCount() {
+		return _data == null || _data.length == 0 ? 0 : _data.length;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -105,7 +110,7 @@ public class DummyCassandraResultSet extends BaseCassandraResultSet {
 
 		if (obj != null) {
 			wasNull = false;
-			
+
 			if (logger.isTraceEnabled()) {
 				logger.trace(new StringBuilder("Got raw value [").append(obj)
 						.append("] from line #").append(getRow())
@@ -131,8 +136,18 @@ public class DummyCassandraResultSet extends BaseCassandraResultSet {
 	}
 
 	@Override
+	protected boolean hasMore() {
+		return getCurrentRowIndex() < _data.length;
+	}
+
+	@Override
 	protected <T> void setValue(int columnIndex, T value) throws SQLException {
 		throw CassandraErrors.notSupportedException();
+	}
+
+	@Override
+	protected SQLException tryClose() {
+		return null;
 	}
 
 	@Override
@@ -153,26 +168,7 @@ public class DummyCassandraResultSet extends BaseCassandraResultSet {
 	}
 
 	@Override
-	protected boolean hasMore() {
-		return getCurrentRowIndex() < _data.length;
-	}
-
-	@Override
 	protected Object unwrap() {
 		return this;
-	}
-
-	@Override
-	protected SQLException tryClose() {
-		return null;
-	}
-
-	public int getColumnCount() {
-		return _data != null && _data.length > 0 && _data[0] != null ? _data[0].length
-				: 0;
-	}
-
-	public int getRowCount() {
-		return _data == null || _data.length == 0 ? 0 : _data.length;
 	}
 }

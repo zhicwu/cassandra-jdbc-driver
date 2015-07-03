@@ -41,6 +41,8 @@ public class CassandraDataTypeMappings {
 	public static final String BLOB = "blob";
 	public static final String BOOLEAN = "boolean";
 	public static final String COUNTER = "counter";
+	static final Map<String, Class<?>> CQL2JAVA_MAPPING = new HashMap<String, Class<?>>();
+	static final Map<String, Integer> CQL2SQL_MAPPING = new HashMap<String, Integer>();
 	public static final String DECIMAL = "decimal";
 	public static final String DOUBLE = "double";
 	public static final String FLOAT = "float";
@@ -48,22 +50,20 @@ public class CassandraDataTypeMappings {
 	public static final String INT = "int";
 	public static final String LIST = "list";
 	public static final String MAP = "map";
+	static final Map<String, Integer> PRECISION_MAPPING = new HashMap<String, Integer>();
+	static final Map<String, Integer> SCALE_MAPPING = new HashMap<String, Integer>();
 	public static final String SET = "set";
 	public static final String TEXT = "text";
 	public static final String TIMESTAMP = "timestamp";
 	public static final String TIMEUUID = "timeuuid";
+
 	public static final String TUPLE = "tuple";
-	public static final String UUID = "uuid";
-	public static final String VARCHAR = "varchar";
-	public static final String VARINT = "varint";
 
 	public static final Object[][] TYPE_META_DATA;
+	public static final String UUID = "uuid";
 
-	static final Map<String, Integer> CQL2SQL_MAPPING = new HashMap<String, Integer>();
-	static final Map<String, Class<?>> CQL2JAVA_MAPPING = new HashMap<String, Class<?>>();
-
-	static final Map<String, Integer> PRECISION_MAPPING = new HashMap<String, Integer>();
-	static final Map<String, Integer> SCALE_MAPPING = new HashMap<String, Integer>();
+	public static final String VARCHAR = "varchar";
+	public static final String VARINT = "varint";
 
 	static {
 		List<Object[]> list = new ArrayList<Object[]>();
@@ -136,11 +136,6 @@ public class CassandraDataTypeMappings {
 		return CQL2SQL_MAPPING.containsKey(cqlType) ? cqlType : TEXT;
 	}
 
-	public static int sqlTypeFor(String cqlType) {
-		return CQL2SQL_MAPPING.containsKey(cqlType) ? CQL2SQL_MAPPING
-				.get(cqlType) : Types.VARCHAR;
-	}
-
 	public static Class<?> javaTypeFor(String cqlType) {
 		return CQL2JAVA_MAPPING.containsKey(cqlType) ? CQL2JAVA_MAPPING
 				.get(cqlType) : String.class;
@@ -154,5 +149,10 @@ public class CassandraDataTypeMappings {
 	public static int scaleFor(String cqlType) {
 		return SCALE_MAPPING.containsKey(cqlType) ? SCALE_MAPPING.get(cqlType)
 				: 0;
+	}
+
+	public static int sqlTypeFor(String cqlType) {
+		return CQL2SQL_MAPPING.containsKey(cqlType) ? CQL2SQL_MAPPING
+				.get(cqlType) : Types.VARCHAR;
 	}
 }

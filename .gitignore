@@ -8,6 +8,7 @@
 .idea
 *.iml
 target
+dist
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/

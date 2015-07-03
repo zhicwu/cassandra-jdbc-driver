@@ -24,7 +24,20 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.*;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.Date;
+import java.sql.NClob;
+import java.sql.ParameterMetaData;
+import java.sql.PreparedStatement;
+import java.sql.Ref;
+import java.sql.ResultSetMetaData;
+import java.sql.RowId;
+import java.sql.SQLException;
+import java.sql.SQLXML;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Calendar;
 
 /**
@@ -38,7 +51,91 @@ public abstract class BaseCassandraPreparedStatement extends
 		super(conn);
 	}
 
-	public void setNull(int parameterIndex, int sqlType) throws SQLException {
+	public void addBatch() throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void clearParameters() throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public boolean execute() throws SQLException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public ResultSetMetaData getMetaData() throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public ParameterMetaData getParameterMetaData() throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public void setArray(int parameterIndex, Array x) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setAsciiStream(int parameterIndex, InputStream x)
+			throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setAsciiStream(int parameterIndex, InputStream x, int length)
+			throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setAsciiStream(int parameterIndex, InputStream x, long length)
+			throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setBigDecimal(int parameterIndex, BigDecimal x)
+			throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setBinaryStream(int parameterIndex, InputStream x)
+			throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setBinaryStream(int parameterIndex, InputStream x, int length)
+			throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setBinaryStream(int parameterIndex, InputStream x, long length)
+			throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setBlob(int parameterIndex, Blob x) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setBlob(int parameterIndex, InputStream inputStream)
+			throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setBlob(int parameterIndex, InputStream inputStream, long length)
+			throws SQLException {
 		// TODO Auto-generated method stub
 
 	}
@@ -53,7 +150,62 @@ public abstract class BaseCassandraPreparedStatement extends
 
 	}
 
-	public void setShort(int parameterIndex, short x) throws SQLException {
+	public void setBytes(int parameterIndex, byte[] x) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setCharacterStream(int parameterIndex, Reader reader)
+			throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setCharacterStream(int parameterIndex, Reader reader, int length)
+			throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setCharacterStream(int parameterIndex, Reader reader,
+			long length) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setClob(int parameterIndex, Clob x) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setClob(int parameterIndex, Reader reader) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setClob(int parameterIndex, Reader reader, long length)
+			throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setDate(int parameterIndex, Date x) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setDate(int parameterIndex, Date x, Calendar cal)
+			throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setDouble(int parameterIndex, double x) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setFloat(int parameterIndex, float x) throws SQLException {
 		// TODO Auto-generated method stub
 
 	}
@@ -68,163 +220,7 @@ public abstract class BaseCassandraPreparedStatement extends
 
 	}
 
-	public void setFloat(int parameterIndex, float x) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setDouble(int parameterIndex, double x) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setBigDecimal(int parameterIndex, BigDecimal x)
-			throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setString(int parameterIndex, String x) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setBytes(int parameterIndex, byte[] x) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setDate(int parameterIndex, Date x) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setTime(int parameterIndex, Time x) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setTimestamp(int parameterIndex, Timestamp x)
-			throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setAsciiStream(int parameterIndex, InputStream x, int length)
-			throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setUnicodeStream(int parameterIndex, InputStream x, int length)
-			throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setBinaryStream(int parameterIndex, InputStream x, int length)
-			throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void clearParameters() throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setObject(int parameterIndex, Object x, int targetSqlType)
-			throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setObject(int parameterIndex, Object x) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public boolean execute() throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public void addBatch() throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setCharacterStream(int parameterIndex, Reader reader, int length)
-			throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setRef(int parameterIndex, Ref x) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setBlob(int parameterIndex, Blob x) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setClob(int parameterIndex, Clob x) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setArray(int parameterIndex, Array x) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public ResultSetMetaData getMetaData() throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public void setDate(int parameterIndex, Date x, Calendar cal)
-			throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setTime(int parameterIndex, Time x, Calendar cal)
-			throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
-			throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setNull(int parameterIndex, int sqlType, String typeName)
-			throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setURL(int parameterIndex, URL x) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public ParameterMetaData getParameterMetaData() throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public void setRowId(int parameterIndex, RowId x) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setNString(int parameterIndex, String value)
+	public void setNCharacterStream(int parameterIndex, Reader value)
 			throws SQLException {
 		// TODO Auto-generated method stub
 
@@ -241,14 +237,7 @@ public abstract class BaseCassandraPreparedStatement extends
 
 	}
 
-	public void setClob(int parameterIndex, Reader reader, long length)
-			throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setBlob(int parameterIndex, InputStream inputStream, long length)
-			throws SQLException {
+	public void setNClob(int parameterIndex, Reader reader) throws SQLException {
 		// TODO Auto-generated method stub
 
 	}
@@ -259,7 +248,29 @@ public abstract class BaseCassandraPreparedStatement extends
 
 	}
 
-	public void setSQLXML(int parameterIndex, SQLXML xmlObject)
+	public void setNString(int parameterIndex, String value)
+			throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setNull(int parameterIndex, int sqlType) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setNull(int parameterIndex, int sqlType, String typeName)
+			throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setObject(int parameterIndex, Object x) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setObject(int parameterIndex, Object x, int targetSqlType)
 			throws SQLException {
 		// TODO Auto-generated method stub
 
@@ -271,60 +282,62 @@ public abstract class BaseCassandraPreparedStatement extends
 
 	}
 
-	public void setAsciiStream(int parameterIndex, InputStream x, long length)
+	public void setRef(int parameterIndex, Ref x) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setRowId(int parameterIndex, RowId x) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setShort(int parameterIndex, short x) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setSQLXML(int parameterIndex, SQLXML xmlObject)
 			throws SQLException {
 		// TODO Auto-generated method stub
 
 	}
 
-	public void setBinaryStream(int parameterIndex, InputStream x, long length)
+	public void setString(int parameterIndex, String x) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setTime(int parameterIndex, Time x) throws SQLException {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void setTime(int parameterIndex, Time x, Calendar cal)
 			throws SQLException {
 		// TODO Auto-generated method stub
 
 	}
 
-	public void setCharacterStream(int parameterIndex, Reader reader,
-			long length) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setAsciiStream(int parameterIndex, InputStream x)
+	public void setTimestamp(int parameterIndex, Timestamp x)
 			throws SQLException {
 		// TODO Auto-generated method stub
 
 	}
 
-	public void setBinaryStream(int parameterIndex, InputStream x)
+	public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
 			throws SQLException {
 		// TODO Auto-generated method stub
 
 	}
 
-	public void setCharacterStream(int parameterIndex, Reader reader)
+	public void setUnicodeStream(int parameterIndex, InputStream x, int length)
 			throws SQLException {
 		// TODO Auto-generated method stub
 
 	}
 
-	public void setNCharacterStream(int parameterIndex, Reader value)
-			throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setClob(int parameterIndex, Reader reader) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setBlob(int parameterIndex, InputStream inputStream)
-			throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void setNClob(int parameterIndex, Reader reader) throws SQLException {
+	public void setURL(int parameterIndex, URL x) throws SQLException {
 		// TODO Auto-generated method stub
 
 	}

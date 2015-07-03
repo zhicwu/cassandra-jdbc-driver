@@ -1,13 +1,14 @@
 package com.github.cassandra.jdbc.provider.datastax;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.sql.SQLException;
 
 import org.junit.Test;
 
 import com.github.cassandra.jdbc.CassandraUtils;
-import com.github.cassandra.jdbc.provider.datastax.CassandraStatement;
 
 public class CassandraStatementTest extends DataStaxTestCase {
 	@Test
@@ -24,9 +25,9 @@ public class CassandraStatementTest extends DataStaxTestCase {
 
 			String[] columns = CassandraUtils.getColumnNames(rs);
 			Object[][] data = CassandraUtils.getAllData(rs);
-			assertTrue(columns.length > 0);			
+			assertTrue(columns.length > 0);
 			assertEquals(5, data.length);
-			
+
 			rs.close();
 			cs.close();
 		} catch (SQLException e) {

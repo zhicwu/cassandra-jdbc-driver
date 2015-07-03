@@ -42,8 +42,8 @@ public class CassandraResultSet extends BaseCassandraResultSet {
 	private static final Logger logger = LoggerFactory
 			.getLogger(CassandraResultSet.class);
 
-	private ResultSet _resultSet;
 	private Row _currentRow;
+	private ResultSet _resultSet;
 
 	protected CassandraResultSet(BaseCassandraStatement statement, ResultSet rs) {
 		super(statement);
@@ -58,11 +58,6 @@ public class CassandraResultSet extends BaseCassandraResultSet {
 		}
 
 		_resultSet = rs;
-	}
-
-	@Override
-	protected Object unwrap() {
-		return _resultSet;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -111,6 +106,11 @@ public class CassandraResultSet extends BaseCassandraResultSet {
 	}
 
 	@Override
+	protected boolean hasMore() {
+		return _resultSet != null && !_resultSet.isExhausted();
+	}
+
+	@Override
 	protected <T> void setValue(int columnIndex, T value) throws SQLException {
 		throw CassandraErrors.notSupportedException();
 	}
@@ -148,7 +148,7 @@ public class CassandraResultSet extends BaseCassandraResultSet {
 	}
 
 	@Override
-	protected boolean hasMore() {
-		return _resultSet != null && !_resultSet.isExhausted();
+	protected Object unwrap() {
+		return _resultSet;
 	}
 }

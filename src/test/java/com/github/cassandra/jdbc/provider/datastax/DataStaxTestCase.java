@@ -17,11 +17,12 @@ public class DataStaxTestCase {
 	public void setUp() throws Exception {
 		CassandraDriver driver = new CassandraDriver();
 		Properties props = new Properties();
-		props.setProperty(KEY_USERNAME, "cassandra");
-		props.setProperty(KEY_PASSWORD, "cassandra");
-		conn = (CassandraConnection) driver.connect(
-				"jdbc:c*:datastax://localhost/system?consistencyLevel=ONE",
-				props);
+		props.setProperty(KEY_USERNAME, "dse");
+		props.setProperty(KEY_PASSWORD, "111");
+		conn = (CassandraConnection) driver
+				.connect(
+						"jdbc:c*:datastax://localhost/system?consistencyLevel=ONE&queryTrace=true",
+						props);
 	}
 
 	@After

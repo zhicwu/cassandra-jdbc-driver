@@ -20,13 +20,38 @@
  */
 package com.github.cassandra.jdbc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_COMPRESSION;
+import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_CONNECT_TIMEOUT;
+import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_CONSISTENCY_LEVEL;
+import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_FETCH_SIZE;
+import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_QUERY_TRACE;
+import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_READ_TIMEOUT;
+import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_SQL_FRIENDLY;
+import static com.github.cassandra.jdbc.CassandraUtils.DRIVER_PROTOCOL;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_COMPRESSION;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_CONNECT_TIMEOUT;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_CONSISTENCY_LEVEL;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_FETCH_SIZE;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_LOCAL_DC;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_PASSWORD;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_PORT;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_QUERY_TRACE;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_READ_TIMEOUT;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_SQL_FRIENDLY;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_USERNAME;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
-import static com.github.cassandra.jdbc.CassandraUtils.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Cassandra JDBC driver.
@@ -34,12 +59,12 @@ import static com.github.cassandra.jdbc.CassandraUtils.*;
  * @author Zhichun Wu
  */
 public class CassandraDriver implements Driver {
-	public static final int VERSION_MAJOR = 0;
-	public static final int VERSION_MINOR = 1;
-	public static final int VERSION_PATCH = 0;
-
 	private static final Logger logger = LoggerFactory
 			.getLogger(CassandraDriver.class);
+	public static final int VERSION_MAJOR = 0;
+	public static final int VERSION_MINOR = 1;
+
+	public static final int VERSION_PATCH = 0;
 
 	static {
 		// Register the CassandraDriver with DriverManager
@@ -76,21 +101,18 @@ public class CassandraDriver implements Driver {
 		}
 	}
 
-	public DriverPropertyInfo[] getPropertyInfo(String url, Properties props)
-			throws SQLException {
-		if (props == null) {
-			props = new Properties();
+	private DriverPropertyInfo createDriverPropertyInfo(String propertyName,
+			String propertyValue, boolean required, String[] choices) {
+		DriverPropertyInfo info = new DriverPropertyInfo(propertyName,
+				propertyValue);
+		info.required = required;
+		info.description = CassandraUtils.getString(new StringBuilder(
+				"MESSAGE_PROP_").append(propertyName.toUpperCase())
+				.append("_DESCRIPTION").toString());
+
+		if (choices != null && choices.length > 0) {
+			info.choices = choices;
 		}
-
-		DriverPropertyInfo[] info = new DriverPropertyInfo[2];
-
-		info[0] = new DriverPropertyInfo(KEY_USERNAME,
-				props.getProperty(KEY_USERNAME));
-		info[0].description = "The 'user' property";
-
-		info[1] = new DriverPropertyInfo(KEY_PASSWORD,
-				props.getProperty(KEY_PASSWORD));
-		info[1].description = "The 'password' property";
 
 		return info;
 	}
@@ -103,12 +125,56 @@ public class CassandraDriver implements Driver {
 		return VERSION_MINOR;
 	}
 
-	public boolean jdbcCompliant() {
-		return false;
-	}
-
 	public java.util.logging.Logger getParentLogger()
 			throws SQLFeatureNotSupportedException {
 		throw CassandraErrors.notSupportedException();
+	}
+
+	public DriverPropertyInfo[] getPropertyInfo(String url, Properties props)
+			throws SQLException {
+		List<DriverPropertyInfo> list = new ArrayList<DriverPropertyInfo>();
+
+		list.add(createDriverPropertyInfo(KEY_USERNAME,
+				CassandraUtils.getPropertyValue(props, KEY_USERNAME), true,
+				null));
+		list.add(createDriverPropertyInfo(KEY_PASSWORD,
+				CassandraUtils.getPropertyValue(props, KEY_PASSWORD), true,
+				null));
+		list.add(createDriverPropertyInfo(KEY_PORT,
+				CassandraUtils.getPropertyValue(props, KEY_PORT), false, null));
+		list.add(createDriverPropertyInfo(KEY_CONNECT_TIMEOUT, CassandraUtils
+				.getPropertyValue(props, KEY_CONNECT_TIMEOUT,
+						DEFAULT_CONNECT_TIMEOUT), false, null));
+		list.add(createDriverPropertyInfo(KEY_READ_TIMEOUT,
+				CassandraUtils.getPropertyValue(props, KEY_READ_TIMEOUT,
+						DEFAULT_READ_TIMEOUT), false, null));
+		list.add(createDriverPropertyInfo(KEY_CONSISTENCY_LEVEL, CassandraUtils
+				.getPropertyValue(props, KEY_CONSISTENCY_LEVEL,
+						DEFAULT_CONSISTENCY_LEVEL), false, new String[] {
+				"ONE", "LOCAL_ONE", "QUORUM", "LOCAL_QUORUM", "EACH_QUORUM",
+				"ALL" }));
+		list.add(createDriverPropertyInfo(KEY_COMPRESSION, CassandraUtils
+				.getPropertyValue(props, KEY_COMPRESSION, DEFAULT_COMPRESSION),
+				false, new String[] { "NONE", "SNAPPY", "LZ4" }));
+		list.add(createDriverPropertyInfo(KEY_FETCH_SIZE, CassandraUtils
+				.getPropertyValue(props, KEY_FETCH_SIZE, DEFAULT_FETCH_SIZE),
+				false, null));
+		list.add(createDriverPropertyInfo(KEY_LOCAL_DC,
+				CassandraUtils.getPropertyValue(props, KEY_LOCAL_DC), false,
+				null));
+		list.add(createDriverPropertyInfo(
+				KEY_SQL_FRIENDLY,
+				CassandraUtils.getPropertyValue(props, KEY_SQL_FRIENDLY,
+						String.valueOf(DEFAULT_SQL_FRIENDLY)), false,
+				new String[] { "true", "false" }));
+		list.add(createDriverPropertyInfo(KEY_QUERY_TRACE, CassandraUtils
+				.getPropertyValue(props, KEY_QUERY_TRACE, DEFAULT_QUERY_TRACE),
+				false, new String[] { "true", "false" }));
+
+		return list.toArray(new DriverPropertyInfo[0]);
+	}
+
+	public boolean jdbcCompliant() {
+		return false;
 	}
 }

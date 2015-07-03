@@ -1,7 +1,5 @@
 package com.github.cassandra.jdbc.provider.datastax;
 
-import static com.github.cassandra.jdbc.CassandraUtils.KEY_PASSWORD;
-import static com.github.cassandra.jdbc.CassandraUtils.KEY_USERNAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -10,16 +8,11 @@ import static org.junit.Assert.fail;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Properties;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
-import com.github.cassandra.jdbc.CassandraDriver;
 import com.github.cassandra.jdbc.CassandraUtils;
 import com.github.cassandra.jdbc.DummyCassandraResultSet;
-import com.github.cassandra.jdbc.provider.datastax.CassandraConnection;
 
 public class CassandraConnectionTest extends DataStaxTestCase {
 	private String[] extractColumnNames(String[][] columns) {

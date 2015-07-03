@@ -26,5 +26,5 @@ package com.github.cassandra.jdbc;
  * @author Zhichun Wu
  */
 public enum CassandraObjectType {
-	KEYSPACE, TABLE_TYPE, TYPE, TABLE, COLUMN, PRIMARY_KEY, INDEX, UDT
+	COLUMN, INDEX, KEYSPACE, PRIMARY_KEY, TABLE, TABLE_TYPE, TYPE, UDT
 }

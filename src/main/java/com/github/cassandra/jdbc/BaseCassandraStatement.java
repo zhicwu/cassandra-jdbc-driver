@@ -20,14 +20,14 @@
  */
 package com.github.cassandra.jdbc;
 
+import static com.github.cassandra.jdbc.CassandraUtils.CURSOR_PREFIX;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.github.cassandra.jdbc.CassandraUtils.CURSOR_PREFIX;
 
 /**
  * This is the base class for all Cassandra statements.
@@ -36,20 +36,20 @@ import static com.github.cassandra.jdbc.CassandraUtils.CURSOR_PREFIX;
  */
 public abstract class BaseCassandraStatement extends BaseJdbcObject implements
 		Statement {
-	protected final int resultType = ResultSet.TYPE_FORWARD_ONLY;
-	protected final int concurrency = ResultSet.CONCUR_READ_ONLY;
-	protected final int hodability = ResultSet.HOLD_CURSORS_OVER_COMMIT;
-	protected final List<String> batch = new ArrayList<String>();
-	protected boolean escapeProcessing = true;
-	protected boolean poolable = false;
-	protected int fetchDirection = ResultSet.FETCH_FORWARD;
-	protected int fetchSize = 100;
-	protected int maxFieldSize = 0; // unlimited
-	protected int maxRows = 0; // unlimited
-	protected int queryTimeout = 0; // unlimited
 	private boolean _closeOnCompletion;
 	private BaseCassandraConnection _connection;
 	private String _cursorName;
+	protected final List<String> batch = new ArrayList<String>();
+	protected final int concurrency = ResultSet.CONCUR_READ_ONLY;
+	protected boolean escapeProcessing = true;
+	protected int fetchDirection = ResultSet.FETCH_FORWARD;
+	protected int fetchSize = 100;
+	protected final int hodability = ResultSet.HOLD_CURSORS_OVER_COMMIT;
+	protected int maxFieldSize = 0; // unlimited
+	protected int maxRows = 0; // unlimited
+	protected boolean poolable = false;
+	protected int queryTimeout = 0; // unlimited
+	protected final int resultType = ResultSet.TYPE_FORWARD_ONLY;
 
 	protected BaseCassandraStatement(BaseCassandraConnection conn) {
 		super(conn == null || conn.quiet);
@@ -61,19 +61,20 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
 				.toString();
 	}
 
-	/**
-	 * Gets cursor name set in statement.
-	 *
-	 * @return cursor name
-	 */
-	protected String getCursorName() {
-		return _cursorName;
-	}
-
-	public void setCursorName(String name) throws SQLException {
+	public void addBatch(String sql) throws SQLException {
 		validateState();
 
-		this._cursorName = name;
+		batch.add(sql);
+	}
+
+	public void cancel() throws SQLException {
+		validateState();
+	}
+
+	public void clearBatch() throws SQLException {
+		validateState();
+
+		batch.clear();
 	}
 
 	public void close() throws SQLException {
@@ -81,109 +82,10 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
 		super.close();
 	}
 
-	public int getMaxFieldSize() throws SQLException {
+	public void closeOnCompletion() throws SQLException {
 		validateState();
 
-		return maxFieldSize;
-	}
-
-	public void setMaxFieldSize(int max) throws SQLException {
-		validateState();
-
-		maxFieldSize = max;
-	}
-
-	public int getMaxRows() throws SQLException {
-		validateState();
-
-		return maxRows;
-	}
-
-	public void setMaxRows(int max) throws SQLException {
-		validateState();
-
-		maxRows = max;
-	}
-
-	public void setEscapeProcessing(boolean enable) throws SQLException {
-		validateState();
-
-		escapeProcessing = enable;
-	}
-
-	public int getQueryTimeout() throws SQLException {
-		validateState();
-
-		return queryTimeout;
-	}
-
-	public void setQueryTimeout(int seconds) throws SQLException {
-		validateState();
-
-		queryTimeout = seconds;
-	}
-
-	public void cancel() throws SQLException {
-		validateState();
-	}
-
-	public boolean getMoreResults() throws SQLException {
-		validateState();
-
-		return false;
-	}
-
-	public int getFetchDirection() throws SQLException {
-		validateState();
-
-		return ResultSet.FETCH_FORWARD;
-	}
-
-	public void setFetchDirection(int direction) throws SQLException {
-		validateState();
-
-		if (direction != ResultSet.FETCH_FORWARD) {
-			if (!quiet) {
-				throw CassandraErrors.notSupportedException();
-			}
-			// this.fetchDirection = direction;
-		}
-	}
-
-	public int getFetchSize() throws SQLException {
-		validateState();
-
-		return fetchSize;
-	}
-
-	public void setFetchSize(int rows) throws SQLException {
-		validateState();
-
-		fetchSize = rows;
-	}
-
-	public int getResultSetConcurrency() throws SQLException {
-		validateState();
-
-		return concurrency;
-	}
-
-	public int getResultSetType() throws SQLException {
-		validateState();
-
-		return resultType;
-	}
-
-	public void addBatch(String sql) throws SQLException {
-		validateState();
-
-		batch.add(sql);
-	}
-
-	public void clearBatch() throws SQLException {
-		validateState();
-
-		batch.clear();
+		this._closeOnCompletion = true;
 	}
 
 	public int[] executeBatch() throws SQLException {
@@ -205,10 +107,25 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
 		return _connection;
 	}
 
-	public boolean getMoreResults(int current) throws SQLException {
+	/**
+	 * Gets cursor name set in statement.
+	 *
+	 * @return cursor name
+	 */
+	protected String getCursorName() {
+		return _cursorName;
+	}
+
+	public int getFetchDirection() throws SQLException {
 		validateState();
 
-		return false;
+		return ResultSet.FETCH_FORWARD;
+	}
+
+	public int getFetchSize() throws SQLException {
+		validateState();
+
+		return fetchSize;
 	}
 
 	public ResultSet getGeneratedKeys() throws SQLException {
@@ -217,10 +134,58 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
 		return null;
 	}
 
+	public int getMaxFieldSize() throws SQLException {
+		validateState();
+
+		return maxFieldSize;
+	}
+
+	public int getMaxRows() throws SQLException {
+		validateState();
+
+		return maxRows;
+	}
+
+	public boolean getMoreResults() throws SQLException {
+		validateState();
+
+		return false;
+	}
+
+	public boolean getMoreResults(int current) throws SQLException {
+		validateState();
+
+		return false;
+	}
+
+	public int getQueryTimeout() throws SQLException {
+		validateState();
+
+		return queryTimeout;
+	}
+
+	public int getResultSetConcurrency() throws SQLException {
+		validateState();
+
+		return concurrency;
+	}
+
 	public int getResultSetHoldability() throws SQLException {
 		validateState();
 
 		return hodability;
+	}
+
+	public int getResultSetType() throws SQLException {
+		validateState();
+
+		return resultType;
+	}
+
+	public boolean isCloseOnCompletion() throws SQLException {
+		validateState();
+
+		return _closeOnCompletion;
 	}
 
 	public boolean isPoolable() throws SQLException {
@@ -229,21 +194,56 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
 		return this.poolable;
 	}
 
+	public void setCursorName(String name) throws SQLException {
+		validateState();
+
+		this._cursorName = name;
+	}
+
+	public void setEscapeProcessing(boolean enable) throws SQLException {
+		validateState();
+
+		escapeProcessing = enable;
+	}
+
+	public void setFetchDirection(int direction) throws SQLException {
+		validateState();
+
+		if (direction != ResultSet.FETCH_FORWARD) {
+			if (!quiet) {
+				throw CassandraErrors.notSupportedException();
+			}
+			// this.fetchDirection = direction;
+		}
+	}
+
+	public void setFetchSize(int rows) throws SQLException {
+		validateState();
+
+		fetchSize = rows;
+	}
+
+	public void setMaxFieldSize(int max) throws SQLException {
+		validateState();
+
+		maxFieldSize = max;
+	}
+
+	public void setMaxRows(int max) throws SQLException {
+		validateState();
+
+		maxRows = max;
+	}
+
 	public void setPoolable(boolean poolable) throws SQLException {
 		validateState();
 
 		this.poolable = poolable;
 	}
 
-	public void closeOnCompletion() throws SQLException {
+	public void setQueryTimeout(int seconds) throws SQLException {
 		validateState();
 
-		this._closeOnCompletion = true;
-	}
-
-	public boolean isCloseOnCompletion() throws SQLException {
-		validateState();
-
-		return _closeOnCompletion;
+		queryTimeout = seconds;
 	}
 }

@@ -31,17 +31,17 @@ import java.sql.ResultSetMetaData;
  */
 public class CassandraColumnDefinition {
 	protected final String catalog;
-	protected final String schema;
-	protected final String table;
-	protected final String name;
-	protected final String label;
 	protected final String cqlType;
-	protected final int sqlType;
 	protected final Class<?> javaType;
-	protected final boolean searchable;
-	protected final boolean writable;
+	protected final String label;
+	protected final String name;
 	protected final int precision;
 	protected final int scale;
+	protected final String schema;
+	protected final boolean searchable;
+	protected final int sqlType;
+	protected final String table;
+	protected final boolean writable;
 
 	public CassandraColumnDefinition(String catalog, String table, String name,
 			String type, boolean searchable) {
@@ -64,44 +64,16 @@ public class CassandraColumnDefinition {
 		this.scale = CassandraDataTypeMappings.scaleFor(type);
 	}
 
-	public boolean isAutoIncrement() {
-		return false;
-	}
-
-	public boolean isCaseSensitive() {
-		return true;
-	}
-
-	public boolean isSearchable() {
-		return searchable;
-	}
-
-	public boolean isCurrency() {
-		return false;
-	}
-
-	public int isNullable() {
-		return ResultSetMetaData.columnNullable;
-	}
-
-	public boolean isSigned() {
-		return false;
-	}
-
-	public int getColumnDisplaySize() {
-		return 0;
-	}
-
 	public String getCatalogName() {
 		return catalog;
 	}
 
-	public String getSchemaName() {
-		return schema;
+	public String getColumnClassName() {
+		return javaType.getName();
 	}
 
-	public String getTableName() {
-		return table;
+	public int getColumnDisplaySize() {
+		return 0;
 	}
 
 	public String getColumnLabel() {
@@ -112,14 +84,6 @@ public class CassandraColumnDefinition {
 		return name;
 	}
 
-	public int getPrecision() {
-		return precision;
-	}
-
-	public int getScale() {
-		return scale;
-	}
-
 	public int getColumnType() {
 		return sqlType;
 	}
@@ -128,19 +92,55 @@ public class CassandraColumnDefinition {
 		return cqlType;
 	}
 
-	public boolean isReadOnly() {
-		return !writable;
+	public int getPrecision() {
+		return precision;
 	}
 
-	public boolean isWritable() {
-		return writable;
+	public int getScale() {
+		return scale;
+	}
+
+	public String getSchemaName() {
+		return schema;
+	}
+
+	public String getTableName() {
+		return table;
+	}
+
+	public boolean isAutoIncrement() {
+		return false;
+	}
+
+	public boolean isCaseSensitive() {
+		return true;
+	}
+
+	public boolean isCurrency() {
+		return false;
 	}
 
 	public boolean isDefinitelyWritable() {
 		return writable;
 	}
 
-	public String getColumnClassName() {
-		return javaType.getName();
+	public int isNullable() {
+		return ResultSetMetaData.columnNullable;
+	}
+
+	public boolean isReadOnly() {
+		return !writable;
+	}
+
+	public boolean isSearchable() {
+		return searchable;
+	}
+
+	public boolean isSigned() {
+		return false;
+	}
+
+	public boolean isWritable() {
+		return writable;
 	}
 }

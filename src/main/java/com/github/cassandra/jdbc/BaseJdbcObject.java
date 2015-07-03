@@ -31,20 +31,65 @@ import java.sql.Wrapper;
  */
 public abstract class BaseJdbcObject implements AutoCloseable, Wrapper {
 	/**
+	 * This indicates whether this has been closed.
+	 */
+	protected boolean closed;
+
+	/**
 	 * Quiet mode suggests if the driver should throw SQLException for
 	 * unsupported operation. By default it is true but can be customized by
 	 * passing "quiet=false" in connection properties.
 	 */
 	protected final boolean quiet;
 
-	/**
-	 * This indicates whether this has been closed.
-	 */
-	protected boolean closed;
-
 	protected BaseJdbcObject(boolean quiet) {
 		this.closed = false;
 		this.quiet = quiet;
+	}
+
+	public void clearWarnings() throws SQLException {
+		// be quiet
+	}
+
+	public void close() throws SQLException {
+		closed = true;
+
+		SQLException exception = tryClose();
+		if (!quiet) {
+			throw exception;
+		}
+	}
+
+	public SQLWarning getWarnings() throws SQLException {
+		return null;
+	}
+
+	public boolean isClosed() throws SQLException {
+		return closed;
+	}
+
+	public boolean isWrapperFor(Class<?> iface) throws SQLException {
+		Object innerObj = unwrap();
+
+		return innerObj != null && innerObj.getClass().isAssignableFrom(iface);
+	}
+
+	/**
+	 * Idempotent close method.
+	 *
+	 * @return SQLException if any
+	 */
+	protected abstract SQLException tryClose();
+
+	/**
+	 * This returns the underlying object actually doing the work.
+	 *
+	 * @return underlying object
+	 */
+	protected abstract Object unwrap();
+
+	public <T> T unwrap(Class<T> iface) throws SQLException {
+		return iface.cast(unwrap());
 	}
 
 	/**
@@ -57,51 +102,6 @@ public abstract class BaseJdbcObject implements AutoCloseable, Wrapper {
 	protected void validateState() throws SQLException {
 		if (closed) {
 			throw CassandraErrors.resourceClosedException(this);
-		}
-	}
-
-	/**
-	 * This returns the underlying object actually doing the work.
-	 *
-	 * @return underlying object
-	 */
-	protected abstract Object unwrap();
-
-	/**
-	 * Idempotent close method.
-	 *
-	 * @return SQLException if any
-	 */
-	protected abstract SQLException tryClose();
-
-	public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		Object innerObj = unwrap();
-
-		return innerObj != null && innerObj.getClass().isAssignableFrom(iface);
-	}
-
-	public <T> T unwrap(Class<T> iface) throws SQLException {
-		return iface.cast(unwrap());
-	}
-
-	public SQLWarning getWarnings() throws SQLException {
-		return null;
-	}
-
-	public void clearWarnings() throws SQLException {
-		// be quiet
-	}
-
-	public boolean isClosed() throws SQLException {
-		return closed;
-	}
-
-	public void close() throws SQLException {
-		closed = true;
-
-		SQLException exception = tryClose();
-		if (!quiet) {
-			throw exception;
 		}
 	}
 }

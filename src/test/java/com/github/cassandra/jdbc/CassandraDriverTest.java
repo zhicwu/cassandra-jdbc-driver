@@ -1,14 +1,18 @@
 package com.github.cassandra.jdbc;
 
-import org.junit.Test;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_PASSWORD;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_USERNAME;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.sql.Connection;
+import java.sql.DriverPropertyInfo;
 import java.sql.ResultSet;
 import java.util.Properties;
 
-import static com.github.cassandra.jdbc.CassandraUtils.KEY_PASSWORD;
-import static com.github.cassandra.jdbc.CassandraUtils.KEY_USERNAME;
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class CassandraDriverTest {
 
@@ -60,6 +64,20 @@ public class CassandraDriverTest {
 			}
 			rs.close();
 			conn.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail("Exception happened during test: " + e.getMessage());
+		}
+	}
+
+	@Test
+	public void testGetPropertyInfo() {
+		CassandraDriver driver = new CassandraDriver();
+		try {
+			String url = "jdbc:c*:datastax://host1,host2/keyspace1?key=value";
+			DriverPropertyInfo[] info = driver.getPropertyInfo(url, null);
+			assertNotNull(info);
+			assertTrue(info.length > 1);
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail("Exception happened during test: " + e.getMessage());
