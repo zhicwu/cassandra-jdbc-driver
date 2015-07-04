@@ -8,12 +8,11 @@ This is nothing but a JDBC driver build on top of existing popular java clients(
 [0.2.0 Release](https://github.com/zhicwu/cassandra-jdbc-driver/releases/tag/0.2.0) - Proof of Concept
 
 ## What's next?
-- Tracing support
 - Write(INSERT/UPDATE/DELETE) support
 - PreparedStatement support
 - Advanced types(LOBs, Collections and UDTs) support
 - Multiple ResultSet support
-- Better SQL compatibility(e.g. Aggregation functions and probably simple table joins and sub-queries)
+- Better SQL compatibility(e.g. SELECT INTO, Aggregation functions and probably simple table joins and sub-queries)
 - More providers...
 
 ## How to use?
