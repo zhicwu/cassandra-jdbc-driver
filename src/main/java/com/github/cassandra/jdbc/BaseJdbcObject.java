@@ -108,6 +108,8 @@ public abstract class BaseJdbcObject implements AutoCloseable, Wrapper {
 	}
 
 	public void clearWarnings() throws SQLException {
+		validateState();
+
 		_warning = null;
 	}
 
@@ -117,12 +119,14 @@ public abstract class BaseJdbcObject implements AutoCloseable, Wrapper {
 		closed = true;
 
 		SQLException exception = tryClose();
-		if (!quiet) {
+		if (!quiet && exception != null) {
 			throw exception;
 		}
 	}
 
 	public SQLWarning getWarnings() throws SQLException {
+		validateState();
+
 		return _warning;
 	}
 

@@ -184,7 +184,8 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
 
 		metadata.clear();
 
-		if (statement != null && statement.isCloseOnCompletion()) {
+		if (statement != null && !statement.isClosed()
+				&& statement.isCloseOnCompletion()) {
 			statement.close();
 		}
 	}
