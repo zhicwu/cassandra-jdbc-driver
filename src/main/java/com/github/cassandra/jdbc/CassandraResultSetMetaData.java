@@ -47,6 +47,16 @@ public class CassandraResultSetMetaData extends BaseJdbcObject implements
 		super(true);
 	}
 
+	@Override
+	protected SQLException tryClose() {
+		return null;
+	}
+
+	@Override
+	protected Object unwrap() {
+		return this;
+	}
+
 	public void addColumnDefinition(CassandraColumnDefinition def) {
 		if (columnDefinitions.add(def)) {
 			columnNameIndices.put(def.getColumnName(),
@@ -178,15 +188,5 @@ public class CassandraResultSetMetaData extends BaseJdbcObject implements
 
 	public boolean isWritable(int column) throws SQLException {
 		return getColumnDefinition(column).isWritable();
-	}
-
-	@Override
-	protected SQLException tryClose() {
-		return null;
-	}
-
-	@Override
-	protected Object unwrap() {
-		return this;
 	}
 }

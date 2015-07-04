@@ -61,6 +61,15 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
 				.toString();
 	}
 
+	/**
+	 * Gets cursor name set in statement.
+	 *
+	 * @return cursor name
+	 */
+	protected String getCursorName() {
+		return _cursorName;
+	}
+
 	public void addBatch(String sql) throws SQLException {
 		validateState();
 
@@ -105,15 +114,6 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
 		validateState();
 
 		return _connection;
-	}
-
-	/**
-	 * Gets cursor name set in statement.
-	 *
-	 * @return cursor name
-	 */
-	protected String getCursorName() {
-		return _cursorName;
 	}
 
 	public int getFetchDirection() throws SQLException {

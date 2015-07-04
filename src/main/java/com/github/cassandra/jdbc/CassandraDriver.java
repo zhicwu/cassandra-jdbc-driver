@@ -24,6 +24,7 @@ import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_COMPRESSION;
 import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_CONNECT_TIMEOUT;
 import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_CONSISTENCY_LEVEL;
 import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_FETCH_SIZE;
+import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_KEEP_ALIVE;
 import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_QUERY_TRACE;
 import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_READ_TIMEOUT;
 import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_SQL_FRIENDLY;
@@ -32,6 +33,7 @@ import static com.github.cassandra.jdbc.CassandraUtils.KEY_COMPRESSION;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_CONNECT_TIMEOUT;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_CONSISTENCY_LEVEL;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_FETCH_SIZE;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_KEEP_ALIVE;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_LOCAL_DC;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_PASSWORD;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_PORT;
@@ -76,6 +78,22 @@ public class CassandraDriver implements Driver {
 		}
 	}
 
+	private DriverPropertyInfo createDriverPropertyInfo(String propertyName,
+			String propertyValue, boolean required, String[] choices) {
+		DriverPropertyInfo info = new DriverPropertyInfo(propertyName,
+				propertyValue);
+		info.required = required;
+		info.description = CassandraUtils.getString(new StringBuilder(
+				"MESSAGE_PROP_").append(propertyName.toUpperCase())
+				.append("_DESCRIPTION").toString());
+
+		if (choices != null && choices.length > 0) {
+			info.choices = choices;
+		}
+
+		return info;
+	}
+
 	public boolean acceptsURL(String url) throws SQLException {
 		return url != null && url.startsWith(DRIVER_PROTOCOL);
 	}
@@ -99,22 +117,6 @@ public class CassandraDriver implements Driver {
 			// signal it is the wrong driver for this
 			return null;
 		}
-	}
-
-	private DriverPropertyInfo createDriverPropertyInfo(String propertyName,
-			String propertyValue, boolean required, String[] choices) {
-		DriverPropertyInfo info = new DriverPropertyInfo(propertyName,
-				propertyValue);
-		info.required = required;
-		info.description = CassandraUtils.getString(new StringBuilder(
-				"MESSAGE_PROP_").append(propertyName.toUpperCase())
-				.append("_DESCRIPTION").toString());
-
-		if (choices != null && choices.length > 0) {
-			info.choices = choices;
-		}
-
-		return info;
 	}
 
 	public int getMajorVersion() {
@@ -169,6 +171,9 @@ public class CassandraDriver implements Driver {
 				new String[] { "true", "false" }));
 		list.add(createDriverPropertyInfo(KEY_QUERY_TRACE, CassandraUtils
 				.getPropertyValue(props, KEY_QUERY_TRACE, DEFAULT_QUERY_TRACE),
+				false, new String[] { "true", "false" }));
+		list.add(createDriverPropertyInfo(KEY_KEEP_ALIVE, CassandraUtils
+				.getPropertyValue(props, KEY_KEEP_ALIVE, DEFAULT_KEEP_ALIVE),
 				false, new String[] { "true", "false" }));
 
 		return list.toArray(new DriverPropertyInfo[0]);

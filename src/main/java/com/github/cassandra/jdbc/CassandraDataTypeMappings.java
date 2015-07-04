@@ -36,13 +36,15 @@ import java.util.Set;
  * @author Zhichun Wu
  */
 public class CassandraDataTypeMappings {
+	static final Map<String, Class<?>> CQL2JAVA_MAPPING = new HashMap<String, Class<?>>();
+	static final Map<String, Integer> CQL2SQL_MAPPING = new HashMap<String, Integer>();
+	static final Map<String, Integer> PRECISION_MAPPING = new HashMap<String, Integer>();
+	static final Map<String, Integer> SCALE_MAPPING = new HashMap<String, Integer>();
 	public static final String ASCII = "ascii";
 	public static final String BIGINT = "bigint";
 	public static final String BLOB = "blob";
 	public static final String BOOLEAN = "boolean";
 	public static final String COUNTER = "counter";
-	static final Map<String, Class<?>> CQL2JAVA_MAPPING = new HashMap<String, Class<?>>();
-	static final Map<String, Integer> CQL2SQL_MAPPING = new HashMap<String, Integer>();
 	public static final String DECIMAL = "decimal";
 	public static final String DOUBLE = "double";
 	public static final String FLOAT = "float";
@@ -50,8 +52,6 @@ public class CassandraDataTypeMappings {
 	public static final String INT = "int";
 	public static final String LIST = "list";
 	public static final String MAP = "map";
-	static final Map<String, Integer> PRECISION_MAPPING = new HashMap<String, Integer>();
-	static final Map<String, Integer> SCALE_MAPPING = new HashMap<String, Integer>();
 	public static final String SET = "set";
 	public static final String TEXT = "text";
 	public static final String TIMESTAMP = "timestamp";

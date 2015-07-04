@@ -40,6 +40,16 @@ public class CassandraPreparedStatement extends BaseCassandraPreparedStatement {
 		_session = session;
 	}
 
+	@Override
+	protected SQLException tryClose() {
+		return null;
+	}
+
+	@Override
+	protected Object unwrap() {
+		return null;
+	}
+
 	public void close() throws SQLException {
 		// TODO Auto-generated method stub
 
@@ -118,15 +128,5 @@ public class CassandraPreparedStatement extends BaseCassandraPreparedStatement {
 	public boolean isClosed() throws SQLException {
 		// TODO Auto-generated method stub
 		return false;
-	}
-
-	@Override
-	protected SQLException tryClose() {
-		return null;
-	}
-
-	@Override
-	protected Object unwrap() {
-		return null;
 	}
 }

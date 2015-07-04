@@ -48,9 +48,27 @@ import com.github.cassandra.jdbc.parser.SqlToCqlTranslator;
  * @author Zhichun Wu
  */
 public class CassandraUtils {
+	private static final Logger logger = LoggerFactory
+			.getLogger(CassandraUtils.class);
+
 	static final String BUNDLE_NAME = CassandraUtils.class.getPackage()
 			.getName() + ".messages";
+	static final ResultSet DUMMY_RESULT_SET = new DummyCassandraResultSet();
 
+	static final String INVALID_URL = "Invalid connection URL";
+	static final String PROVIDER_PREFIX = CassandraUtils.class.getPackage()
+			.getName() + ".provider.";
+	static final String PROVIDER_SUFFIX = "CassandraConnection";
+	static final ResourceBundle RESOURCE_BUNDLE;
+	static final String SQL_KEYWORD_ESCAPING = ".\"$1\"$2";
+	static final Pattern SQL_KEYWORDS_PATTERN = Pattern
+			.compile("(?i)\\.(select|insert|update|delete|into|from|where|key|alter|drop|create)([>=<\\.,\\s])");
+	static final String TOKEN_KVP_SEPARATOR = "=";
+
+	static final String TOKEN_PARAM_SEPARATOR = "&";
+	static final String TOKEN_PROTO_SEPARATOR = ":";
+
+	static final String TOKEN_URL_SEPARATOR = "//";
 	public static final String[][] CATALOG_COLUMNS = new String[][] { {
 			"TABLE_CAT", "text" } };
 	public static final String[][] COLUMN_COLUMNS = new String[][] {
@@ -66,7 +84,6 @@ public class CassandraUtils {
 			{ "SCOPE_CATALOG", "text" }, { "SCOPE_SCHEMA", "text" },
 			{ "SCOPE_TABLE", "text" }, { "SOURCE_DATA_TYPE", "short" },
 			{ "IS_AUTOINCREMENT", "text" }, { "IS_GENERATEDCOLUMN", "text" } };
-
 	public static final String CURSOR_PREFIX = "cursor@";
 	public static final String DEFAULT_COMPRESSION = "none";
 	public static final String DEFAULT_CONNECT_TIMEOUT = "5000"; // 5 seconds
@@ -74,7 +91,6 @@ public class CassandraUtils {
 	public static final String DEFAULT_DB_MAJOR_VERSION = "2";
 	public static final String DEFAULT_DB_MINOR_VERSION = "0";
 	public static final int DEFAULT_DRIVER_MAJOR_VERSION = 0;
-
 	public static final int DEFAULT_DRIVER_MINOR_VERSION = 2;
 	public static final String DEFAULT_DRIVER_NAME = "Cassandra JDBC Driver";
 
@@ -86,20 +102,21 @@ public class CassandraUtils {
 			+ DEFAULT_DRIVER_PATCH_VERSION;
 	public static final String DEFAULT_FETCH_SIZE = "100";
 	public static final String DEFAULT_HOSTS = "localhost";
+	public static final String DEFAULT_KEEP_ALIVE = "true";
 	public static final String DEFAULT_KEYSPACE = "system";
 	public static final String DEFAULT_PRODUCT_NAME = "Apache Cassandra";
 	public static final String DEFAULT_PRODUCT_VERSION = "2.x";
 	// default settings
 	public static final String DEFAULT_PROVIDER = "datastax";
+
 	public static final String DEFAULT_QUERY_TRACE = "true";
 	public static final String DEFAULT_READ_TIMEOUT = "30000"; // 30 seconds
 	public static final long DEFAULT_ROW_LIMIT = 10000L;
 	public static final boolean DEFAULT_SQL_FRIENDLY = true;
-
 	public static final String DEFAULT_USERNAME = "cassandra";
 	public static final String DRIVER_NAME = "Cassandra JDBC Driver";
 	public static final String DRIVER_PROTOCOL = "jdbc:c*:";
-	static final ResultSet DUMMY_RESULT_SET = new DummyCassandraResultSet();
+
 	// really like String.Empty and String.IsNullOrEmpty() in C#...
 	public static final String EMPTY_STRING = "";
 	public static final String[][] INDEX_COLUMNS = new String[][] {
@@ -110,36 +127,35 @@ public class CassandraUtils {
 			{ "COLUMN_NAME", "text" }, { "ASC_OR_DESC", "text" },
 			{ "CARDINALITY", "int" }, { "PAGES", "int" },
 			{ "FILTER_CONDITION", "text" } };
-	static final String INVALID_URL = "Invalid connection URL";
+
 	public static final String KEY_APPROXIMATE_INDEX = "approximateIndexInfo";
 
 	public static final String KEY_CATALOG = "catalog";
-	public static final String KEY_COLUMN_PATTERN = "columnNamePattern";
-	public static final String KEY_COMPRESSION = "compression";
-	public static final String KEY_CONNECT_TIMEOUT = "connectTimeout";
-	public static final String KEY_CONNECTION_URL = "url";
-	public static final String KEY_CONSISTENCY_LEVEL = "consistencyLevel";
-	public static final String KEY_DB_MAJOR_VERSION = "dbMajorVersion";
 
+	public static final String KEY_COLUMN_PATTERN = "columnNamePattern";
+
+	public static final String KEY_COMPRESSION = "compression";
+
+	public static final String KEY_CONNECT_TIMEOUT = "connectTimeout";
+
+	public static final String KEY_CONNECTION_URL = "url";
+
+	public static final String KEY_CONSISTENCY_LEVEL = "consistencyLevel";
+
+	public static final String KEY_DB_MAJOR_VERSION = "dbMajorVersion";
 	public static final String KEY_DB_MINOR_VERSION = "dbMinorVersion";
 	public static final String KEY_DRIVER_MAJOR_VERSION = "driverMajorVersion";
-
 	public static final String KEY_DRIVER_MINOR_VERSION = "driverMinorVersion";
-
 	public static final String KEY_DRIVER_NAME = "driverName";
-
 	public static final String KEY_DRIVER_VERSION = "driverVersion";
-
 	public static final String KEY_FETCH_SIZE = "fetchSize";
-
 	public static final String KEY_HOSTS = "hosts";
-
+	public static final String KEY_KEEP_ALIVE = "keepAlive";
 	public static final String KEY_KEYSPACE = "keyspace";
-
 	public static final String KEY_LOCAL_DC = "localDc";
-
 	public static final String KEY_NUMERIC_FUNCTIONS = "numericFunctions";
 	public static final String KEY_PASSWORD = "password";
+
 	public static final String KEY_PORT = "port";
 	public static final String KEY_PRODUCT_NAME = "productName";
 	public static final String KEY_PRODUCT_VERSION = "productVersion";
@@ -149,32 +165,23 @@ public class CassandraUtils {
 	public static final String KEY_READ_TIMEOUT = "readTimeout";
 	public static final String KEY_SCHEMA_PATTERN = "schemaPattern";
 	public static final String KEY_SQL_FRIENDLY = "sqlFriendly";
+
 	public static final String KEY_SQL_KEYWORDS = "keywords";
 
 	public static final String KEY_STRING_FUNCTIONS = "stringFunctions";
+
 	public static final String KEY_SYSTEM_FUNCTIONS = "systemFunctions";
 	public static final String KEY_TABLE_PATTERN = "tableNamePattern";
+
 	public static final String KEY_TIMEDATE_FUNCTIONS = "timeDateFunctions";
 	public static final String KEY_TYPE_PATTERN = "typeNamePattern";
 	public static final String KEY_UNIQUE_INDEX = "uniqueIndexOnly";
 	public static final String KEY_USERNAME = "user";
-	private static final Logger logger = LoggerFactory
-			.getLogger(CassandraUtils.class);
+
 	public static final String[][] PK_COLUMNS = new String[][] {
 			{ "TABLE_CAT", "text" }, { "TABLE_SCHEM", "text" },
 			{ "TABLE_NAME", "text" }, { "COLUMN_NAME", "text" },
 			{ "KEY_SEQ", "int" }, { "PK_NAME", "text" } };
-
-	static final String PROVIDER_PREFIX = CassandraUtils.class.getPackage()
-			.getName() + ".provider.";
-
-	static final String PROVIDER_SUFFIX = "CassandraConnection";
-
-	static final ResourceBundle RESOURCE_BUNDLE;
-	static final String SQL_KEYWORD_ESCAPING = ".\"$1\"$2";
-
-	static final Pattern SQL_KEYWORDS_PATTERN = Pattern
-			.compile("(?i)\\.(select|insert|update|delete|into|from|where|key|alter|drop|create)([>=<\\.,\\s])");
 	public static final String[][] TABLE_COLUMNS = new String[][] {
 			{ "TABLE_CAT", "text" }, { "TABLE_SCHEM", "text" },
 			{ "TABLE_NAME", "text" }, { "TABLE_TYPE", "text" },
@@ -182,17 +189,12 @@ public class CassandraUtils {
 			{ "TYPE_SCHEM", "text" }, { "TYPE_NAME", "text" },
 			{ "SELF_REFERENCING_COL_NAME", "text" },
 			{ "REF_GENERATION", "text" } };
+
 	// meta data
 	public static final String[][] TABLE_TYPE_COLUMNS = new String[][] { {
 			"TABLE_TYPE", "text" } };
+
 	public static final Object[][] TABLE_TYPE_DATA = new Object[][] { new Object[] { "TABLE" } };
-
-	static final String TOKEN_KVP_SEPARATOR = "=";
-	static final String TOKEN_PARAM_SEPARATOR = "&";
-
-	static final String TOKEN_PROTO_SEPARATOR = ":";
-
-	static final String TOKEN_URL_SEPARATOR = "//";
 
 	public static final String[][] TYPE_COLUMNS = new String[][] {
 			{ "TYPE_NAME", "text" }, { "DATA_TYPE", "int" },
@@ -230,20 +232,6 @@ public class CassandraUtils {
 		}
 	}
 
-	public static String buildSimplifiedConnectionUrl(Properties props) {
-		StringBuilder builder = new StringBuilder(DRIVER_PROTOCOL);
-		builder.append(getPropertyValue(props, KEY_PROVIDER, DEFAULT_PROVIDER))
-				.append(':')
-				.append(TOKEN_URL_SEPARATOR)
-				.append(getPropertyValue(props, KEY_HOSTS, DEFAULT_HOSTS))
-				.append('/')
-				.append(getPropertyValue(props, KEY_KEYSPACE, DEFAULT_KEYSPACE))
-				.append('?').append(KEY_USERNAME).append('=')
-				.append(getPropertyValue(props, KEY_USERNAME, EMPTY_STRING));
-
-		return builder.toString();
-	}
-
 	static BaseCassandraConnection createConnection(Properties props)
 			throws SQLException {
 		BaseCassandraConnection conn;
@@ -263,6 +251,96 @@ public class CassandraUtils {
 		}
 
 		return conn;
+	}
+
+	/**
+	 * Extract properties from given non-null connection URL.
+	 *
+	 * @param url
+	 *            connection URL
+	 * @return properties defined in the URL
+	 * @throws SQLException
+	 *             when the given URL is invalid
+	 */
+	static Properties parseConnectionURL(String url) throws SQLException {
+		Properties props = new Properties();
+
+		// example URL:
+		// jdbc:c*:datastax://host1:9160,host2/keyspace1?consistency=LOCAL_ONE
+		String[] parts = url.split(TOKEN_URL_SEPARATOR);
+		boolean invalidUrl = true;
+
+		if (parts.length == 2) {
+			// get provider
+			String provider = parts[0].replace(DRIVER_PROTOCOL, EMPTY_STRING);
+			if (EMPTY_STRING.equals(provider)) {
+				provider = DEFAULT_PROVIDER;
+			} else {
+				// this will also ignore extra protocol codes like ":a:b:c:d:"
+				provider = provider.split(TOKEN_PROTO_SEPARATOR)[0];
+			}
+			props.setProperty(KEY_PROVIDER, provider);
+
+			String restUrl = parts[1];
+			int ksIdx = restUrl.indexOf('/');
+			int pIdx = restUrl.indexOf('?');
+			if (ksIdx > 0) {
+				// get hosts
+				String hosts = restUrl.substring(0, ksIdx);
+				props.setProperty(KEY_HOSTS, hosts);
+
+				// get keyspace
+				String keyspace = restUrl.substring(ksIdx + 1,
+						pIdx > ksIdx ? pIdx : restUrl.length());
+				if (EMPTY_STRING.equals(keyspace)) {
+					keyspace = DEFAULT_KEYSPACE;
+				}
+				props.setProperty(KEY_KEYSPACE, keyspace);
+			} else {
+				props.setProperty(KEY_KEYSPACE, DEFAULT_KEYSPACE);
+				props.setProperty(KEY_HOSTS,
+						pIdx > 0 ? restUrl.substring(0, pIdx) : restUrl);
+			}
+
+			invalidUrl = false;
+
+			// now let's see if there's any optional parameters
+			if (pIdx > ksIdx) {
+				String[] params = restUrl.substring(pIdx + 1, restUrl.length())
+						.split(TOKEN_PARAM_SEPARATOR);
+				for (String param : params) {
+					String[] kvPair = param.split(TOKEN_KVP_SEPARATOR);
+					if (kvPair.length == 2) {
+						String key = kvPair[0].trim();
+						String value = kvPair[1].trim();
+
+						if (!EMPTY_STRING.equals(key)) {
+							props.setProperty(key, value);
+						}
+					}
+				}
+			}
+		}
+
+		if (invalidUrl) {
+			throw new SQLException(INVALID_URL);
+		}
+
+		return props;
+	}
+
+	public static String buildSimplifiedConnectionUrl(Properties props) {
+		StringBuilder builder = new StringBuilder(DRIVER_PROTOCOL);
+		builder.append(getPropertyValue(props, KEY_PROVIDER, DEFAULT_PROVIDER))
+				.append(':')
+				.append(TOKEN_URL_SEPARATOR)
+				.append(getPropertyValue(props, KEY_HOSTS, DEFAULT_HOSTS))
+				.append('/')
+				.append(getPropertyValue(props, KEY_KEYSPACE, DEFAULT_KEYSPACE))
+				.append('?').append(KEY_USERNAME).append('=')
+				.append(getPropertyValue(props, KEY_USERNAME, EMPTY_STRING));
+
+		return builder.toString();
 	}
 
 	public static Object[][] getAllData(ResultSet rs) throws SQLException {
@@ -464,82 +542,6 @@ public class CassandraUtils {
 		}
 
 		return sql;
-	}
-
-	/**
-	 * Extract properties from given non-null connection URL.
-	 *
-	 * @param url
-	 *            connection URL
-	 * @return properties defined in the URL
-	 * @throws SQLException
-	 *             when the given URL is invalid
-	 */
-	static Properties parseConnectionURL(String url) throws SQLException {
-		Properties props = new Properties();
-
-		// example URL:
-		// jdbc:c*:datastax://host1:9160,host2/keyspace1?consistency=LOCAL_ONE
-		String[] parts = url.split(TOKEN_URL_SEPARATOR);
-		boolean invalidUrl = true;
-
-		if (parts.length == 2) {
-			// get provider
-			String provider = parts[0].replace(DRIVER_PROTOCOL, EMPTY_STRING);
-			if (EMPTY_STRING.equals(provider)) {
-				provider = DEFAULT_PROVIDER;
-			} else {
-				// this will also ignore extra protocol codes like ":a:b:c:d:"
-				provider = provider.split(TOKEN_PROTO_SEPARATOR)[0];
-			}
-			props.setProperty(KEY_PROVIDER, provider);
-
-			String restUrl = parts[1];
-			int ksIdx = restUrl.indexOf('/');
-			int pIdx = restUrl.indexOf('?');
-			if (ksIdx > 0) {
-				// get hosts
-				String hosts = restUrl.substring(0, ksIdx);
-				props.setProperty(KEY_HOSTS, hosts);
-
-				// get keyspace
-				String keyspace = restUrl.substring(ksIdx + 1,
-						pIdx > ksIdx ? pIdx : restUrl.length());
-				if (EMPTY_STRING.equals(keyspace)) {
-					keyspace = DEFAULT_KEYSPACE;
-				}
-				props.setProperty(KEY_KEYSPACE, keyspace);
-			} else {
-				props.setProperty(KEY_KEYSPACE, DEFAULT_KEYSPACE);
-				props.setProperty(KEY_HOSTS,
-						pIdx > 0 ? restUrl.substring(0, pIdx) : restUrl);
-			}
-
-			invalidUrl = false;
-
-			// now let's see if there's any optional parameters
-			if (pIdx > ksIdx) {
-				String[] params = restUrl.substring(pIdx + 1, restUrl.length())
-						.split(TOKEN_PARAM_SEPARATOR);
-				for (String param : params) {
-					String[] kvPair = param.split(TOKEN_KVP_SEPARATOR);
-					if (kvPair.length == 2) {
-						String key = kvPair[0].trim();
-						String value = kvPair[1].trim();
-
-						if (!EMPTY_STRING.equals(key)) {
-							props.setProperty(key, value);
-						}
-					}
-				}
-			}
-		}
-
-		if (invalidUrl) {
-			throw new SQLException(INVALID_URL);
-		}
-
-		return props;
 	}
 
 	public static SQLException tryClose(AutoCloseable resource) {

@@ -77,6 +77,22 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
 		_props = new Properties();
 	}
 
+	@Override
+	protected SQLException tryClose() {
+		return null;
+	}
+
+	@Override
+	protected Object unwrap() {
+		return this;
+	}
+
+	protected void validateState() throws SQLException {
+		if (_conn == null || _conn.isClosed()) {
+			throw CassandraErrors.connectionClosedException();
+		}
+	}
+
 	public boolean allProceduresAreCallable() throws SQLException {
 		return false;
 	}
@@ -996,16 +1012,6 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
 		return false;
 	}
 
-	@Override
-	protected SQLException tryClose() {
-		return null;
-	}
-
-	@Override
-	protected Object unwrap() {
-		return this;
-	}
-
 	public boolean updatesAreDetected(int type) throws SQLException {
 		return false;
 	}
@@ -1016,11 +1022,5 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
 
 	public boolean usesLocalFiles() throws SQLException {
 		return false;
-	}
-
-	protected void validateState() throws SQLException {
-		if (_conn == null || _conn.isClosed()) {
-			throw CassandraErrors.connectionClosedException();
-		}
 	}
 }

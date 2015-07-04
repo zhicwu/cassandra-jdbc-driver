@@ -90,6 +90,30 @@ public abstract class BaseCassandraConnection extends BaseJdbcObject implements
 		_txIsolationLevel = TRANSACTION_NONE;
 	}
 
+	protected abstract <T> T createObject(Class<T> clazz) throws SQLException;
+
+	protected ResultSet getObjectMetaData(CassandraObjectType objectType,
+			Properties queryPatterns, Object... additionalHints)
+			throws SQLException {
+		ResultSet rs = new DummyCassandraResultSet();
+
+		switch (objectType) {
+		case TABLE_TYPE:
+			rs = new DummyCassandraResultSet(TABLE_TYPE_COLUMNS,
+					TABLE_TYPE_DATA);
+			break;
+		case TYPE:
+			rs = new DummyCassandraResultSet(TYPE_COLUMNS,
+					CassandraDataTypeMappings.TYPE_META_DATA);
+			break;
+
+		default:
+			throw CassandraErrors.notSupportedException();
+		}
+
+		return rs;
+	}
+
 	public void abort(Executor executor) throws SQLException {
 		validateState();
 
@@ -134,8 +158,6 @@ public abstract class BaseCassandraConnection extends BaseJdbcObject implements
 
 		return createObject(NClob.class);
 	}
-
-	protected abstract <T> T createObject(Class<T> clazz) throws SQLException;
 
 	public SQLXML createSQLXML() throws SQLException {
 		validateState();
@@ -204,27 +226,6 @@ public abstract class BaseCassandraConnection extends BaseJdbcObject implements
 		validateState();
 
 		return _timeout;
-	}
-
-	protected ResultSet getObjectMetaData(CassandraObjectType objectType,
-			Properties queryPatterns, Object... additionalHints) {
-		ResultSet rs = new DummyCassandraResultSet();
-
-		switch (objectType) {
-		case TABLE_TYPE:
-			rs = new DummyCassandraResultSet(TABLE_TYPE_COLUMNS,
-					TABLE_TYPE_DATA);
-			break;
-		case TYPE:
-			rs = new DummyCassandraResultSet(TYPE_COLUMNS,
-					CassandraDataTypeMappings.TYPE_META_DATA);
-			break;
-
-		default:
-			break;
-		}
-
-		return rs;
 	}
 
 	public String getSchema() throws SQLException {

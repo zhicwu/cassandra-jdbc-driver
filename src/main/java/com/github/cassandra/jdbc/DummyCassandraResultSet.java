@@ -85,15 +85,6 @@ public class DummyCassandraResultSet extends BaseCassandraResultSet {
 		}
 	}
 
-	public int getColumnCount() {
-		return _data != null && _data.length > 0 && _data[0] != null ? _data[0].length
-				: 0;
-	}
-
-	public int getRowCount() {
-		return _data == null || _data.length == 0 ? 0 : _data.length;
-	}
-
 	@SuppressWarnings("unchecked")
 	@Override
 	protected <T> T getValue(int columnIndex, Class<T> clazz)
@@ -170,5 +161,14 @@ public class DummyCassandraResultSet extends BaseCassandraResultSet {
 	@Override
 	protected Object unwrap() {
 		return this;
+	}
+
+	public int getColumnCount() {
+		return _data != null && _data.length > 0 && _data[0] != null ? _data[0].length
+				: 0;
+	}
+
+	public int getRowCount() {
+		return _data == null || _data.length == 0 ? 0 : _data.length;
 	}
 }

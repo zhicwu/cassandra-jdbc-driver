@@ -31,7 +31,12 @@ import java.sql.Wrapper;
  */
 public abstract class BaseJdbcObject implements AutoCloseable, Wrapper {
 	/**
-	 * This indicates whether this has been closed.
+	 * List of chained SQL warnings.
+	 */
+	private SQLWarning _warning;
+
+	/**
+	 * This indicates whether this object has been closed.
 	 */
 	protected boolean closed;
 
@@ -45,33 +50,6 @@ public abstract class BaseJdbcObject implements AutoCloseable, Wrapper {
 	protected BaseJdbcObject(boolean quiet) {
 		this.closed = false;
 		this.quiet = quiet;
-	}
-
-	public void clearWarnings() throws SQLException {
-		// be quiet
-	}
-
-	public void close() throws SQLException {
-		closed = true;
-
-		SQLException exception = tryClose();
-		if (!quiet) {
-			throw exception;
-		}
-	}
-
-	public SQLWarning getWarnings() throws SQLException {
-		return null;
-	}
-
-	public boolean isClosed() throws SQLException {
-		return closed;
-	}
-
-	public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		Object innerObj = unwrap();
-
-		return innerObj != null && innerObj.getClass().isAssignableFrom(iface);
 	}
 
 	/**
@@ -88,10 +66,6 @@ public abstract class BaseJdbcObject implements AutoCloseable, Wrapper {
 	 */
 	protected abstract Object unwrap();
 
-	public <T> T unwrap(Class<T> iface) throws SQLException {
-		return iface.cast(unwrap());
-	}
-
 	/**
 	 * Validate instance state - mainly checking if this has been closed.
 	 *
@@ -103,5 +77,66 @@ public abstract class BaseJdbcObject implements AutoCloseable, Wrapper {
 		if (closed) {
 			throw CassandraErrors.resourceClosedException(this);
 		}
+	}
+
+	/**
+	 * Append a warning to the end of chained SQL warnings.
+	 * 
+	 * @param warning
+	 *            warning to be appended to the warnings list
+	 */
+	public void appendWarning(SQLWarning warning) {
+		if (warning != null) {
+			if (_warning == null) {
+				_warning = warning;
+			} else {
+				SQLWarning w = _warning;
+				SQLWarning prevWarning = w;
+				do {
+					if (w == warning) {
+						break;
+					} else {
+						prevWarning = w;
+					}
+				} while ((w = w.getNextWarning()) != null);
+
+				if (prevWarning != w) {
+					prevWarning.setNextWarning(warning);
+				}
+			}
+		}
+	}
+
+	public void clearWarnings() throws SQLException {
+		_warning = null;
+	}
+
+	public void close() throws SQLException {
+		clearWarnings();
+
+		closed = true;
+
+		SQLException exception = tryClose();
+		if (!quiet) {
+			throw exception;
+		}
+	}
+
+	public SQLWarning getWarnings() throws SQLException {
+		return _warning;
+	}
+
+	public boolean isClosed() throws SQLException {
+		return closed;
+	}
+
+	public boolean isWrapperFor(Class<?> iface) throws SQLException {
+		Object innerObj = unwrap();
+
+		return innerObj != null && innerObj.getClass().isAssignableFrom(iface);
+	}
+
+	public <T> T unwrap(Class<T> iface) throws SQLException {
+		return iface.cast(unwrap());
 	}
 }

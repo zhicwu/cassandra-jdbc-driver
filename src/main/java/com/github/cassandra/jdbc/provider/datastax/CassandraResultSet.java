@@ -48,7 +48,7 @@ public class CassandraResultSet extends BaseCassandraResultSet {
 	protected CassandraResultSet(BaseCassandraStatement statement, ResultSet rs) {
 		super(statement);
 
-		if (rs != null && !rs.isExhausted()) {
+		if (rs != null) {
 			for (Definition def : rs.getColumnDefinitions()) {
 				CassandraColumnDefinition d = new CassandraColumnDefinition(
 						def.getKeyspace(), def.getTable(), def.getName(), def
@@ -89,7 +89,20 @@ public class CassandraResultSet extends BaseCassandraResultSet {
 				} else if (Object.class == clazz) {
 					result = (T) rawValue;
 				} else {
-					result = clazz.cast(rawValue);
+					try {
+						result = clazz.cast(rawValue);
+					} catch (ClassCastException e) {
+						if (logger.isWarnEnabled()) {
+							logger.warn(new StringBuilder(
+									"Not able to convert [").append(rawValue)
+									.append("] to ").append(clazz).toString(),
+									e);
+						}
+
+						if (!quiet) {
+							throw new SQLException(e);
+						}
+					}
 				}
 			} else {
 				wasNull = true;

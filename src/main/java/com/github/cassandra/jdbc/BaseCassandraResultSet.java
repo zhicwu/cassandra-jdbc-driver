@@ -70,6 +70,91 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
 		_exhausted = false;
 	}
 
+	protected int getCurrentRowIndex() {
+		return _rowIndex;
+	}
+
+	protected abstract <T> T getValue(int columnIndex, Class<T> clazz)
+			throws SQLException;
+
+	/**
+	 * Tests if we can retrieve more results.
+	 *
+	 * @return true if we have more results; false otherwise
+	 */
+	protected abstract boolean hasMore();
+
+	protected void requestColumnAccess(int columnIndex) throws SQLException {
+		if (columnIndex < 1) {
+			throw new SQLException(
+					"Column index starts from one and must be positive");
+		} else if (columnIndex > metadata.getColumnCount()) {
+			throw new SQLException("We only have " + metadata.getColumnCount()
+					+ " columns but you're trying to get " + columnIndex);
+		}
+	}
+
+	protected void requestReadAccess(boolean random) throws SQLException {
+		int type = getType();
+
+		if (random && type == ResultSet.TYPE_FORWARD_ONLY) {
+			throw CassandraErrors.notSupportedException();
+		}
+	}
+
+	protected void requestWriteAccess() throws SQLException {
+		int concurrency = getConcurrency();
+
+		if (concurrency == ResultSet.CONCUR_READ_ONLY) {
+			throw CassandraErrors.notSupportedException();
+		}
+	}
+
+	protected abstract <T> void setValue(int columnIndex, T value)
+			throws SQLException;
+
+	protected abstract boolean tryIterate() throws SQLException;
+
+	/**
+	 * Tries to move the cursor to a position according to given row index. This
+	 * will also call {@link #updateCursorState(int)} automatically to ensure
+	 * cursor state is up-to-date.
+	 *
+	 * @param rows
+	 *            how many rows move forward(positive number) or
+	 *            backward(negative number)
+	 * @param relativeIndex
+	 *            true if the rows is a relative number; false for absolute
+	 *            index
+	 * @return true if the cursor moved to the desired position successfully;
+	 *         false otherwise
+	 * @throws SQLException
+	 *             when the operation failed
+	 */
+	protected abstract boolean tryMoveTo(int rows, boolean relativeIndex)
+			throws SQLException;
+
+	/**
+	 * Update cursor state based on given row index. This method should be only
+	 * called from {@link #tryMoveTo(int, boolean)}.
+	 *
+	 * @param rowIndex
+	 *            row index the cursor is pointing to now
+	 */
+	protected void updateCursorState(int rowIndex) {
+		if (_exhausted) {
+			if (rowIndex > this._rowIndex) {
+				this._rowIndex = rowIndex;
+				_exhausted = false;
+			}
+		} else {
+			if (rowIndex < 0) {
+				this._rowIndex = -1;
+				_exhausted = true;
+			}
+		}
+	}
+
 	public boolean absolute(int row) throws SQLException {
 		requestReadAccess(true);
 
@@ -273,10 +358,6 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
 
 		return statement == null ? ResultSet.CONCUR_READ_ONLY : statement
 				.getResultSetConcurrency();
-	}
-
-	protected int getCurrentRowIndex() {
-		return _rowIndex;
 	}
 
 	public String getCursorName() throws SQLException {
@@ -674,16 +755,6 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
 		return getURL(findColumn(columnLabel));
 	}
 
-	protected abstract <T> T getValue(int columnIndex, Class<T> clazz)
-			throws SQLException;
-
-	/**
-	 * Tests if we can retrieve more results.
-	 *
-	 * @return true if we have more results; false otherwise
-	 */
-	protected abstract boolean hasMore();
-
 	public void insertRow() throws SQLException {
 		requestWriteAccess();
 	}
@@ -763,32 +834,6 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
 		return tryMoveTo(rows, true);
 	}
 
-	protected void requestColumnAccess(int columnIndex) throws SQLException {
-		if (columnIndex < 1) {
-			throw new SQLException(
-					"Column index starts from one and must be positive");
-		} else if (columnIndex > metadata.getColumnCount()) {
-			throw new SQLException("We only have " + metadata.getColumnCount()
-					+ " columns but you're trying to get " + columnIndex);
-		}
-	}
-
-	protected void requestReadAccess(boolean random) throws SQLException {
-		int type = getType();
-
-		if (random && type == ResultSet.TYPE_FORWARD_ONLY) {
-			throw CassandraErrors.notSupportedException();
-		}
-	}
-
-	protected void requestWriteAccess() throws SQLException {
-		int concurrency = getConcurrency();
-
-		if (concurrency == ResultSet.CONCUR_READ_ONLY) {
-			throw CassandraErrors.notSupportedException();
-		}
-	}
-
 	public boolean rowDeleted() throws SQLException {
 		return false;
 	}
@@ -816,30 +861,6 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
 			statement.setFetchSize(rows);
 		}
 	}
-
-	protected abstract <T> void setValue(int columnIndex, T value)
-			throws SQLException;
-
-	protected abstract boolean tryIterate() throws SQLException;
-
-	/**
-	 * Tries to move the cursor to a position according to given row index. This
-	 * will also call {@link #updateCursorState(int)} automatically to ensure
-	 * cursor state is up-to-date.
-	 *
-	 * @param rows
-	 *            how many rows move forward(positive number) or
-	 *            backward(negative number)
-	 * @param relativeIndex
-	 *            true if the rows is a relative number; false for absolute
-	 *            index
-	 * @return true if the cursor moved to the desired position successfully;
-	 *         false otherwise
-	 * @throws SQLException
-	 *             when the operation failed
-	 */
-	protected abstract boolean tryMoveTo(int rows, boolean relativeIndex)
-			throws SQLException;
 
 	public void updateArray(int columnIndex, Array x) throws SQLException {
 		requestColumnAccess(columnIndex);
@@ -1077,27 +1098,6 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
 	public void updateClob(String columnLabel, Reader reader, long length)
 			throws SQLException {
 		updateClob(findColumn(columnLabel), reader, length);
-	}
-
-	/**
-	 * Update cursor state based on given row index. This method should be only
-	 * called from {@link #tryMoveTo(int, boolean)}.
-	 *
-	 * @param rowIndex
-	 *            row index the cursor is pointing to now
-	 */
-	protected void updateCursorState(int rowIndex) {
-		if (_exhausted) {
-			if (rowIndex > this._rowIndex) {
-				this._rowIndex = rowIndex;
-				_exhausted = false;
-			}
-		} else {
-			if (rowIndex < 0) {
-				this._rowIndex = -1;
-				_exhausted = true;
-			}
-		}
 	}
 
 	public void updateDate(int columnIndex, Date x) throws SQLException {

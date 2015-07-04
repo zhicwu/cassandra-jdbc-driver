@@ -26,11 +26,11 @@ import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_COMPRESSION;
 import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_CONNECT_TIMEOUT;
 import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_CONSISTENCY_LEVEL;
 import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_FETCH_SIZE;
+import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_KEEP_ALIVE;
 import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_QUERY_TRACE;
 import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_READ_TIMEOUT;
 import static com.github.cassandra.jdbc.CassandraUtils.EMPTY_STRING;
 import static com.github.cassandra.jdbc.CassandraUtils.INDEX_COLUMNS;
-import static com.github.cassandra.jdbc.CassandraUtils.KEY_APPROXIMATE_INDEX;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_CATALOG;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_COLUMN_PATTERN;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_COMPRESSION;
@@ -44,6 +44,7 @@ import static com.github.cassandra.jdbc.CassandraUtils.KEY_DRIVER_NAME;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_DRIVER_VERSION;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_FETCH_SIZE;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_HOSTS;
+import static com.github.cassandra.jdbc.CassandraUtils.KEY_KEEP_ALIVE;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_KEYSPACE;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_LOCAL_DC;
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_PASSWORD;
@@ -100,11 +101,11 @@ import com.github.cassandra.jdbc.DummyCassandraResultSet;
  * @author Zhichun Wu
  */
 public class CassandraConnection extends BaseCassandraConnection {
-	static final String CQL_TO_GET_VERSION = "select release_version from system.local where key='local' limit 1";
-	static final String DRIVER_NAME = "DataStax Java Driver";
-
 	private static final Logger logger = LoggerFactory
 			.getLogger(CassandraConnection.class);
+	static final String CQL_TO_GET_VERSION = "select release_version from system.local where key='local' limit 1";
+
+	static final String DRIVER_NAME = "DataStax Java Driver";
 
 	private Cluster _cluster;
 
@@ -137,12 +138,14 @@ public class CassandraConnection extends BaseCassandraConnection {
 			builder.withPort(Integer.parseInt(props.getProperty(KEY_PORT)));
 		}
 
-		// set timeouts
+		// set socket options
 		SocketOptions socketOptions = new SocketOptions();
 		socketOptions.setConnectTimeoutMillis(Integer.valueOf(props
 				.getProperty(KEY_CONNECT_TIMEOUT, DEFAULT_CONNECT_TIMEOUT)));
 		socketOptions.setReadTimeoutMillis(Integer.valueOf(props.getProperty(
 				KEY_READ_TIMEOUT, DEFAULT_READ_TIMEOUT)));
+		socketOptions.setKeepAlive(Boolean.valueOf(props.getProperty(
+				KEY_KEEP_ALIVE, DEFAULT_KEEP_ALIVE)));
 		builder.withSocketOptions(socketOptions);
 
 		// set query options
@@ -220,240 +223,6 @@ public class CassandraConnection extends BaseCassandraConnection {
 		}
 
 		return new DummyCassandraResultSet(columns, data);
-	}
-
-	@Override
-	protected <T> T createObject(Class<T> clazz) throws SQLException {
-		if (!quiet) {
-			throw CassandraErrors.notSupportedException();
-		}
-
-		return null;
-	}
-
-	public Statement createStatement(int resultSetType,
-			int resultSetConcurrency, int resultSetHoldability)
-			throws SQLException {
-		validateState();
-
-		return new CassandraStatement(this, _cluster.connect(_keyspace));
-	}
-
-	public String getCatalog() throws SQLException {
-		validateState();
-
-		return _keyspace;
-	}
-
-	@SuppressWarnings("resource")
-	@Override
-	protected ResultSet getObjectMetaData(CassandraObjectType objectType,
-			Properties queryPatterns, Object... additionalHints) {
-		if (logger.isTraceEnabled()) {
-			logger.trace(new StringBuilder()
-					.append("Trying to get meta data with the following parameters:\n")
-					.append("objectType: ").append(objectType.name())
-					.append("\nqueryPatterns:\n").append(queryPatterns)
-					.append("\nadditionalHints: ")
-					.append(Arrays.toString(additionalHints)).toString());
-		}
-
-		ResultSet rs = new DummyCassandraResultSet();
-
-		Metadata m = _cluster.getMetadata();
-		switch (objectType) {
-		case KEYSPACE: {
-			List<KeyspaceMetadata> keyspaces = m.getKeyspaces();
-			String[][] data = new String[keyspaces.size()][1];
-			int index = 0;
-			for (KeyspaceMetadata km : keyspaces) {
-				data[index++][0] = km.getName();
-			}
-
-			rs = new DummyCassandraResultSet(CATALOG_COLUMNS, data);
-			break;
-		}
-
-		case TABLE: {
-			String catalog = CassandraUtils.getPropertyValue(queryPatterns,
-					KEY_CATALOG);
-			String tablePattern = CassandraUtils.getPropertyValue(
-					queryPatterns, KEY_TABLE_PATTERN);
-
-			List<Object[]> list = new ArrayList<Object[]>();
-			for (KeyspaceMetadata ks : m.getKeyspaces()) {
-				if (CassandraUtils.matchesPattern(ks.getName(), catalog)) {
-					for (TableMetadata t : ks.getTables()) {
-						if (CassandraUtils.matchesPattern(t.getName(),
-								tablePattern)) {
-							list.add(populateTableMetaData(ks, t));
-						}
-					}
-				}
-			}
-
-			rs = buildResultSet(TABLE_COLUMNS, list);
-			break;
-		}
-
-		case COLUMN: {
-			String catalog = CassandraUtils.getPropertyValue(queryPatterns,
-					KEY_CATALOG);
-			String tablePattern = CassandraUtils.getPropertyValue(
-					queryPatterns, KEY_TABLE_PATTERN);
-			String columnPattern = CassandraUtils.getPropertyValue(
-					queryPatterns, KEY_COLUMN_PATTERN);
-
-			List<Object[]> list = new ArrayList<Object[]>();
-			for (KeyspaceMetadata ks : m.getKeyspaces()) {
-				if (CassandraUtils.isNullOrEmptyString(catalog)
-						|| catalog.equals(ks.getName())) {
-					for (TableMetadata t : ks.getTables()) {
-						if (CassandraUtils.matchesPattern(t.getName(),
-								tablePattern)) {
-							int colIndex = 0;
-							for (ColumnMetadata c : t.getColumns()) {
-								colIndex++;
-								// Why DataStax Java driver turned additional
-								// blob column?
-								// Try system.IndexInfo...
-								if (!CassandraUtils.isNullOrEmptyString(c
-										.getName())
-										&& CassandraUtils.matchesPattern(
-												c.getName(), columnPattern)) {
-									list.add(populateColumnMetaData(ks, t, c,
-											colIndex));
-								}
-							}
-						}
-					}
-				}
-			}
-
-			rs = buildResultSet(COLUMN_COLUMNS, list);
-			break;
-		}
-
-		case INDEX: {
-			String catalog = CassandraUtils.getPropertyValue(queryPatterns,
-					KEY_CATALOG);
-			String table = CassandraUtils.getPropertyValue(queryPatterns,
-					KEY_TABLE_PATTERN);
-			boolean uniqueIndexOnly = Boolean.valueOf(CassandraUtils
-					.getPropertyValue(queryPatterns, KEY_UNIQUE_INDEX,
-							Boolean.FALSE.toString()));
-			// boolean approximateIndex = Boolean.valueOf(CassandraUtils
-			// .getPropertyValue(queryPatterns, KEY_APPROXIMATE_INDEX,
-			// Boolean.TRUE.toString()));
-
-			List<Object[]> list = new ArrayList<Object[]>();
-			for (KeyspaceMetadata ks : m.getKeyspaces()) {
-				if (CassandraUtils.isNullOrEmptyString(catalog)
-						|| catalog.equals(ks.getName())) {
-					for (TableMetadata t : ks.getTables()) {
-						if (CassandraUtils.isNullOrEmptyString(table)
-								|| table.equals(t.getName())) {
-							int colIndex = 0;
-							List<ColumnMetadata> primaryKeys = t
-									.getPrimaryKey();
-							boolean uniquePk = primaryKeys.size() == 1;
-							if (!uniqueIndexOnly || uniquePk) {
-								for (ColumnMetadata c : primaryKeys) {
-									list.add(populateIndexMetaData(ks, t, c,
-											++colIndex, uniquePk));
-								}
-							}
-
-							for (ColumnMetadata c : t.getColumns()) {
-								IndexMetadata i = c.getIndex();
-								if (i != null && !primaryKeys.contains(c)) {
-									list.add(populateIndexMetaData(ks, t, i));
-								}
-							}
-						}
-					}
-				}
-			}
-
-			rs = buildResultSet(INDEX_COLUMNS, list);
-			break;
-		}
-
-		case PRIMARY_KEY: {
-			String catalog = CassandraUtils.getPropertyValue(queryPatterns,
-					KEY_CATALOG);
-			String table = CassandraUtils.getPropertyValue(queryPatterns,
-					KEY_TABLE_PATTERN);
-
-			List<Object[]> list = new ArrayList<Object[]>();
-			for (KeyspaceMetadata ks : m.getKeyspaces()) {
-				if (CassandraUtils.isNullOrEmptyString(catalog)
-						|| catalog.equals(ks.getName())) {
-					for (TableMetadata t : ks.getTables()) {
-						if (CassandraUtils.isNullOrEmptyString(table)
-								|| table.equals(t.getName())) {
-							int colIndex = 0;
-							for (ColumnMetadata c : t.getPrimaryKey()) {
-								list.add(populatePrimaryKeyMetaData(ks, t, c,
-										++colIndex));
-							}
-						}
-					}
-				}
-			}
-
-			rs = buildResultSet(PK_COLUMNS, list);
-			break;
-		}
-
-		case UDT: {
-			String catalog = CassandraUtils.getPropertyValue(queryPatterns,
-					KEY_CATALOG);
-			String typePattern = CassandraUtils.getPropertyValue(queryPatterns,
-					KEY_TYPE_PATTERN);
-
-			List<Object[]> list = new ArrayList<Object[]>();
-			for (KeyspaceMetadata ks : m.getKeyspaces()) {
-				if (CassandraUtils.isNullOrEmptyString(catalog)
-						|| catalog.equals(ks.getName())) {
-					for (UserType t : ks.getUserTypes()) {
-						if (CassandraUtils.matchesPattern(t.getTypeName(),
-								typePattern)) {
-							list.add(populateUdtMetaData(ks, t));
-						}
-					}
-				}
-			}
-
-			rs = buildResultSet(UDT_COLUMNS, list);
-			break;
-		}
-
-		default: {
-			rs = super.getObjectMetaData(objectType, queryPatterns,
-					additionalHints);
-			break;
-
-		}
-		}
-
-		if (logger.isTraceEnabled()) {
-			int rowCount = 0;
-			int colCount = 0;
-
-			if (rs instanceof DummyCassandraResultSet) {
-				DummyCassandraResultSet drs = (DummyCassandraResultSet) rs;
-
-				rowCount = drs.getRowCount();
-				colCount = drs.getColumnCount();
-			}
-
-			logger.trace(new StringBuilder().append("Returning results with ")
-					.append(rowCount).append(" x ").append(colCount)
-					.append(" two-dimensional array").toString());
-		}
-
-		return rs;
 	}
 
 	private Object[] populateColumnMetaData(KeyspaceMetadata ks,
@@ -569,36 +338,241 @@ public class CassandraConnection extends BaseCassandraConnection {
 		};
 	}
 
-	public PreparedStatement prepareStatement(String sql, int resultSetType,
-			int resultSetConcurrency, int resultSetHoldability)
-			throws SQLException {
-		validateState();
+	@Override
+	protected <T> T createObject(Class<T> clazz) throws SQLException {
+		if (!quiet) {
+			throw CassandraErrors.notSupportedException();
+		}
 
-		return new CassandraPreparedStatement(this, _cluster.connect(_keyspace));
+		return null;
 	}
 
-	public void setCatalog(String catalog) throws SQLException {
-		validateState();
-
-		if (CassandraUtils.isNullOrEmptyString(catalog)
-				|| catalog.equals(_keyspace)) {
-			return;
+	@SuppressWarnings("resource")
+	@Override
+	protected ResultSet getObjectMetaData(CassandraObjectType objectType,
+			Properties queryPatterns, Object... additionalHints)
+			throws SQLException {
+		if (logger.isTraceEnabled()) {
+			logger.trace(new StringBuilder()
+					.append("Trying to get meta data with the following parameters:\n")
+					.append("objectType: ").append(objectType.name())
+					.append("\nqueryPatterns:\n").append(queryPatterns)
+					.append("\nadditionalHints: ")
+					.append(Arrays.toString(additionalHints)).toString());
 		}
 
-		try {
-			touchKeyspace(catalog, false);
+		ResultSet rs = new DummyCassandraResultSet();
 
-			if (logger.isDebugEnabled()) {
-				logger.debug(new StringBuilder(
-						"Current keyspace changed from \"").append(_keyspace)
-						.append("\" to \"").append(catalog)
-						.append("\" successfully").toString());
+		Metadata m = _cluster.getMetadata();
+		switch (objectType) {
+		case KEYSPACE: {
+			List<KeyspaceMetadata> keyspaces = m.getKeyspaces();
+			String[][] data = new String[keyspaces.size()][1];
+			int index = 0;
+			for (KeyspaceMetadata km : keyspaces) {
+				data[index++][0] = km.getName();
 			}
 
-			_keyspace = catalog;
-		} catch (Exception e) {
-			throw CassandraErrors.failedToChangeKeyspaceException(catalog, e);
+			rs = new DummyCassandraResultSet(CATALOG_COLUMNS, data);
+			break;
 		}
+
+		case TABLE: {
+			String catalog = CassandraUtils.getPropertyValue(queryPatterns,
+					KEY_CATALOG);
+			String tablePattern = CassandraUtils.getPropertyValue(
+					queryPatterns, KEY_TABLE_PATTERN);
+
+			boolean queryTable = false;
+			if (additionalHints != null) {
+				for (Object type : additionalHints) {
+					if (CassandraObjectType.TABLE.toString().equals(type)) {
+						queryTable = true;
+						break;
+					}
+				}
+			} else {
+				queryTable = true;
+			}
+
+			List<Object[]> list = new ArrayList<Object[]>();
+			if (queryTable) {
+				for (KeyspaceMetadata ks : m.getKeyspaces()) {
+					if (CassandraUtils.matchesPattern(ks.getName(), catalog)) {
+						for (TableMetadata t : ks.getTables()) {
+							if (CassandraUtils.matchesPattern(t.getName(),
+									tablePattern)) {
+								list.add(populateTableMetaData(ks, t));
+							}
+						}
+					}
+				}
+			}
+
+			rs = buildResultSet(TABLE_COLUMNS, list);
+			break;
+		}
+
+		case COLUMN: {
+			String catalog = CassandraUtils.getPropertyValue(queryPatterns,
+					KEY_CATALOG);
+			String tablePattern = CassandraUtils.getPropertyValue(
+					queryPatterns, KEY_TABLE_PATTERN);
+			String columnPattern = CassandraUtils.getPropertyValue(
+					queryPatterns, KEY_COLUMN_PATTERN);
+
+			List<Object[]> list = new ArrayList<Object[]>();
+			for (KeyspaceMetadata ks : m.getKeyspaces()) {
+				if (CassandraUtils.isNullOrEmptyString(catalog)
+						|| catalog.equals(ks.getName())) {
+					for (TableMetadata t : ks.getTables()) {
+						if (CassandraUtils.matchesPattern(t.getName(),
+								tablePattern)) {
+							int colIndex = 0;
+							for (ColumnMetadata c : t.getColumns()) {
+								colIndex++;
+								// Why DataStax Java driver returned additional
+								// blob column?
+								// Try system.IndexInfo...
+								if (!CassandraUtils.isNullOrEmptyString(c
+										.getName())
+										&& CassandraUtils.matchesPattern(
+												c.getName(), columnPattern)) {
+									list.add(populateColumnMetaData(ks, t, c,
+											colIndex));
+								}
+							}
+						}
+					}
+				}
+			}
+
+			rs = buildResultSet(COLUMN_COLUMNS, list);
+			break;
+		}
+
+		case INDEX: {
+			String catalog = CassandraUtils.getPropertyValue(queryPatterns,
+					KEY_CATALOG);
+			String table = CassandraUtils.getPropertyValue(queryPatterns,
+					KEY_TABLE_PATTERN);
+			boolean uniqueIndexOnly = Boolean.valueOf(CassandraUtils
+					.getPropertyValue(queryPatterns, KEY_UNIQUE_INDEX,
+							Boolean.FALSE.toString()));
+			// boolean approximateIndex = Boolean.valueOf(CassandraUtils
+			// .getPropertyValue(queryPatterns, KEY_APPROXIMATE_INDEX,
+			// Boolean.TRUE.toString()));
+
+			List<Object[]> list = new ArrayList<Object[]>();
+			for (KeyspaceMetadata ks : m.getKeyspaces()) {
+				if (CassandraUtils.isNullOrEmptyString(catalog)
+						|| catalog.equals(ks.getName())) {
+					for (TableMetadata t : ks.getTables()) {
+						if (CassandraUtils.isNullOrEmptyString(table)
+								|| table.equals(t.getName())) {
+							int colIndex = 0;
+							List<ColumnMetadata> primaryKeys = t
+									.getPrimaryKey();
+							boolean uniquePk = primaryKeys.size() == 1;
+							if (!uniqueIndexOnly || uniquePk) {
+								for (ColumnMetadata c : primaryKeys) {
+									list.add(populateIndexMetaData(ks, t, c,
+											++colIndex, uniquePk));
+								}
+							}
+
+							for (ColumnMetadata c : t.getColumns()) {
+								IndexMetadata i = c.getIndex();
+								if (i != null && !primaryKeys.contains(c)) {
+									list.add(populateIndexMetaData(ks, t, i));
+								}
+							}
+						}
+					}
+				}
+			}
+
+			rs = buildResultSet(INDEX_COLUMNS, list);
+			break;
+		}
+
+		case PRIMARY_KEY: {
+			String catalog = CassandraUtils.getPropertyValue(queryPatterns,
+					KEY_CATALOG);
+			String table = CassandraUtils.getPropertyValue(queryPatterns,
+					KEY_TABLE_PATTERN);
+
+			List<Object[]> list = new ArrayList<Object[]>();
+			for (KeyspaceMetadata ks : m.getKeyspaces()) {
+				if (CassandraUtils.isNullOrEmptyString(catalog)
+						|| catalog.equals(ks.getName())) {
+					for (TableMetadata t : ks.getTables()) {
+						if (CassandraUtils.isNullOrEmptyString(table)
+								|| table.equals(t.getName())) {
+							int colIndex = 0;
+							for (ColumnMetadata c : t.getPrimaryKey()) {
+								list.add(populatePrimaryKeyMetaData(ks, t, c,
+										++colIndex));
+							}
+						}
+					}
+				}
+			}
+
+			rs = buildResultSet(PK_COLUMNS, list);
+			break;
+		}
+
+		case UDT: {
+			String catalog = CassandraUtils.getPropertyValue(queryPatterns,
+					KEY_CATALOG);
+			String typePattern = CassandraUtils.getPropertyValue(queryPatterns,
+					KEY_TYPE_PATTERN);
+
+			// FIXME deal with additionalHints
+
+			List<Object[]> list = new ArrayList<Object[]>();
+			for (KeyspaceMetadata ks : m.getKeyspaces()) {
+				if (CassandraUtils.isNullOrEmptyString(catalog)
+						|| catalog.equals(ks.getName())) {
+					for (UserType t : ks.getUserTypes()) {
+						if (CassandraUtils.matchesPattern(t.getTypeName(),
+								typePattern)) {
+							list.add(populateUdtMetaData(ks, t));
+						}
+					}
+				}
+			}
+
+			rs = buildResultSet(UDT_COLUMNS, list);
+			break;
+		}
+
+		default: {
+			rs = super.getObjectMetaData(objectType, queryPatterns,
+					additionalHints);
+			break;
+
+		}
+		}
+
+		if (logger.isTraceEnabled()) {
+			int rowCount = 0;
+			int colCount = 0;
+
+			if (rs instanceof DummyCassandraResultSet) {
+				DummyCassandraResultSet drs = (DummyCassandraResultSet) rs;
+
+				rowCount = drs.getRowCount();
+				colCount = drs.getColumnCount();
+			}
+
+			logger.trace(new StringBuilder().append("Returning results with ")
+					.append(rowCount).append(" x ").append(colCount)
+					.append(" two-dimensional array").toString());
+		}
+
+		return rs;
 	}
 
 	protected String touchKeyspace(String keyspace, boolean getDbVersion) {
@@ -621,9 +595,9 @@ public class CassandraConnection extends BaseCassandraConnection {
 			if (session != null) {
 				try {
 					session.closeAsync().force();
-				} catch (Exception e) {
+				} catch (Throwable t) {
 					if (logger.isWarnEnabled()) {
-						logger.warn("Failed to close session", e);
+						logger.warn("Failed to close session", t);
 					}
 				}
 			}
@@ -656,6 +630,52 @@ public class CassandraConnection extends BaseCassandraConnection {
 		if (_cluster.isClosed()) {
 			_cluster = null;
 			throw CassandraErrors.connectionClosedException();
+		}
+	}
+
+	public Statement createStatement(int resultSetType,
+			int resultSetConcurrency, int resultSetHoldability)
+			throws SQLException {
+		validateState();
+
+		return new CassandraStatement(this, _cluster.connect(_keyspace));
+	}
+
+	public String getCatalog() throws SQLException {
+		validateState();
+
+		return _keyspace;
+	}
+
+	public PreparedStatement prepareStatement(String sql, int resultSetType,
+			int resultSetConcurrency, int resultSetHoldability)
+			throws SQLException {
+		validateState();
+
+		return new CassandraPreparedStatement(this, _cluster.connect(_keyspace));
+	}
+
+	public void setCatalog(String catalog) throws SQLException {
+		validateState();
+
+		if (CassandraUtils.isNullOrEmptyString(catalog)
+				|| catalog.equals(_keyspace)) {
+			return;
+		}
+
+		try {
+			touchKeyspace(catalog, false);
+
+			if (logger.isDebugEnabled()) {
+				logger.debug(new StringBuilder(
+						"Current keyspace changed from \"").append(_keyspace)
+						.append("\" to \"").append(catalog)
+						.append("\" successfully").toString());
+			}
+
+			_keyspace = catalog;
+		} catch (Exception e) {
+			throw CassandraErrors.failedToChangeKeyspaceException(catalog, e);
 		}
 	}
 }
