@@ -20,18 +20,15 @@
  */
 package com.github.cassandra.jdbc.provider.datastax;
 
-import java.sql.SQLException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.datastax.driver.core.ColumnDefinitions.Definition;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
-import com.github.cassandra.jdbc.BaseCassandraResultSet;
-import com.github.cassandra.jdbc.BaseCassandraStatement;
-import com.github.cassandra.jdbc.CassandraColumnDefinition;
-import com.github.cassandra.jdbc.CassandraErrors;
+import com.github.cassandra.jdbc.*;
+import org.pmw.tinylog.Logger;
+
+import java.nio.ByteBuffer;
+import java.sql.Blob;
+import java.sql.SQLException;
 
 /**
  * This is a result set implementation built on top of DataStax Java driver.
@@ -39,129 +36,122 @@ import com.github.cassandra.jdbc.CassandraErrors;
  * @author Zhichun Wu
  */
 public class CassandraResultSet extends BaseCassandraResultSet {
-	private static final Logger logger = LoggerFactory
-			.getLogger(CassandraResultSet.class);
+    private Row _currentRow;
+    private ResultSet _resultSet;
 
-	private Row _currentRow;
-	private ResultSet _resultSet;
+    protected CassandraResultSet(BaseCassandraStatement statement, ResultSet rs) {
+        super(statement);
 
-	protected CassandraResultSet(BaseCassandraStatement statement, ResultSet rs) {
-		super(statement);
+        if (rs != null) {
+            for (Definition def : rs.getColumnDefinitions()) {
+                CassandraColumnDefinition d = new CassandraColumnDefinition(
+                        def.getKeyspace(), def.getTable(), def.getName(), def
+                        .getType().getName().toString(), false);
+                metadata.addColumnDefinition(d);
+            }
+        }
 
-		if (rs != null) {
-			for (Definition def : rs.getColumnDefinitions()) {
-				CassandraColumnDefinition d = new CassandraColumnDefinition(
-						def.getKeyspace(), def.getTable(), def.getName(), def
-								.getType().getName().toString(), false);
-				metadata.addColumnDefinition(d);
-			}
-		}
+        _resultSet = rs;
+    }
 
-		_resultSet = rs;
-	}
+    @SuppressWarnings("unchecked")
+    @Override
+    protected <T> T getValue(int columnIndex, Class<T> clazz)
+            throws SQLException {
+        Logger.trace(new StringBuilder(
+                "Trying to get value with inputs: line=").append(getRow())
+                .append(", column=").append(columnIndex).append(", type=")
+                .append(clazz).toString());
 
-	@SuppressWarnings("unchecked")
-	@Override
-	protected <T> T getValue(int columnIndex, Class<T> clazz)
-			throws SQLException {
-		if (logger.isTraceEnabled()) {
-			logger.trace(new StringBuilder(
-					"Trying to get value with inputs: line=").append(getRow())
-					.append(", column=").append(columnIndex).append(", type=")
-					.append(clazz).toString());
-		}
+        Object rawValue = null;
+        T result = null;
+        if (_currentRow != null) {
+            rawValue = _currentRow.getObject(columnIndex - 1);
 
-		Object rawValue = null;
-		T result = null;
-		if (_currentRow != null) {
-			rawValue = _currentRow.getObject(columnIndex - 1);
+            Logger.trace(new StringBuilder("Got raw value [")
+                    .append(rawValue).append("] from line #")
+                    .append(getRow()).toString());
 
-			if (logger.isTraceEnabled()) {
-				logger.trace(new StringBuilder("Got raw value [")
-						.append(rawValue).append("] from line #")
-						.append(getRow()).toString());
-			}
+            if (rawValue != null) {
+                wasNull = false;
+                if (String.class == clazz) {
+                    result = (T) String.valueOf(rawValue);
+                } else if (Object.class == clazz) {
+                    result = (T) (rawValue instanceof ByteBuffer ? ((ByteBuffer) rawValue).array() : rawValue);
+                } else if (Blob.class == clazz) {
+                    result = (T) new CassandraBlob((ByteBuffer) rawValue);
+                } else if (byte[].class == clazz) {
+                    result = (T) ((ByteBuffer) rawValue).array();
+                } else {
+                    try {
+                        result = clazz.cast(rawValue);
+                    } catch (ClassCastException e) {
+                        Logger.warn(new StringBuilder(
+                                        "Not able to convert [").append(rawValue)
+                                        .append("] to ").append(clazz).toString(),
+                                e);
 
-			if (rawValue != null) {
-				wasNull = false;
-				if (String.class == clazz) {
-					result = (T) String.valueOf(rawValue);
-				} else if (Object.class == clazz) {
-					result = (T) rawValue;
-				} else {
-					try {
-						result = clazz.cast(rawValue);
-					} catch (ClassCastException e) {
-						if (logger.isWarnEnabled()) {
-							logger.warn(new StringBuilder(
-									"Not able to convert [").append(rawValue)
-									.append("] to ").append(clazz).toString(),
-									e);
-						}
+                        if (!quiet) {
+                            throw new SQLException(e);
+                        }
+                    }
+                }
+            } else {
+                wasNull = true;
+            }
+        }
 
-						if (!quiet) {
-							throw new SQLException(e);
-						}
-					}
-				}
-			} else {
-				wasNull = true;
-			}
-		}
+        Logger.trace(new StringBuilder("Return value: raw=")
+                .append(rawValue).append(", converted=").append(result)
+                .toString());
 
-		if (logger.isTraceEnabled()) {
-			logger.trace(new StringBuilder("Return value: raw=")
-					.append(rawValue).append(", converted=").append(result)
-					.toString());
-		}
+        return result;
+    }
 
-		return result;
-	}
+    @Override
+    protected boolean hasMore() {
+        return _resultSet != null && !_resultSet.isExhausted();
+    }
 
-	@Override
-	protected boolean hasMore() {
-		return _resultSet != null && !_resultSet.isExhausted();
-	}
+    @Override
+    protected <T> void setValue(int columnIndex, T value) throws SQLException {
+        throw CassandraErrors.notSupportedException();
+    }
 
-	@Override
-	protected <T> void setValue(int columnIndex, T value) throws SQLException {
-		throw CassandraErrors.notSupportedException();
-	}
+    @Override
+    protected SQLException tryClose() {
+        if (_resultSet != null) {
+            _resultSet = null;
+            _currentRow = null;
+        }
 
-	@Override
-	protected SQLException tryClose() {
-		if (_resultSet != null) {
-			_resultSet = null;
-			_currentRow = null;
-		}
+        return null;
+    }
 
-		return null;
-	}
+    @Override
+    protected boolean tryIterate() throws SQLException {
+        boolean result = false;
+        if (_resultSet != null) {
+            try {
+                _currentRow = _resultSet.one();
+            } catch (Exception e) {
+                throw new SQLException(e);
+            }
 
-	@Override
-	protected boolean tryIterate() throws SQLException {
-		boolean result = false;
-		if (_resultSet != null) {
-			try {
-				_currentRow = _resultSet.one();
-			} catch (Exception e) {
-				throw new SQLException(e);
-			}
+            result = _currentRow != null;
+        }
 
-			result = _currentRow != null;
-		}
+        return result;
+    }
 
-		return result;
-	}
+    @Override
+    protected boolean tryMoveTo(int rows, boolean relativeIndex)
+            throws SQLException {
+        throw CassandraErrors.notSupportedException();
+    }
 
-	@Override
-	protected boolean tryMoveTo(int rows, boolean relativeIndex)
-			throws SQLException {
-		throw CassandraErrors.notSupportedException();
-	}
-
-	@Override
-	protected Object unwrap() {
-		return _resultSet;
-	}
+    @Override
+    protected Object unwrap() {
+        return _resultSet;
+    }
 }

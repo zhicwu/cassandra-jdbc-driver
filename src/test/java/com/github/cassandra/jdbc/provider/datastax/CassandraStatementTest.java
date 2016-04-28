@@ -1,38 +1,49 @@
 package com.github.cassandra.jdbc.provider.datastax;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.sql.SQLException;
-
+import com.github.cassandra.jdbc.CassandraUtils;
 import org.junit.Test;
 
-import com.github.cassandra.jdbc.CassandraUtils;
+import static org.junit.Assert.*;
 
 public class CassandraStatementTest extends DataStaxTestCase {
-	@Test
-	public void testExecuteString() {
-		try {
-			java.sql.Statement s = conn.createStatement();
-			assertTrue(s instanceof CassandraStatement);
+    @Test
+    public void testExecuteString() {
+        try {
+            java.sql.Statement s = conn.createStatement();
+            assertTrue(s instanceof CassandraStatement);
 
-			CassandraStatement cs = (CassandraStatement) s;
-			boolean result = cs.execute("select * from system.peers limit 5");
-			assertEquals(true, result);
-			java.sql.ResultSet rs = cs.getResultSet();
-			assertTrue(rs != null);
+            CassandraStatement cs = (CassandraStatement) s;
+            boolean result = cs.execute("select * from peers limit 1");
+            assertEquals(true, result);
+            java.sql.ResultSet rs = cs.getResultSet();
+            assertTrue(rs != null);
 
-			String[] columns = CassandraUtils.getColumnNames(rs);
-			Object[][] data = CassandraUtils.getAllData(rs);
-			assertTrue(columns.length > 0);
-			assertEquals(5, data.length);
+            String[] columns = CassandraUtils.getColumnNames(rs);
+            Object[][] data = CassandraUtils.getAllData(rs);
+            assertTrue(columns.length > 0);
 
-			rs.close();
-			cs.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-			fail("Error occurred during testing: " + e.getMessage());
-		}
-	}
+            rs.close();
+            cs.close();
+            conn.close();
+
+            this.setUp();
+
+            cs = (CassandraStatement) conn.createStatement();
+            result = cs.execute("select * from local limit 1");
+            assertEquals(true, result);
+            rs = cs.getResultSet();
+            assertTrue(rs != null);
+
+            columns = CassandraUtils.getColumnNames(rs);
+            data = CassandraUtils.getAllData(rs);
+            assertTrue(columns.length > 0);
+
+            rs.close();
+            cs.close();
+            conn.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Error occurred during testing: " + e.getMessage());
+        }
+    }
 }

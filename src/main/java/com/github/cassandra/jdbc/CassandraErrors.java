@@ -30,68 +30,68 @@ import java.sql.SQLFeatureNotSupportedException;
  * @author Zhichun Wu
  */
 public final class CassandraErrors {
-	public static final int ERROR_CODE_GENERAL = -1;
+    public static final int ERROR_CODE_GENERAL = -1;
 
-	public static SQLException connectionClosedException() {
-		return new SQLException(
-				CassandraUtils.getString("EXCEPTION_CONNECTION_CLOSED"), null,
-				ERROR_CODE_GENERAL);
-	}
+    public static SQLException connectionClosedException() {
+        return new SQLException(
+                CassandraUtils.getString("EXCEPTION_CONNECTION_CLOSED"), null,
+                ERROR_CODE_GENERAL);
+    }
 
-	public static SQLException databaseMetaDataNotAvailableException() {
-		return new SQLException(
-				CassandraUtils
-						.getString("EXCEPTION_DATABASE_METADATA_NOT_AVAILABLE"),
-				null, ERROR_CODE_GENERAL);
-	}
+    public static SQLException databaseMetaDataNotAvailableException() {
+        return new SQLException(
+                CassandraUtils
+                        .getString("EXCEPTION_DATABASE_METADATA_NOT_AVAILABLE"),
+                null, ERROR_CODE_GENERAL);
+    }
 
-	public static SQLException failedToChangeKeyspaceException(String keyspace,
-			Exception cause) {
-		return new SQLException(CassandraUtils.getString(
-				"EXCEPTION_FAILED_TO_CHANGE_KEYSPACE",
-				new Object[] { keyspace }), null, ERROR_CODE_GENERAL, cause);
-	}
+    public static SQLException failedToChangeKeyspaceException(String keyspace,
+                                                               Exception cause) {
+        return new SQLException(CassandraUtils.getString(
+                "EXCEPTION_FAILED_TO_CHANGE_KEYSPACE",
+                new Object[]{keyspace}), null, ERROR_CODE_GENERAL, cause);
+    }
 
-	public static SQLException failedToCloseConnectionException(Exception cause) {
-		return new SQLException(
-				CassandraUtils
-						.getString("EXCEPTION_FAILED_TO_CLOSE_CONNECTION"),
-				null, ERROR_CODE_GENERAL, cause);
-	}
+    public static SQLException failedToCloseConnectionException(Exception cause) {
+        return new SQLException(
+                CassandraUtils
+                        .getString("EXCEPTION_FAILED_TO_CLOSE_CONNECTION"),
+                null, ERROR_CODE_GENERAL, cause);
+    }
 
-	public static SQLException failedToCloseResourceException(
-			String resourceName, Throwable cause) {
-		return new SQLException(CassandraUtils.getString(
-				"EXCEPTION_FAILED_TO_CLOSE_RESOURCE", resourceName), null,
-				ERROR_CODE_GENERAL, cause);
-	}
+    public static SQLException failedToCloseResourceException(
+            String resourceName, Throwable cause) {
+        return new SQLException(CassandraUtils.getString(
+                "EXCEPTION_FAILED_TO_CLOSE_RESOURCE", resourceName), null,
+                ERROR_CODE_GENERAL, cause);
+    }
 
-	public static SQLException invalidKeyspaceException(String keyspace) {
-		return new SQLException(CassandraUtils.getString(
-				"EXCEPTION_INVALID_KEYSPACE", new Object[] { keyspace }), null,
-				ERROR_CODE_GENERAL);
-	}
+    public static SQLException invalidKeyspaceException(String keyspace) {
+        return new SQLException(CassandraUtils.getString(
+                "EXCEPTION_INVALID_KEYSPACE", new Object[]{keyspace}), null,
+                ERROR_CODE_GENERAL);
+    }
 
-	public static SQLFeatureNotSupportedException notSupportedException() {
-		return new SQLFeatureNotSupportedException(
-				CassandraUtils.getString("EXCEPTION_NOT_SUPPORTED"), null,
-				ERROR_CODE_GENERAL);
-	}
+    public static SQLFeatureNotSupportedException notSupportedException() {
+        return new SQLFeatureNotSupportedException(
+                CassandraUtils.getString("EXCEPTION_NOT_SUPPORTED"), null,
+                ERROR_CODE_GENERAL);
+    }
 
-	public static SQLException resourceClosedException(Object obj) {
-		return new SQLException(CassandraUtils.getString(
-				"EXCEPTION_RESOURCE_CLOSED", obj), null, ERROR_CODE_GENERAL);
-	}
+    public static SQLException resourceClosedException(Object obj) {
+        return new SQLException(CassandraUtils.getString(
+                "EXCEPTION_RESOURCE_CLOSED", obj), null, ERROR_CODE_GENERAL);
+    }
 
-	public static SQLException resultSetClosed() {
-		return new SQLException(
-				CassandraUtils.getString("EXCEPTION_RESULTSET_CLOSED"), null,
-				ERROR_CODE_GENERAL);
-	}
+    public static SQLException resultSetClosed() {
+        return new SQLException(
+                CassandraUtils.getString("EXCEPTION_RESULTSET_CLOSED"), null,
+                ERROR_CODE_GENERAL);
+    }
 
-	public static SQLException statementClosedException() {
-		return new SQLException(
-				CassandraUtils.getString("EXCEPTION_STATEMENT_CLOSED"), null,
-				ERROR_CODE_GENERAL);
-	}
+    public static SQLException statementClosedException() {
+        return new SQLException(
+                CassandraUtils.getString("EXCEPTION_STATEMENT_CLOSED"), null,
+                ERROR_CODE_GENERAL);
+    }
 }

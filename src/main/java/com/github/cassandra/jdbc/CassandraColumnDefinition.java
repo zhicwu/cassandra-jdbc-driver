@@ -20,9 +20,9 @@
  */
 package com.github.cassandra.jdbc;
 
-import static com.github.cassandra.jdbc.CassandraUtils.EMPTY_STRING;
-
 import java.sql.ResultSetMetaData;
+
+import static com.github.cassandra.jdbc.CassandraUtils.EMPTY_STRING;
 
 /**
  * This defines a column in Cassandra.
@@ -30,117 +30,117 @@ import java.sql.ResultSetMetaData;
  * @author Zhichun Wu
  */
 public class CassandraColumnDefinition {
-	protected final String catalog;
-	protected final String cqlType;
-	protected final Class<?> javaType;
-	protected final String label;
-	protected final String name;
-	protected final int precision;
-	protected final int scale;
-	protected final String schema;
-	protected final boolean searchable;
-	protected final int sqlType;
-	protected final String table;
-	protected final boolean writable;
+    protected final String catalog;
+    protected final String cqlType;
+    protected final Class<?> javaType;
+    protected final String label;
+    protected final String name;
+    protected final int precision;
+    protected final int scale;
+    protected final String schema;
+    protected final boolean searchable;
+    protected final int sqlType;
+    protected final String table;
+    protected final boolean writable;
 
-	public CassandraColumnDefinition(String catalog, String table, String name,
-			String type, boolean searchable) {
-		this(catalog, table, name, name, type, searchable, false);
-	}
+    public CassandraColumnDefinition(String catalog, String table, String name,
+                                     String type, boolean searchable) {
+        this(catalog, table, name, name, type, searchable, false);
+    }
 
-	public CassandraColumnDefinition(String catalog, String table, String name,
-			String label, String type, boolean searchable, boolean writable) {
-		this.catalog = catalog == null ? EMPTY_STRING : catalog;
-		this.schema = EMPTY_STRING;
-		this.table = table == null ? EMPTY_STRING : table;
-		this.name = name == null ? EMPTY_STRING : name;
-		this.label = label == null ? name : label;
-		this.cqlType = CassandraDataTypeMappings.cqlTypeFor(type);
-		this.sqlType = CassandraDataTypeMappings.sqlTypeFor(type);
-		this.javaType = CassandraDataTypeMappings.javaTypeFor(type);
-		this.searchable = searchable;
-		this.writable = writable;
-		this.precision = CassandraDataTypeMappings.precisionFor(type);
-		this.scale = CassandraDataTypeMappings.scaleFor(type);
-	}
+    public CassandraColumnDefinition(String catalog, String table, String name,
+                                     String label, String type, boolean searchable, boolean writable) {
+        this.catalog = catalog == null ? EMPTY_STRING : catalog;
+        this.schema = EMPTY_STRING;
+        this.table = table == null ? EMPTY_STRING : table;
+        this.name = name == null ? EMPTY_STRING : name;
+        this.label = label == null ? name : label;
+        this.cqlType = CassandraDataTypeMappings.cqlTypeFor(type);
+        this.sqlType = CassandraDataTypeMappings.sqlTypeFor(type);
+        this.javaType = CassandraDataTypeMappings.javaTypeFor(type);
+        this.searchable = searchable;
+        this.writable = writable;
+        this.precision = CassandraDataTypeMappings.precisionFor(type);
+        this.scale = CassandraDataTypeMappings.scaleFor(type);
+    }
 
-	public String getCatalogName() {
-		return catalog;
-	}
+    public String getCatalogName() {
+        return catalog;
+    }
 
-	public String getColumnClassName() {
-		return javaType.getName();
-	}
+    public String getColumnClassName() {
+        return javaType.getName();
+    }
 
-	public int getColumnDisplaySize() {
-		return 0;
-	}
+    public int getColumnDisplaySize() {
+        return 0;
+    }
 
-	public String getColumnLabel() {
-		return label;
-	}
+    public String getColumnLabel() {
+        return label;
+    }
 
-	public String getColumnName() {
-		return name;
-	}
+    public String getColumnName() {
+        return name;
+    }
 
-	public int getColumnType() {
-		return sqlType;
-	}
+    public int getColumnType() {
+        return sqlType;
+    }
 
-	public String getColumnTypeName() {
-		return cqlType;
-	}
+    public String getColumnTypeName() {
+        return cqlType;
+    }
 
-	public int getPrecision() {
-		return precision;
-	}
+    public int getPrecision() {
+        return precision;
+    }
 
-	public int getScale() {
-		return scale;
-	}
+    public int getScale() {
+        return scale;
+    }
 
-	public String getSchemaName() {
-		return schema;
-	}
+    public String getSchemaName() {
+        return schema;
+    }
 
-	public String getTableName() {
-		return table;
-	}
+    public String getTableName() {
+        return table;
+    }
 
-	public boolean isAutoIncrement() {
-		return false;
-	}
+    public boolean isAutoIncrement() {
+        return false;
+    }
 
-	public boolean isCaseSensitive() {
-		return true;
-	}
+    public boolean isCaseSensitive() {
+        return true;
+    }
 
-	public boolean isCurrency() {
-		return false;
-	}
+    public boolean isCurrency() {
+        return false;
+    }
 
-	public boolean isDefinitelyWritable() {
-		return writable;
-	}
+    public boolean isDefinitelyWritable() {
+        return writable;
+    }
 
-	public int isNullable() {
-		return ResultSetMetaData.columnNullable;
-	}
+    public int isNullable() {
+        return ResultSetMetaData.columnNullable;
+    }
 
-	public boolean isReadOnly() {
-		return !writable;
-	}
+    public boolean isReadOnly() {
+        return !writable;
+    }
 
-	public boolean isSearchable() {
-		return searchable;
-	}
+    public boolean isSearchable() {
+        return searchable;
+    }
 
-	public boolean isSigned() {
-		return false;
-	}
+    public boolean isSigned() {
+        return false;
+    }
 
-	public boolean isWritable() {
-		return writable;
-	}
+    public boolean isWritable() {
+        return writable;
+    }
 }

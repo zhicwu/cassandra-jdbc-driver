@@ -20,37 +20,13 @@
  */
 package com.github.cassandra.jdbc;
 
-import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_CONNECT_TIMEOUT;
-import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_SQL_FRIENDLY;
-import static com.github.cassandra.jdbc.CassandraUtils.DEFAULT_USERNAME;
-import static com.github.cassandra.jdbc.CassandraUtils.KEY_CONNECTION_URL;
-import static com.github.cassandra.jdbc.CassandraUtils.KEY_CONNECT_TIMEOUT;
-import static com.github.cassandra.jdbc.CassandraUtils.KEY_QUIET;
-import static com.github.cassandra.jdbc.CassandraUtils.KEY_SQL_FRIENDLY;
-import static com.github.cassandra.jdbc.CassandraUtils.KEY_USERNAME;
-import static com.github.cassandra.jdbc.CassandraUtils.TABLE_TYPE_COLUMNS;
-import static com.github.cassandra.jdbc.CassandraUtils.TABLE_TYPE_DATA;
-import static com.github.cassandra.jdbc.CassandraUtils.TYPE_COLUMNS;
-
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.CallableStatement;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.NClob;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLClientInfoException;
-import java.sql.SQLException;
-import java.sql.SQLXML;
-import java.sql.Savepoint;
-import java.sql.Statement;
-import java.sql.Struct;
+import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+
+import static com.github.cassandra.jdbc.CassandraUtils.*;
 
 /**
  * This is the base class for implementing Cassandra connection.
@@ -58,380 +34,372 @@ import java.util.concurrent.Executor;
  * @author Zhichun Wu
  */
 public abstract class BaseCassandraConnection extends BaseJdbcObject implements
-		Connection {
-	private boolean _autoCommit;
-
-	private final Properties _clientInfo = new Properties();
-	private boolean _connReadOnly;
-
-	private final boolean _sqlFriendly;
-	private int _timeout;
-	private int _txIsolationLevel;
-	private final Map<String, Class<?>> _typeMap = new HashMap<String, Class<?>>();
-
-	protected final CassandraDatabaseMetaData metaData;
+        Connection {
+    private final Properties _clientInfo = new Properties();
+    private int _txIsolationLevel;
+    private final Map<String, Class<?>> _typeMap = new HashMap<String, Class<?>>();
 
-	public BaseCassandraConnection(Properties props) {
-		super(Boolean.valueOf(CassandraUtils.getPropertyValue(props, KEY_QUIET,
-				Boolean.TRUE.toString())));
-
-		metaData = new CassandraDatabaseMetaData(this);
-		metaData.setProperty(KEY_CONNECTION_URL,
-				CassandraUtils.buildSimplifiedConnectionUrl(props));
-		metaData.setProperty(KEY_USERNAME, CassandraUtils.getPropertyValue(
-				props, KEY_USERNAME, DEFAULT_USERNAME));
-
-		_autoCommit = true;
-		_connReadOnly = false;
-		_sqlFriendly = Boolean.valueOf(CassandraUtils.getPropertyValue(props,
-				KEY_SQL_FRIENDLY, Boolean.toString(DEFAULT_SQL_FRIENDLY)));
-		_timeout = Integer.parseInt(CassandraUtils.getPropertyValue(props,
-				KEY_CONNECT_TIMEOUT, DEFAULT_CONNECT_TIMEOUT));
-		_txIsolationLevel = TRANSACTION_NONE;
-	}
+    protected final CassandraConfiguration config;
+    protected final CassandraDatabaseMetaData metaData;
 
-	protected abstract <T> T createObject(Class<T> clazz) throws SQLException;
-
-	protected ResultSet getObjectMetaData(CassandraObjectType objectType,
-			Properties queryPatterns, Object... additionalHints)
-			throws SQLException {
-		ResultSet rs = new DummyCassandraResultSet();
+    public BaseCassandraConnection(CassandraConfiguration config) {
+        super(config.isQuiet());
+        _txIsolationLevel = TRANSACTION_NONE;
 
-		switch (objectType) {
-		case TABLE_TYPE:
-			rs = new DummyCassandraResultSet(TABLE_TYPE_COLUMNS,
-					TABLE_TYPE_DATA);
-			break;
-		case TYPE:
-			rs = new DummyCassandraResultSet(TYPE_COLUMNS,
-					CassandraDataTypeMappings.TYPE_META_DATA);
-			break;
+        this.config = config;
 
-		default:
-			throw CassandraErrors.notSupportedException();
-		}
+        metaData = new CassandraDatabaseMetaData(this);
+        metaData.setProperty(CassandraConfiguration.KEY_CONNECTION_URL, config.getConnectionUrl());
+        metaData.setProperty(CassandraConfiguration.KEY_USERNAME, config.getUserName());
+    }
 
-		return rs;
-	}
+    protected abstract <T> T createObject(Class<T> clazz) throws SQLException;
 
-	public void abort(Executor executor) throws SQLException {
-		validateState();
+    protected ResultSet getObjectMetaData(CassandraObjectType objectType,
+                                          Properties queryPatterns, Object... additionalHints)
+            throws SQLException {
+        ResultSet rs = new DummyCassandraResultSet();
 
-		if (!quiet) {
-			throw CassandraErrors.notSupportedException();
-		}
-	}
+        switch (objectType) {
+            case TABLE_TYPE:
+                rs = new DummyCassandraResultSet(TABLE_TYPE_COLUMNS,
+                        TABLE_TYPE_DATA);
+                break;
+            case TYPE:
+                rs = new DummyCassandraResultSet(TYPE_COLUMNS,
+                        CassandraDataTypeMappings.TYPE_META_DATA);
+                break;
 
-	public void commit() throws SQLException {
-		validateState();
+            default:
+                throw CassandraErrors.notSupportedException();
+        }
 
-		// better to be quiet and do nothing as we always commit in Cassandra
-		if (!quiet) {
-			throw CassandraErrors.notSupportedException();
-		}
-	}
+        return rs;
+    }
 
-	public Array createArrayOf(String typeName, Object[] elements)
-			throws SQLException {
-		validateState();
+    public CassandraConfiguration getConfiguration() {
+        return config;
+    }
 
-		// FIXME incomplete
-		Array result = createObject(Array.class);
+    public void abort(Executor executor) throws SQLException {
+        validateState();
 
-		return result;
-	}
+        if (!quiet) {
+            throw CassandraErrors.notSupportedException();
+        }
+    }
 
-	public Blob createBlob() throws SQLException {
-		validateState();
+    public void commit() throws SQLException {
+        validateState();
 
-		return createObject(Blob.class);
-	}
+        // better to be quiet and do nothing as we always commit in Cassandra
+        if (!quiet) {
+            throw CassandraErrors.notSupportedException();
+        }
+    }
 
-	public Clob createClob() throws SQLException {
-		validateState();
+    public Array createArrayOf(String typeName, Object[] elements)
+            throws SQLException {
+        validateState();
 
-		return createObject(Clob.class);
-	}
+        // FIXME incomplete
+        Array result = createObject(Array.class);
 
-	public NClob createNClob() throws SQLException {
-		validateState();
+        return result;
+    }
 
-		return createObject(NClob.class);
-	}
+    public Blob createBlob() throws SQLException {
+        validateState();
 
-	public SQLXML createSQLXML() throws SQLException {
-		validateState();
+        return createObject(Blob.class);
+    }
 
-		return createObject(SQLXML.class);
-	}
+    public Clob createClob() throws SQLException {
+        validateState();
 
-	public Statement createStatement() throws SQLException {
-		return createStatement(ResultSet.TYPE_FORWARD_ONLY,
-				ResultSet.CONCUR_READ_ONLY);
-	}
+        return createObject(Clob.class);
+    }
 
-	public Statement createStatement(int resultSetType, int resultSetConcurrency)
-			throws SQLException {
-		return createStatement(resultSetType, resultSetConcurrency,
-				ResultSet.HOLD_CURSORS_OVER_COMMIT);
-	}
+    public NClob createNClob() throws SQLException {
+        validateState();
 
-	public Struct createStruct(String typeName, Object[] attributes)
-			throws SQLException {
-		validateState();
+        return createObject(NClob.class);
+    }
 
-		// FIXME incomplete
-		Struct result = createObject(Struct.class);
+    public SQLXML createSQLXML() throws SQLException {
+        validateState();
 
-		return result;
-	}
+        return createObject(SQLXML.class);
+    }
 
-	public boolean getAutoCommit() throws SQLException {
-		validateState();
+    public Statement createStatement() throws SQLException {
+        return createStatement(ResultSet.TYPE_FORWARD_ONLY,
+                ResultSet.CONCUR_READ_ONLY);
+    }
 
-		return _autoCommit;
-	}
+    public Statement createStatement(int resultSetType, int resultSetConcurrency)
+            throws SQLException {
+        return createStatement(resultSetType, resultSetConcurrency,
+                ResultSet.HOLD_CURSORS_OVER_COMMIT);
+    }
 
-	public Properties getClientInfo() throws SQLException {
-		validateState();
+    public Struct createStruct(String typeName, Object[] attributes)
+            throws SQLException {
+        validateState();
 
-		Properties props = new Properties();
-		props.putAll(_clientInfo);
-		return props;
-	}
+        // FIXME incomplete
+        Struct result = createObject(Struct.class);
 
-	public String getClientInfo(String name) throws SQLException {
-		validateState();
+        return result;
+    }
 
-		return _clientInfo.getProperty(name);
-	}
+    public boolean getAutoCommit() throws SQLException {
+        validateState();
 
-	public int getHoldability() throws SQLException {
-		validateState();
+        return config.isAutoCommit();
+    }
 
-		return ResultSet.HOLD_CURSORS_OVER_COMMIT;
-	}
+    public Properties getClientInfo() throws SQLException {
+        validateState();
 
-	public DatabaseMetaData getMetaData() throws SQLException {
-		validateState();
+        Properties props = new Properties();
+        props.putAll(_clientInfo);
+        return props;
+    }
 
-		if (!quiet && metaData == null) {
-			throw CassandraErrors.databaseMetaDataNotAvailableException();
-		}
+    public String getClientInfo(String name) throws SQLException {
+        validateState();
 
-		return metaData;
-	}
+        return _clientInfo.getProperty(name);
+    }
 
-	public int getNetworkTimeout() throws SQLException {
-		validateState();
+    public int getHoldability() throws SQLException {
+        validateState();
 
-		return _timeout;
-	}
+        return ResultSet.HOLD_CURSORS_OVER_COMMIT;
+    }
 
-	public String getSchema() throws SQLException {
-		validateState();
+    public DatabaseMetaData getMetaData() throws SQLException {
+        validateState();
 
-		return null;
-	}
+        if (!quiet && metaData == null) {
+            throw CassandraErrors.databaseMetaDataNotAvailableException();
+        }
 
-	public int getTransactionIsolation() throws SQLException {
-		validateState();
+        return metaData;
+    }
 
-		return _txIsolationLevel;
-	}
+    public int getNetworkTimeout() throws SQLException {
+        validateState();
 
-	public Map<String, Class<?>> getTypeMap() throws SQLException {
-		validateState();
+        return config.getConnectionTimeout();
+    }
 
-		Map<String, Class<?>> map = new HashMap<String, Class<?>>();
-		map.putAll(_typeMap);
-		return map;
-	}
+    public String getSchema() throws SQLException {
+        validateState();
 
-	public boolean isReadOnly() throws SQLException {
-		validateState();
+        return null;
+    }
 
-		return _connReadOnly;
-	}
+    public int getTransactionIsolation() throws SQLException {
+        validateState();
 
-	public boolean isValid(int timeout) throws SQLException {
-		validateState();
+        return _txIsolationLevel;
+    }
 
-		// FIXME incomplete
-		return !closed;
-	}
+    public Map<String, Class<?>> getTypeMap() throws SQLException {
+        validateState();
 
-	public String nativeSQL(String sql) throws SQLException {
-		validateState();
+        Map<String, Class<?>> map = new HashMap<String, Class<?>>();
+        map.putAll(_typeMap);
+        return map;
+    }
 
-		return CassandraUtils.normalizeSql(sql, _sqlFriendly, quiet);
-	}
+    public boolean isReadOnly() throws SQLException {
+        validateState();
 
-	public CallableStatement prepareCall(String sql) throws SQLException {
-		return prepareCall(sql, ResultSet.TYPE_FORWARD_ONLY,
-				ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
-	}
+        return config.isReadOnly();
+    }
 
-	public CallableStatement prepareCall(String sql, int resultSetType,
-			int resultSetConcurrency) throws SQLException {
-		return prepareCall(sql, resultSetType, resultSetConcurrency,
-				ResultSet.HOLD_CURSORS_OVER_COMMIT);
-	}
+    public boolean isValid(int timeout) throws SQLException {
+        validateState();
 
-	public CallableStatement prepareCall(String sql, int resultSetType,
-			int resultSetConcurrency, int resultSetHoldability)
-			throws SQLException {
-		validateState();
+        // FIXME incomplete
+        return !closed;
+    }
 
-		if (!quiet) {
-			throw CassandraErrors.notSupportedException();
-		}
+    public String nativeSQL(String sql) throws SQLException {
+        validateState();
 
-		return null;
-	}
+        return CassandraUtils.normalizeSql(sql, config.isSqlFriendly(), quiet);
+    }
 
-	public PreparedStatement prepareStatement(String sql) throws SQLException {
-		return prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
-				ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
-	}
+    public CallableStatement prepareCall(String sql) throws SQLException {
+        return prepareCall(sql, ResultSet.TYPE_FORWARD_ONLY,
+                ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+    }
 
-	public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys)
-			throws SQLException {
-		return prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
-				ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
-	}
+    public CallableStatement prepareCall(String sql, int resultSetType,
+                                         int resultSetConcurrency) throws SQLException {
+        return prepareCall(sql, resultSetType, resultSetConcurrency,
+                ResultSet.HOLD_CURSORS_OVER_COMMIT);
+    }
 
-	public PreparedStatement prepareStatement(String sql, int resultSetType,
-			int resultSetConcurrency) throws SQLException {
-		return prepareStatement(sql, resultSetType, resultSetConcurrency,
-				ResultSet.HOLD_CURSORS_OVER_COMMIT);
-	}
+    public CallableStatement prepareCall(String sql, int resultSetType,
+                                         int resultSetConcurrency, int resultSetHoldability)
+            throws SQLException {
+        validateState();
 
-	public PreparedStatement prepareStatement(String sql, int[] columnIndexes)
-			throws SQLException {
-		// FIXME incomplete
-		return prepareStatement(sql);
-	}
+        if (!quiet) {
+            throw CassandraErrors.notSupportedException();
+        }
 
-	public PreparedStatement prepareStatement(String sql, String[] columnNames)
-			throws SQLException {
-		// FIXME incomplete
-		return prepareStatement(sql);
-	}
+        return null;
+    }
 
-	public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-		validateState();
+    public PreparedStatement prepareStatement(String sql) throws SQLException {
+        return prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
+                ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+    }
+
+    public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys)
+            throws SQLException {
+        return prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
+                ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+    }
+
+    public PreparedStatement prepareStatement(String sql, int resultSetType,
+                                              int resultSetConcurrency) throws SQLException {
+        return prepareStatement(sql, resultSetType, resultSetConcurrency,
+                ResultSet.HOLD_CURSORS_OVER_COMMIT);
+    }
 
-		if (!quiet) {
-			throw CassandraErrors.notSupportedException();
-		}
-	}
+    public PreparedStatement prepareStatement(String sql, int[] columnIndexes)
+            throws SQLException {
+        // FIXME incomplete
+        return prepareStatement(sql);
+    }
 
-	public void rollback() throws SQLException {
-		validateState();
+    public PreparedStatement prepareStatement(String sql, String[] columnNames)
+            throws SQLException {
+        // FIXME incomplete
+        return prepareStatement(sql);
+    }
 
-		// better to be quiet and do nothing as we always commit in Cassandra
-		if (!quiet) {
-			throw CassandraErrors.notSupportedException();
-		}
-	}
+    public void releaseSavepoint(Savepoint savepoint) throws SQLException {
+        validateState();
 
-	public void rollback(Savepoint savepoint) throws SQLException {
-		validateState();
+        if (!quiet) {
+            throw CassandraErrors.notSupportedException();
+        }
+    }
 
-		if (!quiet) {
-			throw CassandraErrors.notSupportedException();
-		}
-	}
+    public void rollback() throws SQLException {
+        validateState();
 
-	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		validateState();
+        // better to be quiet and do nothing as we always commit in Cassandra
+        if (!quiet) {
+            throw CassandraErrors.notSupportedException();
+        }
+    }
 
-		if (!quiet && !autoCommit) {
-			throw CassandraErrors.notSupportedException();
-		}
-	}
+    public void rollback(Savepoint savepoint) throws SQLException {
+        validateState();
 
-	public void setClientInfo(Properties properties)
-			throws SQLClientInfoException {
-		// FIXME incomplete
-		_clientInfo.clear();
+        if (!quiet) {
+            throw CassandraErrors.notSupportedException();
+        }
+    }
 
-		if (properties != null) {
-			_clientInfo.putAll(properties);
-		}
-	}
+    public void setAutoCommit(boolean autoCommit) throws SQLException {
+        validateState();
 
-	public void setClientInfo(String name, String value)
-			throws SQLClientInfoException {
-		// FIXME incomplete
-		_clientInfo.setProperty(name, value);
-	}
+        if (!quiet && !autoCommit) {
+            throw CassandraErrors.notSupportedException();
+        }
+    }
 
-	public void setHoldability(int holdability) throws SQLException {
-		validateState();
+    public void setClientInfo(Properties properties)
+            throws SQLClientInfoException {
+        // FIXME incomplete
+        _clientInfo.clear();
 
-		if (!quiet && holdability != ResultSet.HOLD_CURSORS_OVER_COMMIT) {
-			throw CassandraErrors.notSupportedException();
-		}
-	}
+        if (properties != null) {
+            _clientInfo.putAll(properties);
+        }
+    }
 
-	public void setNetworkTimeout(Executor executor, int milliseconds)
-			throws SQLException {
-		validateState();
+    public void setClientInfo(String name, String value)
+            throws SQLClientInfoException {
+        // FIXME incomplete
+        _clientInfo.setProperty(name, value);
+    }
 
-		// FIXME incomplete
-		if (quiet) {
-			_timeout = milliseconds;
-		} else {
-			throw CassandraErrors.notSupportedException();
-		}
-	}
+    public void setHoldability(int holdability) throws SQLException {
+        validateState();
 
-	public void setReadOnly(boolean readOnly) throws SQLException {
-		validateState();
+        if (!quiet && holdability != ResultSet.HOLD_CURSORS_OVER_COMMIT) {
+            throw CassandraErrors.notSupportedException();
+        }
+    }
 
-		_connReadOnly = readOnly;
-	}
+    public void setNetworkTimeout(Executor executor, int milliseconds)
+            throws SQLException {
+        validateState();
 
-	public Savepoint setSavepoint() throws SQLException {
-		return setSavepoint(null);
-	}
+        // FIXME incomplete
+        if (!quiet) {
+            throw CassandraErrors.notSupportedException();
+        }
+    }
 
-	public Savepoint setSavepoint(String name) throws SQLException {
-		validateState();
+    public void setReadOnly(boolean readOnly) throws SQLException {
+        validateState();
 
-		if (!quiet) {
-			throw CassandraErrors.notSupportedException();
-		}
+        // FIXME incomplete
+        if (!quiet) {
+            throw CassandraErrors.notSupportedException();
+        }
+    }
 
-		return null;
-	}
+    public Savepoint setSavepoint() throws SQLException {
+        return setSavepoint(null);
+    }
 
-	public void setSchema(String schema) throws SQLException {
-		validateState();
+    public Savepoint setSavepoint(String name) throws SQLException {
+        validateState();
 
-		if (!quiet) {
-			throw CassandraErrors.notSupportedException();
-		}
-	}
+        if (!quiet) {
+            throw CassandraErrors.notSupportedException();
+        }
 
-	public void setTransactionIsolation(int level) throws SQLException {
-		validateState();
+        return null;
+    }
 
-		// ignore isolation level and always use TRANSACTION_READ_COMMITTED
-		if (!quiet && level != TRANSACTION_NONE) {
-			throw CassandraErrors.notSupportedException();
-		}
-	}
+    public void setSchema(String schema) throws SQLException {
+        validateState();
 
-	public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
-		validateState();
+        if (!quiet) {
+            throw CassandraErrors.notSupportedException();
+        }
+    }
 
-		_typeMap.clear();
+    public void setTransactionIsolation(int level) throws SQLException {
+        validateState();
 
-		if (map != null) {
-			_typeMap.putAll(map);
-		}
-	}
+        // ignore isolation level and always use TRANSACTION_READ_COMMITTED
+        if (!quiet && level != TRANSACTION_NONE) {
+            throw CassandraErrors.notSupportedException();
+        }
+    }
+
+    public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
+        validateState();
+
+        _typeMap.clear();
+
+        if (map != null) {
+            _typeMap.putAll(map);
+        }
+    }
 }

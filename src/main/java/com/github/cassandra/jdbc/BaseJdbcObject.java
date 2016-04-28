@@ -30,117 +30,115 @@ import java.sql.Wrapper;
  * @author Zhichun Wu
  */
 public abstract class BaseJdbcObject implements AutoCloseable, Wrapper {
-	/**
-	 * List of chained SQL warnings.
-	 */
-	private SQLWarning _warning;
+    /**
+     * List of chained SQL warnings.
+     */
+    private SQLWarning _warning;
 
-	/**
-	 * This indicates whether this object has been closed.
-	 */
-	protected boolean closed;
+    /**
+     * This indicates whether this object has been closed.
+     */
+    protected boolean closed;
 
-	/**
-	 * Quiet mode suggests if the driver should throw SQLException for
-	 * unsupported operation. By default it is true but can be customized by
-	 * passing "quiet=false" in connection properties.
-	 */
-	protected final boolean quiet;
+    /**
+     * Quiet mode suggests if the driver should throw SQLException for
+     * unsupported operation. By default it is true but can be customized by
+     * passing "quiet=false" in connection properties.
+     */
+    protected final boolean quiet;
 
-	protected BaseJdbcObject(boolean quiet) {
-		this.closed = false;
-		this.quiet = quiet;
-	}
+    protected BaseJdbcObject(boolean quiet) {
+        this.closed = false;
+        this.quiet = quiet;
+    }
 
-	/**
-	 * Idempotent close method.
-	 *
-	 * @return SQLException if any
-	 */
-	protected abstract SQLException tryClose();
+    /**
+     * Idempotent close method.
+     *
+     * @return SQLException if any
+     */
+    protected abstract SQLException tryClose();
 
-	/**
-	 * This returns the underlying object actually doing the work.
-	 *
-	 * @return underlying object
-	 */
-	protected abstract Object unwrap();
+    /**
+     * This returns the underlying object actually doing the work.
+     *
+     * @return underlying object
+     */
+    protected abstract Object unwrap();
 
-	/**
-	 * Validate instance state - mainly checking if this has been closed.
-	 *
-	 * @throws SQLException
-	 *             when state is invalid(e.g. closed
-	 *             connection/statement/resultset)
-	 */
-	protected void validateState() throws SQLException {
-		if (closed) {
-			throw CassandraErrors.resourceClosedException(this);
-		}
-	}
+    /**
+     * Validate instance state - mainly checking if this has been closed.
+     *
+     * @throws SQLException when state is invalid(e.g. closed
+     *                      connection/statement/resultset)
+     */
+    protected void validateState() throws SQLException {
+        if (closed) {
+            throw CassandraErrors.resourceClosedException(this);
+        }
+    }
 
-	/**
-	 * Append a warning to the end of chained SQL warnings.
-	 * 
-	 * @param warning
-	 *            warning to be appended to the warnings list
-	 */
-	public void appendWarning(SQLWarning warning) {
-		if (warning != null) {
-			if (_warning == null) {
-				_warning = warning;
-			} else {
-				SQLWarning w = _warning;
-				SQLWarning prevWarning = w;
-				do {
-					if (w == warning) {
-						break;
-					} else {
-						prevWarning = w;
-					}
-				} while ((w = w.getNextWarning()) != null);
+    /**
+     * Append a warning to the end of chained SQL warnings.
+     *
+     * @param warning warning to be appended to the warnings list
+     */
+    public void appendWarning(SQLWarning warning) {
+        if (warning != null) {
+            if (_warning == null) {
+                _warning = warning;
+            } else {
+                SQLWarning w = _warning;
+                SQLWarning prevWarning = w;
+                do {
+                    if (w == warning) {
+                        break;
+                    } else {
+                        prevWarning = w;
+                    }
+                } while ((w = w.getNextWarning()) != null);
 
-				if (prevWarning != w) {
-					prevWarning.setNextWarning(warning);
-				}
-			}
-		}
-	}
+                if (prevWarning != w) {
+                    prevWarning.setNextWarning(warning);
+                }
+            }
+        }
+    }
 
-	public void clearWarnings() throws SQLException {
-		validateState();
+    public void clearWarnings() throws SQLException {
+        // validateState();
 
-		_warning = null;
-	}
+        _warning = null;
+    }
 
-	public void close() throws SQLException {
-		clearWarnings();
+    public void close() throws SQLException {
+        clearWarnings();
 
-		closed = true;
+        closed = true;
 
-		SQLException exception = tryClose();
-		if (!quiet && exception != null) {
-			throw exception;
-		}
-	}
+        SQLException exception = tryClose();
+        if (!quiet && exception != null) {
+            throw exception;
+        }
+    }
 
-	public SQLWarning getWarnings() throws SQLException {
-		validateState();
+    public SQLWarning getWarnings() throws SQLException {
+        validateState();
 
-		return _warning;
-	}
+        return _warning;
+    }
 
-	public boolean isClosed() throws SQLException {
-		return closed;
-	}
+    public boolean isClosed() throws SQLException {
+        return closed;
+    }
 
-	public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		Object innerObj = unwrap();
+    public boolean isWrapperFor(Class<?> iface) throws SQLException {
+        Object innerObj = unwrap();
 
-		return innerObj != null && innerObj.getClass().isAssignableFrom(iface);
-	}
+        return innerObj != null && innerObj.getClass().isAssignableFrom(iface);
+    }
 
-	public <T> T unwrap(Class<T> iface) throws SQLException {
-		return iface.cast(unwrap());
-	}
+    public <T> T unwrap(Class<T> iface) throws SQLException {
+        return iface.cast(unwrap());
+    }
 }
