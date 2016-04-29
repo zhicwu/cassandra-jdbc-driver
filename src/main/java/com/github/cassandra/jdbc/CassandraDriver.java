@@ -38,7 +38,7 @@ public class CassandraDriver implements Driver {
     public static final int VERSION_MAJOR = 0;
     public static final int VERSION_MINOR = 3;
 
-    public static final int VERSION_PATCH = 0;
+    public static final int VERSION_PATCH = 1;
 
     static final String MSG_PREFIX = "MESSAGE_PROP_";
     static final String MSG_SUFFIX = "_DESCRIPTION";

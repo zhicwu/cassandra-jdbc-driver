@@ -41,10 +41,10 @@ import java.util.List;
  */
 public class CassandraStatement extends BaseCassandraPreparedStatement {
     protected CassandraResultSet currentResultSet;
-    protected com.datastax.driver.core.Session session;
+    protected DataStaxSessionWrapper session;
 
     protected CassandraStatement(CassandraConnection conn,
-                                 com.datastax.driver.core.Session session) {
+                                 DataStaxSessionWrapper session) {
         super(conn);
         this.session = session;
     }
@@ -151,8 +151,7 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
                     currentResultSet.close();
                 }
             } catch (Throwable t) {
-                Logger.warn("Not able to close the old result set: "
-                        + currentResultSet, t);
+                Logger.warn(t, "Not able to close the old result set: ", currentResultSet);
             }
         }
 
@@ -168,8 +167,7 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
                 currentResultSet.close();
             }
         } catch (Throwable t) {
-            Logger.warn("Not able to close the current result set: "
-                    + currentResultSet, t);
+            Logger.warn(t, "Not able to close the current result set: ", currentResultSet);
             e = new SQLException(t);
         } finally {
             currentResultSet = null;

@@ -46,7 +46,7 @@ public class CassandraConnection extends BaseCassandraConnection {
 
     static final String DRIVER_NAME = "DataStax Java Driver";
 
-    private Session _session;
+    private DataStaxSessionWrapper _session;
 
     private String _keyspace;
 
@@ -54,7 +54,7 @@ public class CassandraConnection extends BaseCassandraConnection {
         super(config);
 
         _keyspace = config.getKeyspace();
-        _session = CassandraSessionFactory.getSession(config);
+        _session = DataStaxSessionFactory.getSession(config);
 
         // populate meta data
         metaData.setProperty(KEY_DRIVER_NAME, DRIVER_NAME);
@@ -69,7 +69,13 @@ public class CassandraConnection extends BaseCassandraConnection {
 
         // get database version
         String dbVersion = EMPTY_STRING;
-        Row row = _session.execute(CQL_TO_GET_VERSION).one();
+        Row row = null;
+        try {
+            row = _session.execute(CQL_TO_GET_VERSION).one();
+        } catch (SQLException e) {
+            Logger.warn(e, "Failed to get DB version");
+        }
+
         if (row != null) {
             dbVersion = row.getString(0);
         }
@@ -230,7 +236,7 @@ public class CassandraConnection extends BaseCassandraConnection {
 
         ResultSet rs = new DummyCassandraResultSet();
 
-        Metadata m = _session.getCluster().getMetadata();
+        Metadata m = _session.getClusterMetaData();
         switch (objectType) {
             case KEYSPACE: {
                 List<KeyspaceMetadata> keyspaces = m.getKeyspaces();
@@ -459,7 +465,7 @@ public class CassandraConnection extends BaseCassandraConnection {
 
         // this might happen if someone close the connection directly without
         // touching JDBC API
-        if (_session.isClosed()) {
+        if (_session == null || _session.isClosed()) {
             _session = null;
             throw CassandraErrors.connectionClosedException();
         }
@@ -497,7 +503,7 @@ public class CassandraConnection extends BaseCassandraConnection {
 
         try {
             // _session.closeAsync().force();
-            _session = CassandraSessionFactory.getSession(getConfiguration(), catalog);
+            _session = DataStaxSessionFactory.getSession(getConfiguration(), catalog);
 
             Logger.debug(new StringBuilder(
                     "Current keyspace changed from \"").append(_keyspace)

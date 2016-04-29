@@ -31,25 +31,27 @@ import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 import org.pmw.tinylog.Logger;
 
+import java.util.concurrent.Callable;
+
 import static com.github.cassandra.jdbc.CassandraUtils.KEY_PORT;
 
 /**
  * Session factory.
  */
-final class CassandraSessionFactory {
-    private final static Cache<String, Session> _sessionCache;
+final class DataStaxSessionFactory {
+    private final static Cache<String, DataStaxSessionWrapper> _sessionCache;
 
     static {
         // FIXME when exactly to close the cluster object?
-        _sessionCache = CacheBuilder.newBuilder().weakValues().removalListener(new RemovalListener<String, Session>() {
-            public void onRemoval(RemovalNotification<String, Session> notification) {
-                Session session = notification.getValue();
+        _sessionCache = CacheBuilder.newBuilder().weakValues().removalListener(new RemovalListener<String, DataStaxSessionWrapper>() {
+            public void onRemoval(RemovalNotification<String, DataStaxSessionWrapper> notification) {
+                DataStaxSessionWrapper session = notification.getValue();
 
                 Logger.debug(new StringBuilder().append("Closing [")
                         .append(session).append("] (cause: ").append(notification.getCause()).append(")...").toString());
                 if (session != null) {
                     try {
-                        session.closeAsync().force();
+                        session.close();
                     } catch (Throwable t) {
                         Logger.debug("Error occurred when closing session", t);
                     }
@@ -61,11 +63,11 @@ final class CassandraSessionFactory {
         }).build();
     }
 
-    static Session newSession(CassandraConfiguration config) {
+    private static DataStaxSessionWrapper newSession(CassandraConfiguration config) {
         return newSession(config, null);
     }
 
-    static Session newSession(CassandraConfiguration config, String keyspace) {
+    private static DataStaxSessionWrapper newSession(CassandraConfiguration config, String keyspace) {
         keyspace = Strings.isNullOrEmpty(keyspace)
                 || config.getKeyspace().equals(keyspace) ? config.getKeyspace() : keyspace;
 
@@ -147,29 +149,37 @@ final class CassandraSessionFactory {
                     .append(host.getRack()).toString());
         }
 
-        return cluster.connect(keyspace);
+        return new DataStaxSessionWrapper(cluster.connect(keyspace));
     }
 
-    static Session getSession(CassandraConfiguration config) {
+    static DataStaxSessionWrapper getSession(final CassandraConfiguration config) {
         return getSession(config, null);
     }
 
-    static Session getSession(CassandraConfiguration config, String keyspace) {
-        Session session = _sessionCache.getIfPresent(config.getConnectionUrl());
+    static DataStaxSessionWrapper getSession(final CassandraConfiguration config, final String keyspace) {
+        final String targetKeyspace = Strings.isNullOrEmpty(keyspace)
+                || config.getKeyspace().equals(keyspace) ? config.getKeyspace() : keyspace;
+        DataStaxSessionWrapper session = null;
 
-        if (session != null && !session.isClosed()
-                && (Strings.isNullOrEmpty(keyspace) || config.getKeyspace().equals(keyspace))) {
-            return session;
+        try {
+            session = _sessionCache.get(config.getConnectionUrl(), new Callable<DataStaxSessionWrapper>() {
+                public DataStaxSessionWrapper call() throws Exception {
+                    return newSession(config, targetKeyspace);
+                }
+            });
+
+            if (session.isClosed() || !session.getLoggedKeyspace().equals(targetKeyspace)) {
+                // FIXME this will cause connection issues in other threads
+                _sessionCache.invalidate(config.getConnectionUrl());
+                session = getSession(config, targetKeyspace);
+            }
+
+            // active the session and increase the reference counter
+            session.open();
+        } catch (Exception e) {
+            Logger.error(e, "Failed to obtain session object");
+            throw new RuntimeException(e);
         }
-
-        if (session != null) {
-            session = session.getCluster().connect(Strings.isNullOrEmpty(keyspace)
-                    || config.getKeyspace().equals(keyspace) ? config.getKeyspace() : keyspace);
-        } else {
-            session = newSession(config, keyspace);
-        }
-
-        _sessionCache.put(config.getConnectionUrl(), session);
 
         return session;
     }

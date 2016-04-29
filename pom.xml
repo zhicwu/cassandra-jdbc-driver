@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.cassandra</groupId>
     <artifactId>cassandra-jdbc-driver</artifactId>
-    <version>0.3.0-SNAPSHOT</version>
+    <version>0.3.1-SNAPSHOT</version>
     <name>Cassandra JDBC Driver</name>
     <url>http://github.com/zhicwu/cassandra-jdbc-driver</url>
     <description>Type 2 JDBC driver for Apache Cassandra built on top of existing great libs like java driver from
@@ -16,7 +16,7 @@
         <datastax-driver.version>3.0.0</datastax-driver.version>
         <snappy.version>1.0.5</snappy.version>
         <lz4.version>1.2.0</lz4.version>
-        <tinylog.version>1.1-rc-3</tinylog.version>
+        <tinylog.version>1.1</tinylog.version>
         <java.version>1.6</java.version>
         <junit.version>4.12</junit.version>
         <mockito.version>1.10.19</mockito.version>

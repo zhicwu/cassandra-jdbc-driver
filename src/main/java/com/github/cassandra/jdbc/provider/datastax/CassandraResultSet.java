@@ -86,10 +86,9 @@ public class CassandraResultSet extends BaseCassandraResultSet {
                     try {
                         result = clazz.cast(rawValue);
                     } catch (ClassCastException e) {
-                        Logger.warn(new StringBuilder(
-                                        "Not able to convert [").append(rawValue)
-                                        .append("] to ").append(clazz).toString(),
-                                e);
+                        Logger.warn(e, new StringBuilder(
+                                "Not able to convert [").append(rawValue)
+                                .append("] to ").append(clazz).toString());
 
                         if (!quiet) {
                             throw new SQLException(e);

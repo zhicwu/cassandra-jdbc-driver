@@ -353,8 +353,7 @@ public class CassandraUtils {
                 if (!quiet) {
                     throw new SQLException(e);
                 } else {
-                    Logger.warn(
-                            "Wasn't able to translate given SQL to CQL", e);
+                    Logger.warn(e, "Wasn't able to translate given SQL to CQL");
                 }
             }
         }
@@ -385,10 +384,10 @@ public class CassandraUtils {
                 exception = CassandraErrors.failedToCloseResourceException(
                         resourceName, t);
 
-                Logger.warn(
+                Logger.warn(t,
                         new StringBuilder("Error occurred when closing [")
                                 .append(resourceName).append("]")
-                                .toString(), t);
+                                .toString());
             }
         }
 

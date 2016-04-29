@@ -51,7 +51,7 @@ public class CassandraPreparedStatement extends CassandraStatement {
     private PreparedStatement _ps;
 
     protected CassandraPreparedStatement(CassandraConnection conn,
-                                         com.datastax.driver.core.Session session,
+                                         DataStaxSessionWrapper session,
                                          String sql) throws SQLException {
         super(conn, session);
 
@@ -160,6 +160,7 @@ public class CassandraPreparedStatement extends CassandraStatement {
         for (Map.Entry<Integer, Object> entry : parameters.entrySet()) {
             params[i++] = entry.getValue();
         }
+
         com.datastax.driver.core.ResultSet rs = executePreparedCql(getConnection().nativeSQL(sql), params);
         replaceCurrentResultSet(rs);
 
