@@ -29,8 +29,9 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
-import java.sql.Date;
-import java.util.*;
+import java.util.Calendar;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * This is the base class for prepared statement implementation for Cassandra.
@@ -40,13 +41,13 @@ import java.util.*;
 public abstract class BaseCassandraPreparedStatement extends
         BaseCassandraStatement implements PreparedStatement {
     protected final CassandraParameterMetaData parameterMetaData;
+    protected final SortedMap<Integer, Object> parameters = new TreeMap<Integer, Object>();
+    protected String cql;
 
-    protected final Map<Integer, Object> parameters = new TreeMap<Integer, Object>();
-    protected final List<Map<Integer, Object>> batches = new LinkedList<Map<Integer, Object>>();
-
-    protected BaseCassandraPreparedStatement(BaseCassandraConnection conn) {
+    protected BaseCassandraPreparedStatement(BaseCassandraConnection conn, String cql) {
         super(conn);
 
+        this.cql = cql;
         parameterMetaData = new CassandraParameterMetaData(conn);
     }
 
@@ -55,7 +56,14 @@ public abstract class BaseCassandraPreparedStatement extends
     }
 
     public void addBatch() throws SQLException {
-        this.batches.add(parameters);
+        Object[] params = new Object[parameters.size()];
+        int index = 0;
+        for (Object p : parameters.values()) {
+            params[index++] = p;
+        }
+
+        this.batch.add(new CassandraCqlStatement(cql, params));
+
         this.clearParameters();
     }
 

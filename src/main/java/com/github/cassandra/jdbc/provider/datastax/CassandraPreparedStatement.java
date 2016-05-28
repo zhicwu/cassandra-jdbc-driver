@@ -20,14 +20,16 @@
  */
 package com.github.cassandra.jdbc.provider.datastax;
 
-import com.datastax.driver.core.ColumnDefinitions;
-import com.datastax.driver.core.ExecutionInfo;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.QueryTrace;
+import com.datastax.driver.core.*;
 import com.github.cassandra.jdbc.CassandraColumnDefinition;
+import com.github.cassandra.jdbc.CassandraCqlStatement;
 import com.github.cassandra.jdbc.CassandraErrors;
+import com.google.common.base.Objects;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.pmw.tinylog.Logger;
 
+import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -36,9 +38,10 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
-import static com.github.cassandra.jdbc.CassandraDataTypeMappings.BLOB;
-import static com.github.cassandra.jdbc.CassandraDataTypeMappings.INET;
+import static com.github.cassandra.jdbc.CassandraDataTypeMappings.*;
 
 /**
  * This is a prepared statement implementation built on top of DataStax Java
@@ -47,27 +50,44 @@ import static com.github.cassandra.jdbc.CassandraDataTypeMappings.INET;
  * @author Zhichun Wu
  */
 public class CassandraPreparedStatement extends CassandraStatement {
-    private String _cql;
-    private PreparedStatement _ps;
+    protected final Cache<String, PreparedStatement> preparedStmtCache;
 
     protected CassandraPreparedStatement(CassandraConnection conn,
                                          DataStaxSessionWrapper session,
                                          String sql) throws SQLException {
-        super(conn, session);
+        super(conn, session, sql);
 
-        updateParameterMetaData(sql, false);
+        preparedStmtCache = CacheBuilder.newBuilder().maximumSize(5).build();
+
+        // FIXME convert given string(sql or cql) to CassandraCqlStatement and put in a cache for further usage
+        updateParameterMetaData(this.cql, true);
     }
 
-    protected void updateParameterMetaData(String sql, boolean isCql) throws SQLException {
-        String cql = isCql ? sql : getConnection().nativeSQL(sql);
+    protected PreparedStatement getInnerPreparedStatement(final String cql) throws SQLException {
+        PreparedStatement preparedStmt = null;
 
-        if (_cql != cql) {
-            _cql = cql;
-            _ps = session.prepare(_cql);
+        try {
+            preparedStmt = preparedStmtCache.get(cql, new Callable<PreparedStatement>() {
+                public PreparedStatement call() throws Exception {
+                    return session.prepare(cql);
+                }
+            });
+        } catch (ExecutionException e) {
+            throw new SQLException(e);
+        }
+
+        return preparedStmt;
+    }
+
+    protected void updateParameterMetaData(String cql, boolean force) throws SQLException {
+        if (force || !Objects.equal(this.cql, cql)) {
+            this.cql = cql;
+            PreparedStatement preparedStmt = getInnerPreparedStatement(cql);
             parameterMetaData.clear();
-            for (ColumnDefinitions.Definition def : _ps.getVariables().asList()) {
+            for (ColumnDefinitions.Definition def : preparedStmt.getVariables().asList()) {
                 parameterMetaData.addParameterDefinition(new CassandraColumnDefinition(
-                        def.getKeyspace(), def.getTable(), def.getName(), def.getName(), def.getType().toString(), false, false));
+                        def.getKeyspace(), def.getTable(), def.getName(), def.getName(),
+                        def.getType().toString(), false, false));
             }
         }
     }
@@ -84,28 +104,48 @@ public class CassandraPreparedStatement extends CassandraStatement {
             }
         } else if (BLOB.equals(typeName) && paramValue instanceof byte[]) {
             parameters.put(paramIndex, ByteBuffer.wrap((byte[]) paramValue));
+        } else if (TEXT.equals(typeName)) {
+            parameters.put(paramIndex, String.valueOf(paramValue));
+        } else if (UUID.equals(typeName)) {
+            parameters.put(paramIndex, java.util.UUID.fromString(String.valueOf(paramValue)));
+        } else if (INT.equals(typeName)) {
+            parameters.put(paramIndex, paramValue instanceof Number
+                    ? ((Number) paramValue).intValue() : Integer.valueOf(String.valueOf(paramValue)));
+        } else if (BIGINT.equals(typeName)) {
+            parameters.put(paramIndex, paramValue instanceof Number
+                    ? ((Number) paramValue).longValue() : Long.valueOf(String.valueOf(paramValue)));
+        } else if (FLOAT.equals(typeName)) {
+            parameters.put(paramIndex, paramValue instanceof Number
+                    ? ((Number) paramValue).floatValue() : Float.valueOf(String.valueOf(paramValue)));
+        } else if (DOUBLE.equals(typeName)) {
+            parameters.put(paramIndex, paramValue instanceof Number
+                    ? ((Number) paramValue).doubleValue() : Double.valueOf(String.valueOf(paramValue)));
+        } else if (DECIMAL.equals(typeName)) {
+            parameters.put(paramIndex, paramValue instanceof BigDecimal
+                    ? (BigDecimal) paramValue : new BigDecimal(String.valueOf(paramValue)));
         } else {
             super.setParameter(paramIndex, paramValue);
         }
     }
 
-    protected com.datastax.driver.core.ResultSet executePreparedCql(String cql, Object... params) throws SQLException {
+    protected com.datastax.driver.core.ResultSet executePreparedCql(final String cql, Object... params) throws SQLException {
         Logger.debug(new StringBuilder(
                 "Trying to execute the following CQL:\n").append(cql)
                 .toString());
 
         boolean queryTrace = false;
-        updateParameterMetaData(cql, true);
+        updateParameterMetaData(cql, false);
 
+        PreparedStatement preparedStmt = getInnerPreparedStatement(cql);
         if (getConnection() instanceof CassandraConnection) {
             CassandraConnection cc = (CassandraConnection) getConnection();
 
             if (cc.getConfiguration().isQueryTrace()) {
-                _ps.enableTracing();
+                preparedStmt.enableTracing();
             }
         }
 
-        com.datastax.driver.core.ResultSet rs = session.execute(_ps.bind(params));
+        com.datastax.driver.core.ResultSet rs = session.execute(preparedStmt.bind(params));
 
         List<ExecutionInfo> list = rs.getAllExecutionInfo();
         int size = list == null ? 0 : list.size();
@@ -132,16 +172,40 @@ public class CassandraPreparedStatement extends CassandraStatement {
         return rs;
     }
 
+    @Override
+    public int[] executeBatch() throws SQLException {
+        BatchStatement batchStmt = new BatchStatement(BatchStatement.Type.UNLOGGED);
+
+
+        for (CassandraCqlStatement stmt : batch) {
+            String cql = stmt.getCql();
+            if (stmt.hasParameter()) {
+                batchStmt.add(getInnerPreparedStatement(cql).bind(stmt.getParameters()));
+            } else {
+                batchStmt.add(new SimpleStatement(cql));
+            }
+        }
+
+        session.execute(batchStmt);
+
+        int[] results = new int[batch.size()];
+        for (int i = 0; i < results.length; i++) {
+            results[i] = 0;
+        }
+
+        return results;
+    }
+
     public boolean execute() throws SQLException {
-        return this.execute(_cql);
+        return this.execute(this.cql);
     }
 
     public ResultSet executeQuery() throws SQLException {
-        return this.executeQuery(_cql);
+        return this.executeQuery(this.cql);
     }
 
     public int executeUpdate() throws SQLException {
-        return this.executeUpdate(_cql);
+        return this.executeUpdate(this.cql);
     }
 
     public ResultSetMetaData getMetaData() throws SQLException {

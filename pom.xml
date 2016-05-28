@@ -3,23 +3,25 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.cassandra</groupId>
     <artifactId>cassandra-jdbc-driver</artifactId>
-    <version>0.3.1-SNAPSHOT</version>
+    <version>0.4.0</version>
     <name>Cassandra JDBC Driver</name>
     <url>http://github.com/zhicwu/cassandra-jdbc-driver</url>
-    <description>Type 2 JDBC driver for Apache Cassandra built on top of existing great libs like java driver from
-        DataStax. It supports Cassandra 2.x and above with better support for traditional SQL grammar.
+    <description>Type 4 JDBC driver for Apache Cassandra built on top of existing great libs like java driver from
+        DataStax. It supports Cassandra 2.x and above with improved SQL compatibility.
     </description>
     <inceptionYear>2015</inceptionYear>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jsqlparser.version>0.9.5</jsqlparser.version>
-        <datastax-driver.version>3.0.0</datastax-driver.version>
+        <datastax-driver.version>3.0.2</datastax-driver.version>
         <snappy.version>1.0.5</snappy.version>
         <lz4.version>1.2.0</lz4.version>
         <tinylog.version>1.1</tinylog.version>
         <java.version>1.6</java.version>
         <junit.version>4.12</junit.version>
+        <testng.version>6.9.10</testng.version>
         <mockito.version>1.10.19</mockito.version>
+        <docker-client.version>3.5.12</docker-client.version>
         <main.basedir>${project.basedir}</main.basedir>
         <shade.base>com.github.cassandra.jdbc.internal</shade.base>
     </properties>
@@ -69,9 +71,22 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
             <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.spotify</groupId>
+            <artifactId>docker-client</artifactId>
+            <classifier>shaded</classifier>
+            <version>${docker-client.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -158,7 +173,7 @@
                                     <shadedPattern>${shade.base}.slf4j</shadedPattern>
                                 </relocation>
                                 <!-- Better to keep Netty as is according to:
-                                https://www.codatlas.com/github.com/datastax/java-driver/3.0/driver-core/src/main/java/com/datastax/driver/core/NettyUtil.java
+                                https://github.com/datastax/java-driver/blob/3.0/driver-core/src/main/java/com/datastax/driver/core/NettyUtil.java#L53
                                 -->
                                 <relocation>
                                     <pattern>io.netty</pattern>

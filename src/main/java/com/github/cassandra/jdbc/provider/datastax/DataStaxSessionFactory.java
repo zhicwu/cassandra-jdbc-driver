@@ -22,6 +22,9 @@ package com.github.cassandra.jdbc.provider.datastax;
 
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
+import com.datastax.driver.core.policies.LatencyAwarePolicy;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.github.cassandra.jdbc.CassandraConfiguration;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -123,12 +126,15 @@ final class DataStaxSessionFactory {
                 config.getAdditionalProperty("newConnectionThresholdRemote", 256));
         builder.withPoolingOptions(poolOptions);
 
-        if (!Strings.isNullOrEmpty(config.getLocalDc())) {
-            builder.withLoadBalancingPolicy(DCAwareRoundRobinPolicy.builder().withLocalDc(config.getLocalDc()).build());
-        }
-
         // set compression
         builder.withCompression(ProtocolOptions.Compression.valueOf(config.getCompression()));
+
+        // FIXME set policies based on configuration
+        if (!Strings.isNullOrEmpty(config.getLocalDc())) {
+            builder.withLoadBalancingPolicy(DCAwareRoundRobinPolicy.builder().withLocalDc(config.getLocalDc()).build());
+        } else {
+            builder.withLoadBalancingPolicy(new RoundRobinPolicy());
+        }
 
         // build the cluster
         Cluster cluster = builder.withCredentials(config.getUserName(),
@@ -140,8 +146,8 @@ final class DataStaxSessionFactory {
 
         Metadata metadata = cluster.getMetadata();
 
-        Logger.info(new StringBuilder("Connected to cluster: ").append(
-                metadata.getClusterName()).toString());
+        Logger.info(new StringBuilder("Connected to cluster@").append(cluster.hashCode())
+                .append(": ").append(metadata.getClusterName()).toString());
         for (Host host : metadata.getAllHosts()) {
             Logger.info(new StringBuilder("-> Datacenter: ")
                     .append(host.getDatacenter()).append("; Host: ")

@@ -20,12 +20,10 @@
  */
 package com.github.cassandra.jdbc.provider.datastax;
 
-import com.datastax.driver.core.ExecutionInfo;
-import com.datastax.driver.core.QueryTrace;
+import com.datastax.driver.core.*;
 import com.datastax.driver.core.QueryTrace.Event;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.SimpleStatement;
 import com.github.cassandra.jdbc.BaseCassandraPreparedStatement;
+import com.github.cassandra.jdbc.CassandraCqlStatement;
 import com.github.cassandra.jdbc.CassandraErrors;
 import org.pmw.tinylog.Logger;
 
@@ -33,6 +31,8 @@ import java.sql.Connection;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.List;
+
+import static com.github.cassandra.jdbc.CassandraUtils.EMPTY_STRING;
 
 /**
  * This is a statement implementation built on top of DataStax Java driver.
@@ -45,7 +45,13 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
 
     protected CassandraStatement(CassandraConnection conn,
                                  DataStaxSessionWrapper session) {
-        super(conn);
+        this(conn, session, EMPTY_STRING);
+    }
+
+    protected CassandraStatement(CassandraConnection conn,
+                                 DataStaxSessionWrapper session,
+                                 String cql) {
+        super(conn, cql);
         this.session = session;
     }
 
@@ -173,21 +179,6 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
             currentResultSet = null;
         }
 
-        /*
-        try {
-            if (session != null && !session.isClosed()) {
-                session.close();
-                session = null;
-            }
-        } catch (Throwable t) {
-            Logger.warn("Not able to close this statement: " + this, t);
-
-            e = new SQLException(t);
-        } finally {
-            session = null;
-        }
-        */
-
         return e;
     }
 
@@ -204,6 +195,24 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
             session = null;
             throw CassandraErrors.statementClosedException();
         }
+    }
+
+    @Override
+    public int[] executeBatch() throws SQLException {
+        BatchStatement batchStmt = new BatchStatement(BatchStatement.Type.UNLOGGED);
+
+        for (CassandraCqlStatement stmt : batch) {
+            batchStmt.add(new SimpleStatement(stmt.getCql()));
+        }
+
+        session.execute(batchStmt);
+
+        int[] results = new int[batch.size()];
+        for (int i = 0; i < results.length; i++) {
+            results[i] = 0;
+        }
+
+        return results;
     }
 
     public boolean execute(String sql) throws SQLException {

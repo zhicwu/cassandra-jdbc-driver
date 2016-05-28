@@ -353,7 +353,7 @@ public class CassandraUtils {
                 if (!quiet) {
                     throw new SQLException(e);
                 } else {
-                    Logger.warn(e, "Wasn't able to translate given SQL to CQL");
+                    Logger.warn("Not able to translate the following SQL to CQL - treat it as CQL\n{}", sql);
                 }
             }
         }

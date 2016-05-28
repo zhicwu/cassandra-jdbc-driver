@@ -44,7 +44,7 @@ public final class CassandraConfiguration {
     static final String DEFAULT_USERNAME = "cassandra";
     static final String DEFAULT_COMPRESSION = "LZ4";
     static final String DEFAULT_CONNECT_TIMEOUT = "5"; // 5 seconds
-    static final String DEFAULT_CONSISTENCY_LEVEL = "ONE";
+    static final String DEFAULT_CONSISTENCY_LEVEL = "LOCAL_ONE";
 
     static final String DRIVER_PROTOCOL = "jdbc:c*:";
 

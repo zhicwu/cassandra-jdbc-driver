@@ -39,7 +39,7 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
     private boolean _closeOnCompletion;
     private BaseCassandraConnection _connection;
     private String _cursorName;
-    protected final List<String> batch = new ArrayList<String>();
+    protected final List<CassandraCqlStatement> batch = new ArrayList<CassandraCqlStatement>();
     protected final int concurrency = ResultSet.CONCUR_READ_ONLY;
     protected boolean escapeProcessing = true;
     protected int fetchDirection = ResultSet.FETCH_FORWARD;
@@ -73,7 +73,7 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
     public void addBatch(String sql) throws SQLException {
         validateState();
 
-        batch.add(sql);
+        batch.add(new CassandraCqlStatement(_connection.nativeSQL(sql)));
     }
 
     public void cancel() throws SQLException {
@@ -103,8 +103,9 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
         int[] results = new int[batch.size()];
 
         int idx = 0;
-        for (String sql : batch) {
-            results[idx++] = execute(sql) ? 0 : 1;
+        for (CassandraCqlStatement stmt : batch) {
+            // FIXME this is rude...
+            results[idx++] = execute(stmt.getCql()) ? 0 : 1;
         }
 
         return results;
