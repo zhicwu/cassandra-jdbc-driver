@@ -5,7 +5,7 @@ Cassandra JDBC driver that works with 2.x and above.
 This is nothing but a JDBC driver build on top of existing popular java clients(e.g. [DataStax Java Driver](https://github.com/datastax/java-driver/)). It can be used with [SQuirreL SQL](http://www.squirrelsql.org/) for development and [Pentaho BI Server](http://community.pentaho.com/) for data analysis and reporting.
 
 ## Where we are?
-[0.3.0 Release](https://github.com/zhicwu/cassandra-jdbc-driver/releases/tag/0.3.0) - Proof of Concept
+[0.3.1 Release](https://github.com/zhicwu/cassandra-jdbc-driver/releases/tag/0.3.1) - Experimental
 
 ## What's next?
 - Write(INSERT/UPDATE/DELETE) support
