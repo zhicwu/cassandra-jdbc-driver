@@ -20,12 +20,13 @@
  */
 package com.github.cassandra.jdbc;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.primitives.Ints;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Properties;
-
-import static com.github.cassandra.jdbc.CassandraUtils.EMPTY_STRING;
 
 public final class CassandraConfiguration {
     static final String INVALID_URL = "Invalid connection URL";
@@ -36,6 +37,7 @@ public final class CassandraConfiguration {
     static final String DEFAULT_KEYSPACE = "system";
 
     // default settings
+    static final String DEFAULT_PORT = "-1";
     static final String DEFAULT_PROVIDER = "datastax";
     static final String DEFAULT_QUERY_TRACE = "false";
     static final String DEFAULT_READ_TIMEOUT = "30"; // 30 seconds
@@ -57,6 +59,7 @@ public final class CassandraConfiguration {
     static final String KEY_CONSISTENCY_LEVEL = "consistencyLevel";
     static final String KEY_FETCH_SIZE = "fetchSize";
     static final String KEY_HOSTS = "hosts";
+    static final String KEY_PORT = "port";
     static final String KEY_KEEP_ALIVE = "keepAlive";
     static final String KEY_KEYSPACE = "keyspace";
     static final String KEY_LOCAL_DC = "localDc";
@@ -82,6 +85,7 @@ public final class CassandraConfiguration {
     private final String userName;
     private final String password;
     private final String hosts;
+    private final int port;
     private final String keyspace;
     private final boolean quiet;
     private final boolean sqlFriendly;
@@ -179,7 +183,7 @@ public final class CassandraConfiguration {
 
     static String extractProperty(Properties props, String key, String defaultValue) {
         String value = (String) props.remove(key);
-        return value == null ? defaultValue : value;
+        return value == null ? Strings.nullToEmpty(defaultValue) : value;
     }
 
     static String buildSimplifiedConnectionUrl(Properties props) {
@@ -206,7 +210,20 @@ public final class CassandraConfiguration {
         connectionUrl = buildSimplifiedConnectionUrl(connProps);
         userName = extractProperty(connProps, KEY_USERNAME, DEFAULT_USERNAME);
         password = extractProperty(connProps, KEY_PASSWORD, DEFAULT_USERNAME);
-        hosts = extractProperty(connProps, KEY_HOSTS, DEFAULT_HOSTS);
+
+        int tentativePort = Ints.tryParse(extractProperty(connProps, KEY_PORT, DEFAULT_PORT));
+        Splitter splitter = Splitter.on(':').trimResults().omitEmptyStrings().limit(2);
+        StringBuilder sb = new StringBuilder();
+        for (String host : Splitter.on(',').trimResults().omitEmptyStrings().split(
+                extractProperty(connProps, KEY_HOSTS, DEFAULT_HOSTS))) {
+            List<String> h = splitter.splitToList(host);
+            sb.append(h.get(0)).append(',');
+            if (h.size() > 1 && tentativePort <= 0) {
+                tentativePort = Ints.tryParse(h.get(1));
+            }
+        }
+        hosts = sb.deleteCharAt(sb.length() - 1).toString();
+        port = tentativePort;
         keyspace = extractProperty(connProps, KEY_KEYSPACE, DEFAULT_KEYSPACE);
         quiet = Boolean.valueOf(extractProperty(connProps, KEY_QUIET, DEFAULT_QUIET).toLowerCase());
         sqlFriendly = Boolean.valueOf(extractProperty(connProps, KEY_SQL_FRIENDLY, DEFAULT_SQL_FRIENDLY).toLowerCase());
@@ -215,7 +232,7 @@ public final class CassandraConfiguration {
         readTimeout = Integer.parseInt(extractProperty(connProps, KEY_READ_TIMEOUT, DEFAULT_READ_TIMEOUT)) * 1000;
         keepAlive = Boolean.valueOf(extractProperty(connProps, KEY_KEEP_ALIVE, DEFAULT_KEEP_ALIVE).toLowerCase());
         consistencyLevel = extractProperty(connProps, KEY_CONSISTENCY_LEVEL, DEFAULT_CONSISTENCY_LEVEL).toUpperCase();
-        localDc = extractProperty(connProps, KEY_LOCAL_DC, EMPTY_STRING);
+        localDc = extractProperty(connProps, KEY_LOCAL_DC, null);
         loadBalancingPolicy = "";
         fallbackPolicy = "";
         fetchSize = Integer.parseInt(extractProperty(connProps, KEY_FETCH_SIZE, DEFAULT_FETCH_SIZE));
@@ -242,6 +259,10 @@ public final class CassandraConfiguration {
 
     public String getHosts() {
         return hosts;
+    }
+
+    public int getPort() {
+        return port;
     }
 
     public String getKeyspace() {
@@ -314,13 +335,7 @@ public final class CassandraConfiguration {
     }
 
     public int getAdditionalProperty(String key, int defaultValue) {
-        String value = getAdditionalProperty(key, EMPTY_STRING);
+        String value = getAdditionalProperty(key, null);
         return Strings.isNullOrEmpty(value) ? defaultValue : Integer.valueOf(value);
-    }
-
-    public Properties getAdditionalProperties() {
-        Properties props = new Properties();
-        props.putAll(additionalProperties);
-        return props;
     }
 }

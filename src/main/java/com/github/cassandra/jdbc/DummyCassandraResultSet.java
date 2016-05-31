@@ -20,78 +20,74 @@
  */
 package com.github.cassandra.jdbc;
 
+import org.pmw.tinylog.Level;
 import org.pmw.tinylog.Logger;
 
 import java.sql.SQLException;
 import java.util.Arrays;
 
-import static com.github.cassandra.jdbc.CassandraUtils.EMPTY_STRING;
-
 /**
- * Dummy result set that only supports String. It's mainly be used to return
- * meta data.
+ * Dummy result set that is read-only. It's mainly used to wrap meta data.
  *
  * @author Zhichun Wu
  */
 public class DummyCassandraResultSet extends BaseCassandraResultSet {
-    private Object[] _currentRow;
-    private final Object[][] _data;
+    private static final Level LOG_LEVEL = Logger.getLevel(DummyCassandraResultSet.class);
 
+    private Object[] currentRow;
+    private final Object[][] data;
+
+    /**
+     * This creates an empty result set.
+     */
     public DummyCassandraResultSet() {
         this(new String[0][], null);
     }
 
+    /**
+     * This creates a result set based on given data and column definitions.
+     *
+     * @param columns column definitions, name and its Cql type
+     * @param data    rows
+     */
     public DummyCassandraResultSet(String[][] columns, Object[][] data) {
-        super(null);
+        super(null, null);
 
-        Logger.trace(new StringBuilder("Consutructing dummary result set [")
-                .append(this.hashCode()).append("]...").toString());
+        Logger.trace("Constructing dummy result set @{}...", hashCode());
 
         if (columns != null && columns.length > 0 && columns[0].length > 1) {
             for (String[] column : columns) {
-                Logger.trace(new StringBuffer("* Column: {name=")
-                        .append(column[0]).append(", cqlType=")
-                        .append(column[1]).append("}").toString());
+                Logger.trace("* Column: {name={}, cqlType={}}", column[0], column[1]);
 
                 metadata.addColumnDefinition(new CassandraColumnDefinition(
-                        EMPTY_STRING, EMPTY_STRING, column[0], column[1], false));
+                        null, null, column[0], column[1], false));
             }
         }
 
-        if (data != null) {
-            _data = data;
-        } else {
-            _data = new String[0][];
+        this.data = data == null ? new String[0][] : data;
+
+        if (LOG_LEVEL.compareTo(Level.TRACE) >= 0) {
+            for (Object[] row : this.data) {
+                Logger.trace("* Row: {}", Arrays.toString(row));
+            }
         }
 
-        for (Object[] objs : _data) {
-            Logger.trace(new StringBuffer("* Row: {")
-                    .append(Arrays.toString(objs)).append("}").toString());
-        }
-
-        Logger.trace(new StringBuilder("Dummary result set [")
-                .append(this.hashCode()).append("] is ready for use")
-                .toString());
+        Logger.trace("Dummy result set @{} is ready for use", hashCode());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     protected <T> T getValue(int columnIndex, Class<T> clazz)
             throws SQLException {
-        Logger.trace(new StringBuilder(
-                "Trying to get value with inputs: line=").append(getRow())
-                .append(", column=").append(columnIndex).append(", type=")
-                .append(clazz).toString());
+        Logger.trace("Trying to get value with inputs: line={}, column={}, type={}", getRow(), columnIndex, clazz);
 
-        Object obj = _currentRow[columnIndex - 1];
+        Object obj = currentRow[columnIndex - 1];
         T result = null;
 
         if (obj != null) {
             wasNull = false;
 
-            Logger.trace(new StringBuilder("Got raw value [").append(obj)
-                    .append("] from line #").append(getRow())
-                    .append(" of ").append(_data.length).toString());
+            Logger.trace("Got raw value [{}] from line {} of {}", obj, getRow(), data.length);
 
             if (String.class == clazz) {
                 result = (T) String.valueOf(obj);
@@ -104,15 +100,14 @@ public class DummyCassandraResultSet extends BaseCassandraResultSet {
             wasNull = true;
         }
 
-        Logger.trace(new StringBuilder("Return value: raw=").append(obj)
-                .append(", converted=").append(result).toString());
+        Logger.trace("Return value: raw={}, converted={}", obj, result);
 
         return result;
     }
 
     @Override
     protected boolean hasMore() {
-        return getCurrentRowIndex() < _data.length;
+        return getCurrentRowIndex() < data.length;
     }
 
     @Override
@@ -128,9 +123,9 @@ public class DummyCassandraResultSet extends BaseCassandraResultSet {
     @Override
     protected boolean tryIterate() throws SQLException {
         int row = getCurrentRowIndex();
-        boolean success = row < _data.length;
+        boolean success = row < data.length;
         if (success) {
-            _currentRow = _data[row];
+            currentRow = data[row];
         }
 
         return success;
@@ -148,11 +143,11 @@ public class DummyCassandraResultSet extends BaseCassandraResultSet {
     }
 
     public int getColumnCount() {
-        return _data != null && _data.length > 0 && _data[0] != null ? _data[0].length
+        return data.length > 0 && data[0] != null ? data[0].length
                 : 0;
     }
 
     public int getRowCount() {
-        return _data == null || _data.length == 0 ? 0 : _data.length;
+        return data.length == 0 ? 0 : data.length;
     }
 }

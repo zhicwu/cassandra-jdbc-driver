@@ -14,10 +14,10 @@ import java.util.List;
 
 public class SqlToCqlTranslator implements SelectVisitor, FromItemVisitor,
         SelectItemVisitor, ExpressionVisitor {
-    static final long DEFAULT_ROW_LIMIT = 10000L;
+    public static final long DEFAULT_ROW_LIMIT = 10000L;
 
     public void visit(Addition addition) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        // throw new UnsupportedOperationException("Not supported yet.");
     }
 
     public void visit(AllColumns allColumns) {
@@ -147,7 +147,7 @@ public class SqlToCqlTranslator implements SelectVisitor, FromItemVisitor,
     }
 
     public void visit(LongValue longValue) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        // throw new UnsupportedOperationException("Not supported yet.");
     }
 
     public void visit(HexValue hexValue) {
@@ -198,12 +198,16 @@ public class SqlToCqlTranslator implements SelectVisitor, FromItemVisitor,
         if (plainSelect.getIntoTables() != null
                 || plainSelect.getGroupByColumnReferences() != null
                 || plainSelect.getJoins() != null
-                || plainSelect.getFromItem() == null
+                //|| plainSelect.getFromItem() == null
                 || plainSelect.getSelectItems() == null) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
-        plainSelect.getFromItem().accept(this);
+        FromItem selectFrom = plainSelect.getFromItem();
+        if (selectFrom != null) {
+            selectFrom.accept(this);
+        }
+
         List<SelectItem> items = plainSelect.getSelectItems();
         int index = 0;
         for (SelectItem item : items) {

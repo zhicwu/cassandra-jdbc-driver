@@ -20,9 +20,6 @@
  */
 package com.github.cassandra.jdbc;
 
-import com.github.cassandra.jdbc.parser.SqlToCqlTranslator;
-import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import net.sf.jsqlparser.statement.select.Select;
 import org.pmw.tinylog.Logger;
 
 import java.sql.ResultSet;
@@ -30,8 +27,6 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * This is a utility class.
@@ -44,9 +39,6 @@ public class CassandraUtils {
     static final ResultSet DUMMY_RESULT_SET = new DummyCassandraResultSet();
 
     static final ResourceBundle RESOURCE_BUNDLE;
-    static final String SQL_KEYWORD_ESCAPING = ".\"$1\"$2";
-    static final Pattern SQL_KEYWORDS_PATTERN = Pattern
-            .compile("(?i)\\.(select|insert|update|delete|into|from|where|key|alter|drop|create)([>=<\\.,\\s])");
 
     public static final String KEY_DB_MAJOR_VERSION = "dbMajorVersion";
     public static final String KEY_DB_MINOR_VERSION = "dbMinorVersion";
@@ -57,7 +49,6 @@ public class CassandraUtils {
     public static final String KEY_DRIVER_VERSION = "driverVersion";
 
     public static final String EMPTY_STRING = "";
-    public static final String KEY_PORT = "port";
     public static final String[][] CATALOG_COLUMNS = new String[][]{{
             "TABLE_CAT", "text"}};
     public static final String[][] COLUMN_COLUMNS = new String[][]{
@@ -328,40 +319,6 @@ public class CassandraUtils {
     public static boolean matchesPattern(String name, String pattern) {
         return isNullOrEmptyString(pattern) || pattern.equals("%")
                 || pattern.equals(name);
-    }
-
-    public static String normalizeSql(String sql, boolean translate,
-                                      boolean quiet) throws SQLException {
-        sql = isNullOrEmptyString(sql) ? EMPTY_STRING : sql.trim();
-
-        if (translate) {
-            try {
-                // workaround for limitation of JSqlParser
-                Matcher m = SQL_KEYWORDS_PATTERN.matcher(sql);
-
-                // go ahead to parse the normalized SQL
-                net.sf.jsqlparser.statement.Statement s = CCJSqlParserUtil
-                        .parse(m.replaceAll(SQL_KEYWORD_ESCAPING));
-                if (s instanceof Select) {
-                    Select select = (Select) s;
-                    select.getSelectBody().accept(new SqlToCqlTranslator());
-                    sql = select.toString();
-                } else {
-                    sql = s.toString();
-                }
-            } catch (Exception e) {
-                if (!quiet) {
-                    throw new SQLException(e);
-                } else {
-                    Logger.warn("Not able to translate the following SQL to CQL - treat it as CQL\n{}", sql);
-                }
-            }
-        }
-
-        Logger.debug(new StringBuilder("Normalized SQL:\n").append(sql)
-                .toString());
-
-        return sql;
     }
 
     public static SQLException tryClose(AutoCloseable resource) {

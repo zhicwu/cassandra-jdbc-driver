@@ -20,6 +20,8 @@
  */
 package com.github.cassandra.jdbc;
 
+import com.google.common.base.Strings;
+
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -231,7 +233,12 @@ public abstract class BaseCassandraConnection extends BaseJdbcObject implements
     public String nativeSQL(String sql) throws SQLException {
         validateState();
 
-        return CassandraUtils.normalizeSql(sql, config.isSqlFriendly(), quiet);
+        if (config.isSqlFriendly()) {
+            ParsedSqlStatement stmt = ParsedSqlStatement.parse(sql);
+            sql = stmt.getSql();
+        }
+
+        return Strings.nullToEmpty(sql);
     }
 
     public CallableStatement prepareCall(String sql) throws SQLException {

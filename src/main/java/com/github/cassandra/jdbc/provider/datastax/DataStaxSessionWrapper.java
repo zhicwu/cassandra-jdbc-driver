@@ -85,8 +85,8 @@ public class DataStaxSessionWrapper implements AutoCloseable {
     public void close() throws Exception {
         if (session == null || references.decrementAndGet() <= 0) {
             if (session != null) {
-                if (DataStaxClusterHelper.hasLiveSessions(session.getCluster())) {
-                    Cluster cluster = session.getCluster();
+                Cluster cluster = session.getCluster();
+                if (DataStaxClusterHelper.hasLiveSessions(cluster)) {
                     cluster.closeAsync().force();
                     Logger.info("Closing cluster@{} and all sessions underneath", cluster.hashCode());
                 } else {

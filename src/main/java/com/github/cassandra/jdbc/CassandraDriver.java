@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Properties;
 
 import static com.github.cassandra.jdbc.CassandraConfiguration.*;
-import static com.github.cassandra.jdbc.CassandraUtils.KEY_PORT;
 
 /**
  * Cassandra JDBC driver.
@@ -36,9 +35,8 @@ import static com.github.cassandra.jdbc.CassandraUtils.KEY_PORT;
  */
 public class CassandraDriver implements Driver {
     public static final int VERSION_MAJOR = 0;
-    public static final int VERSION_MINOR = 3;
-
-    public static final int VERSION_PATCH = 1;
+    public static final int VERSION_MINOR = 4;
+    public static final int VERSION_PATCH = 0;
 
     static final String MSG_PREFIX = "MESSAGE_PROP_";
     static final String MSG_SUFFIX = "_DESCRIPTION";
@@ -71,7 +69,7 @@ public class CassandraDriver implements Driver {
             Constructor<?> c = clazz.getConstructor(CassandraConfiguration.class);
             conn = (BaseCassandraConnection) c.newInstance(config);
         } catch (Exception e) {
-            throw new SQLException(e);
+            throw new SQLException(e.getCause() == null ? e : e.getCause());
         }
 
         return conn;

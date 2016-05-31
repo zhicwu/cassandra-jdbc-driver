@@ -22,8 +22,6 @@ package com.github.cassandra.jdbc.provider.datastax;
 
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
-import com.datastax.driver.core.policies.LatencyAwarePolicy;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.github.cassandra.jdbc.CassandraConfiguration;
 import com.google.common.base.Splitter;
@@ -36,8 +34,6 @@ import org.pmw.tinylog.Logger;
 
 import java.util.concurrent.Callable;
 
-import static com.github.cassandra.jdbc.CassandraUtils.KEY_PORT;
-
 /**
  * Session factory.
  */
@@ -45,23 +41,20 @@ final class DataStaxSessionFactory {
     private final static Cache<String, DataStaxSessionWrapper> _sessionCache;
 
     static {
-        // FIXME when exactly to close the cluster object?
         _sessionCache = CacheBuilder.newBuilder().weakValues().removalListener(new RemovalListener<String, DataStaxSessionWrapper>() {
             public void onRemoval(RemovalNotification<String, DataStaxSessionWrapper> notification) {
                 DataStaxSessionWrapper session = notification.getValue();
 
-                Logger.debug(new StringBuilder().append("Closing [")
-                        .append(session).append("] (cause: ").append(notification.getCause()).append(")...").toString());
+                Logger.debug("Closing [{}] (cause: {})...", session, notification.getCause());
                 if (session != null) {
                     try {
                         session.close();
                     } catch (Throwable t) {
-                        Logger.debug("Error occurred when closing session", t);
+                        Logger.debug(t, "Error occurred when closing session");
                     }
                 }
 
-                Logger.debug(new StringBuilder().append("Closed [")
-                        .append(session).append("].").toString());
+                Logger.debug("Closed [{0}].", session);
             }
         }).build();
     }
@@ -74,19 +67,18 @@ final class DataStaxSessionFactory {
         keyspace = Strings.isNullOrEmpty(keyspace)
                 || config.getKeyspace().equals(keyspace) ? config.getKeyspace() : keyspace;
 
-        Logger.debug(new StringBuilder().append("Connecting to [")
-                .append(config.getConnectionUrl()).append("]...").toString());
+        Logger.debug("Connecting to [{}]...", config.getConnectionUrl());
 
         Cluster.Builder builder = Cluster.builder();
 
         // add contact points
-        for (String host : Splitter.on(",").trimResults().split(config.getHosts())) {
+        for (String host : Splitter.on(',').trimResults().omitEmptyStrings().split(config.getHosts())) {
             builder.addContactPoint(host);
         }
 
         // set port if specified
-        if (config.containsAdditionalProperty(KEY_PORT)) {
-            builder.withPort(config.getAdditionalProperty(KEY_PORT, -1));
+        if (config.getPort() > 0) {
+            builder.withPort(config.getPort());
         }
 
         // set socket options
@@ -140,19 +132,16 @@ final class DataStaxSessionFactory {
         Cluster cluster = builder.withCredentials(config.getUserName(),
                 config.getPassword()).build();
 
-        Logger.debug(new StringBuilder().append("Connected to [")
-                .append(config.getConnectionUrl()).append('(').append(cluster.hashCode())
-                .append(')').append("] successfully").toString());
+        Logger.debug("Connected to [{}({})] successfully", config.getConnectionUrl(), cluster.hashCode());
 
         Metadata metadata = cluster.getMetadata();
 
-        Logger.info(new StringBuilder("Connected to cluster@").append(cluster.hashCode())
-                .append(": ").append(metadata.getClusterName()).toString());
+        Logger.info("Connected to cluster@{}: {}", cluster.hashCode(), metadata.getClusterName());
         for (Host host : metadata.getAllHosts()) {
-            Logger.info(new StringBuilder("-> Datacenter: ")
-                    .append(host.getDatacenter()).append("; Host: ")
-                    .append(host.getAddress()).append("; Rack: ")
-                    .append(host.getRack()).toString());
+            Logger.info("-> Datacenter: {}, Host: {}, Rack: {}",
+                    host.getDatacenter(),
+                    host.getAddress(),
+                    host.getRack());
         }
 
         return new DataStaxSessionWrapper(cluster.connect(keyspace));

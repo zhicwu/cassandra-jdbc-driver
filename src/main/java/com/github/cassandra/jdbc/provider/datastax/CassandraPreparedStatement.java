@@ -24,6 +24,7 @@ import com.datastax.driver.core.*;
 import com.github.cassandra.jdbc.CassandraColumnDefinition;
 import com.github.cassandra.jdbc.CassandraCqlStatement;
 import com.github.cassandra.jdbc.CassandraErrors;
+import com.github.cassandra.jdbc.ParsedSqlStatement;
 import com.google.common.base.Objects;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -79,10 +80,10 @@ public class CassandraPreparedStatement extends CassandraStatement {
         return preparedStmt;
     }
 
-    protected void updateParameterMetaData(String cql, boolean force) throws SQLException {
-        if (force || !Objects.equal(this.cql, cql)) {
+    protected void updateParameterMetaData(ParsedSqlStatement cql, boolean force) throws SQLException {
+        if (force || !Objects.equal(this.cql.getSql(), cql.getSql())) {
             this.cql = cql;
-            PreparedStatement preparedStmt = getInnerPreparedStatement(cql);
+            PreparedStatement preparedStmt = getInnerPreparedStatement(cql.getSql());
             parameterMetaData.clear();
             for (ColumnDefinitions.Definition def : preparedStmt.getVariables().asList()) {
                 parameterMetaData.addParameterDefinition(new CassandraColumnDefinition(
@@ -95,6 +96,16 @@ public class CassandraPreparedStatement extends CassandraStatement {
     @Override
     protected void setParameter(int paramIndex, Object paramValue) throws SQLException {
         String typeName = parameterMetaData.getParameterTypeName(paramIndex);
+
+        // FIXME poor performance...
+        if (paramValue == null && this.cql.replaceNullValue()) {
+            String typeClassName = parameterMetaData.getParameterClassName(paramIndex);
+            try {
+                paramValue = getClass().getClassLoader().loadClass(typeClassName).newInstance();
+            } catch (Exception e) {
+                Logger.debug("Not able to generate default value for {}", typeClassName);
+            }
+        }
 
         if (INET.equals(typeName) && paramValue instanceof String) {
             try {
@@ -134,7 +145,7 @@ public class CassandraPreparedStatement extends CassandraStatement {
                 .toString());
 
         boolean queryTrace = false;
-        updateParameterMetaData(cql, false);
+        updateParameterMetaData(ParsedSqlStatement.parse(cql), false);
 
         PreparedStatement preparedStmt = getInnerPreparedStatement(cql);
         if (getConnection() instanceof CassandraConnection) {
@@ -197,15 +208,15 @@ public class CassandraPreparedStatement extends CassandraStatement {
     }
 
     public boolean execute() throws SQLException {
-        return this.execute(this.cql);
+        return this.execute(this.cql.getSql());
     }
 
     public ResultSet executeQuery() throws SQLException {
-        return this.executeQuery(this.cql);
+        return this.executeQuery(this.cql.getSql());
     }
 
     public int executeUpdate() throws SQLException {
-        return this.executeUpdate(this.cql);
+        return this.executeUpdate(this.cql.getSql());
     }
 
     public ResultSetMetaData getMetaData() throws SQLException {
@@ -219,16 +230,18 @@ public class CassandraPreparedStatement extends CassandraStatement {
     public boolean execute(String sql) throws SQLException {
         validateState();
 
+        ParsedSqlStatement parsedStmt = ParsedSqlStatement.parse(sql);
+
         Object[] params = new Object[parameters.size()];
         int i = 0;
         for (Map.Entry<Integer, Object> entry : parameters.entrySet()) {
             params[i++] = entry.getValue();
         }
 
-        com.datastax.driver.core.ResultSet rs = executePreparedCql(getConnection().nativeSQL(sql), params);
-        replaceCurrentResultSet(rs);
+        com.datastax.driver.core.ResultSet rs = executePreparedCql(parsedStmt.getSql(), params);
+        replaceCurrentResultSet(parsedStmt, rs);
 
-        return true;
+        return !parsedStmt.isDdl();
     }
 
     public ResultSet executeQuery(String sql) throws SQLException {

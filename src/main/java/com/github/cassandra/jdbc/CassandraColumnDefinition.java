@@ -20,6 +20,8 @@
  */
 package com.github.cassandra.jdbc;
 
+import com.google.common.base.Strings;
+
 import java.sql.ResultSetMetaData;
 
 import static com.github.cassandra.jdbc.CassandraUtils.EMPTY_STRING;
@@ -50,11 +52,11 @@ public class CassandraColumnDefinition {
 
     public CassandraColumnDefinition(String catalog, String table, String name,
                                      String label, String type, boolean searchable, boolean writable) {
-        this.catalog = catalog == null ? EMPTY_STRING : catalog;
+        this.catalog = Strings.nullToEmpty(catalog);
         this.schema = EMPTY_STRING;
-        this.table = table == null ? EMPTY_STRING : table;
-        this.name = name == null ? EMPTY_STRING : name;
-        this.label = label == null ? name : label;
+        this.table = Strings.nullToEmpty(table);
+        this.name = Strings.nullToEmpty(name);
+        this.label = Strings.isNullOrEmpty(label) ? name : label;
         this.cqlType = CassandraDataTypeMappings.cqlTypeFor(type);
         this.sqlType = CassandraDataTypeMappings.sqlTypeFor(type);
         this.javaType = CassandraDataTypeMappings.javaTypeFor(type);

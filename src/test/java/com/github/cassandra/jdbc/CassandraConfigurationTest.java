@@ -1,28 +1,36 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 package com.github.cassandra.jdbc;
 
-import org.junit.Test;
+import org.testng.annotations.Test;
 
 import java.util.Properties;
 
 import static com.github.cassandra.jdbc.CassandraConfiguration.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 public class CassandraConfigurationTest {
 
-    @Test
-    public void testNormalizeSql() {
-        String sql = "select tbl.key,tbl.bootstrapped,tbl.cluster_name,tbl.cql_version,tbl.data_center,tbl.dse_version,tbl.gossip_generation,tbl.host_id,tbl.native_protocol_version,tbl.partitioner,tbl.rack,tbl.release_version,tbl.schema_version,tbl.thrift_version,tbl.tokens,tbl.truncated_at,tbl.workload from \"system\".\"local\" tbl";
-
-        try {
-            CassandraUtils.normalizeSql(sql, true, false);
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("Exception happened during test: " + e.getMessage());
-        }
-    }
-
-    @Test
+    @Test(groups = {"unit", "base"})
     public void testParseConnectionURL() {
         String url = "jdbc:c*:mine://host1.a.com:9160,host2.a.com:9170/keyspace1?consistencyLevel=ONE";
 
