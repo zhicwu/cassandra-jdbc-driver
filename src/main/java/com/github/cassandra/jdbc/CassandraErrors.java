@@ -94,4 +94,8 @@ public final class CassandraErrors {
                 CassandraUtils.getString("EXCEPTION_STATEMENT_CLOSED"), null,
                 ERROR_CODE_GENERAL);
     }
+
+    public static IllegalStateException unexpectedException(Throwable cause) {
+        return new IllegalStateException(CassandraUtils.getString("EXCEPTION_UNEXPECTED"), cause);
+    }
 }

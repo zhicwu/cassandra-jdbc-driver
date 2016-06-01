@@ -92,7 +92,7 @@ public class CassandraDriverTest {
         CassandraDriver driver = new CassandraDriver();
         try {
             String url = "jdbc:c*:datastax://host1,host2/keyspace1?key=value";
-            DriverPropertyInfo[] info = driver.getPropertyInfo(url, null);
+            DriverPropertyInfo[] info = driver.getPropertyInfo(url, new Properties());
             assertNotNull(info);
             assertTrue(info.length > 1);
         } catch (Exception e) {

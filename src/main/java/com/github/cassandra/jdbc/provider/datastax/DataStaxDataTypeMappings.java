@@ -18,40 +18,38 @@
  * under the License.
  *
  */
-package com.github.cassandra.jdbc;
+package com.github.cassandra.jdbc.provider.datastax;
+
+import com.datastax.driver.core.LocalDate;
+import com.datastax.driver.core.TupleType;
+import com.github.cassandra.jdbc.CassandraDataType;
+import com.github.cassandra.jdbc.CassandraDataTypeMappings;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
-import java.sql.Date;
+import java.nio.ByteBuffer;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
-/**
- * This defines mappings to get SQL/Java type based on given CQL type.
- *
- * @author Zhichun Wu
- */
-public class CassandraDataTypeMappings {
-    static final CassandraDataTypeMappings instance = new CassandraDataTypeMappings();
+public class DataStaxDataTypeMappings extends CassandraDataTypeMappings {
+    static final CassandraDataTypeMappings instance = new DataStaxDataTypeMappings();
 
-    private final Map<String, Class<?>> cql2JavaMapping = new HashMap<String, Class<?>>();
-    private final Map<String, Integer> cql2JdbcMapping = new HashMap<String, Integer>();
-    private final Map<String, Integer> precisionMapping = new HashMap<String, Integer>();
-    private final Map<String, Integer> scaleMapping = new HashMap<String, Integer>();
-
-    private final Object[][] typeMetaData;
-
+    @Override
     protected void init(List<Object[]> list) {
+        // http://docs.datastax.com/en/latest-java-driver/java-driver/reference/javaClass2Cql3Datatypes.html
         addMappings(list, CassandraDataType.ASCII.getTypeName(), Types.VARCHAR, String.class,
                 Integer.MAX_VALUE, 0);
         addMappings(list, CassandraDataType.BIGINT.getTypeName(), Types.BIGINT, Long.class, 19, 0);
-        addMappings(list, CassandraDataType.BLOB.getTypeName(), Types.BLOB, byte[].class, Integer.MAX_VALUE, 0);
+        addMappings(list, CassandraDataType.BLOB.getTypeName(), Types.BLOB, ByteBuffer.class, Integer.MAX_VALUE, 0);
         addMappings(list, CassandraDataType.BOOLEAN.getTypeName(), Types.BOOLEAN, Boolean.class, 4, 0);
         addMappings(list, CassandraDataType.COUNTER.getTypeName(), Types.BIGINT, Long.class, 19, 0);
-        addMappings(list, CassandraDataType.DATE.getTypeName(), Types.DATE, Date.class, 10, 0);
+        addMappings(list, CassandraDataType.DATE.getTypeName(), Types.DATE, LocalDate.class, 10, 0);
         addMappings(list, CassandraDataType.DECIMAL.getTypeName(), Types.DECIMAL, BigDecimal.class,
                 Integer.MAX_VALUE, 2);
         addMappings(list, CassandraDataType.DOUBLE.getTypeName(), Types.DOUBLE, Double.class, 22, 8);
@@ -71,79 +69,11 @@ public class CassandraDataTypeMappings {
         addMappings(list, CassandraDataType.TIMESTAMP.getTypeName(), Types.TIMESTAMP, Timestamp.class, 50, 0);
         addMappings(list, CassandraDataType.TIMEUUID.getTypeName(), Types.VARCHAR, UUID.class, 50, 0);
         addMappings(list, CassandraDataType.TINYINT.getTypeName(), Types.TINYINT, Byte.class, 3, 0);
-        addMappings(list, CassandraDataType.TUPLE.getTypeName(), Types.JAVA_OBJECT, Object.class,
+        addMappings(list, CassandraDataType.TUPLE.getTypeName(), Types.JAVA_OBJECT, TupleType.class,
                 Integer.MAX_VALUE, 0);
         addMappings(list, CassandraDataType.UUID.getTypeName(), Types.VARCHAR, UUID.class, 50, 0);
         addMappings(list, CassandraDataType.VARCHAR.getTypeName(), Types.VARCHAR, String.class,
                 Integer.MAX_VALUE, 0);
         addMappings(list, CassandraDataType.VARINT.getTypeName(), Types.BIGINT, BigInteger.class, Integer.MAX_VALUE, 0);
-    }
-
-    protected CassandraDataTypeMappings() {
-        List<Object[]> list = new ArrayList<Object[]>();
-
-        init(list);
-
-        typeMetaData = new Object[list.size()][];
-        int index = 0;
-        for (Object[] objs : list) {
-            typeMetaData[index++] = objs;
-        }
-    }
-
-    protected void addMappings(List<Object[]> list, String cqlType, int sqlType,
-                               Class<?> javaType, int precision, int scale) {
-        cql2JdbcMapping.put(cqlType, sqlType);
-        cql2JavaMapping.put(cqlType, javaType);
-        precisionMapping.put(cqlType, precision);
-        scaleMapping.put(cqlType, scale);
-
-        list.add(new Object[]{cqlType, // TYPE_NAME
-                sqlType, // DATA_TYPE
-                0, // PRECISION
-                null, // LITERAL_PREFIX
-                null, // LITERAL_SUFFIX
-                null, // CREATE_PARAMS
-                java.sql.DatabaseMetaData.typeNullable, // NULLABLE
-                true, // CASE_SENSITIVE
-                java.sql.DatabaseMetaData.typePredNone, // SEARCHABLE
-                false, // UNSIGNED_ATTRIBUTE
-                false, // FIXED_PREC_SCALE
-                false, // AUTO_INCREMENT
-                null, // LOCAL_TYPE_NAME
-                0, // MINIMUM_SCALE
-                0, // MAXIMUM_SCALE
-                0, // SQL_DATA_TYPE
-                0, // SQL_DATETIME_SUB
-                10 // NUM_PREC_RADIX
-        });
-    }
-
-    protected Object[][] getTypeMetaData() {
-        return typeMetaData;
-    }
-
-    public String cqlTypeFor(String cqlType) {
-        return cql2JdbcMapping.containsKey(cqlType) ? cqlType : CassandraDataType.TEXT.getTypeName();
-    }
-
-    public Class<?> javaTypeFor(String cqlType) {
-        return cql2JavaMapping.containsKey(cqlType) ? cql2JavaMapping
-                .get(cqlType) : String.class;
-    }
-
-    public int precisionFor(String cqlType) {
-        return precisionMapping.containsKey(cqlType) ? precisionMapping
-                .get(cqlType) : 0;
-    }
-
-    public int scaleFor(String cqlType) {
-        return scaleMapping.containsKey(cqlType) ? scaleMapping.get(cqlType)
-                : 0;
-    }
-
-    public int sqlTypeFor(String cqlType) {
-        return cql2JdbcMapping.containsKey(cqlType) ? cql2JdbcMapping
-                .get(cqlType) : Types.VARCHAR;
     }
 }

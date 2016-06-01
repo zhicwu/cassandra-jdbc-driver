@@ -23,7 +23,6 @@ package com.github.cassandra.jdbc;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
-import com.github.cassandra.jdbc.provider.datastax.CassandraConnection;
 import com.google.common.base.Splitter;
 import com.google.common.io.CharStreams;
 import org.pmw.tinylog.Logger;
@@ -60,7 +59,7 @@ public class CassandraServerTest {
             props.load(getClass().getResourceAsStream("/connection.properties"));
             CassandraConfiguration conf = new CassandraConfiguration(props.getProperty("url"), props);
             Cluster.Builder builder = Cluster.builder();
-            for(String host : Splitter.on(',').trimResults().omitEmptyStrings().split(conf.getHosts())) {
+            for (String host : Splitter.on(',').trimResults().omitEmptyStrings().split(conf.getHosts())) {
                 builder.addContactPoint(host);
             }
             if (conf.getPort() > 0) {

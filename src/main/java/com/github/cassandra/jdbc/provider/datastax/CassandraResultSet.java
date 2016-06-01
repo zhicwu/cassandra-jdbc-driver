@@ -39,7 +39,7 @@ public class CassandraResultSet extends BaseCassandraResultSet {
     private Row _currentRow;
     private ResultSet _resultSet;
 
-    protected CassandraResultSet(BaseCassandraStatement statement, ParsedSqlStatement parsedStmt, ResultSet rs) {
+    protected CassandraResultSet(BaseCassandraStatement statement, CassandraCqlStatement parsedStmt, ResultSet rs) {
         super(statement, parsedStmt);
 
         if (rs != null) {

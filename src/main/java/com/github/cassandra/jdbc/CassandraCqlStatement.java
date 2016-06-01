@@ -23,8 +23,6 @@ package com.github.cassandra.jdbc;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 
-import static com.github.cassandra.jdbc.CassandraUtils.EMPTY_STRING;
-
 public class CassandraCqlStatement {
     private final String cql;
     // based on first line comments - the magic comment, for example:
@@ -35,20 +33,33 @@ public class CassandraCqlStatement {
     // additional fields parsed from given SQL(not CQL), for example:
     // select *, 1 as from system.peers
     // private final SortedMap<String, Integer> name2type;
+    private final CassandraCqlStmtConfiguration config;
     private final Object[] parameters;
 
     public CassandraCqlStatement(String cql, Object... params) {
-        this.cql = Strings.isNullOrEmpty(cql) ? EMPTY_STRING : cql;
+        this(cql, null, params);
+    }
+
+    public CassandraCqlStatement(String cql, CassandraCqlStmtConfiguration config, Object... params) {
+        this.cql = Strings.nullToEmpty(cql);
+        this.config = config;
+
         this.parameters = new Object[params == null ? 0 : params.length];
 
-        int index = 0;
-        for (Object p : params) {
-            this.parameters[index++] = p;
+        if (params != null) {
+            int index = 0;
+            for (Object p : params) {
+                this.parameters[index++] = p;
+            }
         }
     }
 
     public String getCql() {
         return this.cql;
+    }
+
+    public CassandraCqlStmtConfiguration getConfiguration() {
+        return this.config;
     }
 
     public boolean hasParameter() {
@@ -63,7 +74,7 @@ public class CassandraCqlStatement {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(this.cql, this.parameters);
+        return Objects.hashCode(this.cql, this.config, this.parameters);
     }
 
     @Override
@@ -77,6 +88,7 @@ public class CassandraCqlStatement {
         final CassandraCqlStatement other = (CassandraCqlStatement) obj;
 
         return Objects.equal(this.cql, other.cql)
+                && Objects.equal(this.config, other.config)
                 && Objects.equal(this.parameters, other.parameters);
     }
 
@@ -84,6 +96,7 @@ public class CassandraCqlStatement {
     public String toString() {
         return Objects.toStringHelper(this)
                 .addValue(this.cql)
+                .addValue(this.config)
                 .addValue(this.parameters)
                 .toString();
     }

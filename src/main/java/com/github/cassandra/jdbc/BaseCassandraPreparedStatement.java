@@ -42,12 +42,12 @@ public abstract class BaseCassandraPreparedStatement extends
         BaseCassandraStatement implements PreparedStatement {
     protected final CassandraParameterMetaData parameterMetaData;
     protected final SortedMap<Integer, Object> parameters = new TreeMap<Integer, Object>();
-    protected ParsedSqlStatement cql;
+    protected CassandraCqlStatement cqlStmt;
 
     protected BaseCassandraPreparedStatement(BaseCassandraConnection conn, String cql) {
         super(conn);
 
-        this.cql = ParsedSqlStatement.parse(cql);
+        this.cqlStmt = CassandraCqlParser.parse(conn.getConfiguration(), cql);
         parameterMetaData = new CassandraParameterMetaData(conn);
     }
 
@@ -62,7 +62,7 @@ public abstract class BaseCassandraPreparedStatement extends
             params[index++] = p;
         }
 
-        this.batch.add(new CassandraCqlStatement(cql.getSql(), params));
+        this.batch.add(new CassandraCqlStatement(cqlStmt.getCql(), params));
 
         this.clearParameters();
     }

@@ -26,8 +26,9 @@ import org.testng.annotations.Test;
 
 import static com.github.cassandra.jdbc.parser.SqlToCqlTranslator.DEFAULT_ROW_LIMIT;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
-public class ParsedSqlStatementTest {
+public class CassandraCqlParserTest {
     @DataProvider(name = "parse-sql")
     public Object[][] createTestSql() {
         return new Object[][]{
@@ -50,8 +51,13 @@ public class ParsedSqlStatementTest {
 
     @Test(groups = {"unit", "base"}, dataProvider = "parse-sql")
     public void testNormalizeSql(String sql, String expectedSql) {
-        ParsedSqlStatement stmt = ParsedSqlStatement.parse(sql);
+        try {
+            CassandraCqlStatement stmt = CassandraCqlParser.parse(
+                    CassandraConfiguration.load(getClass().getResourceAsStream("/connection.properties")), sql);
 
-        assertEquals(stmt.getSql(), expectedSql);
+            assertEquals(stmt.getCql(), expectedSql);
+        } catch (Exception e) {
+            fail("Failed", e);
+        }
     }
 }

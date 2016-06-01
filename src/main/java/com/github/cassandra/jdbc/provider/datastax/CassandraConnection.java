@@ -109,7 +109,7 @@ public class CassandraConnection extends BaseCassandraConnection {
                 null, // TABLE_SCHEM
                 t.getName(), // TABLE_NAME
                 c.getName(), // COLUMN_NAME
-                CassandraDataTypeMappings.sqlTypeFor(cqlType), // DATA_TYPE
+                DataStaxDataTypeMappings.instance.sqlTypeFor(cqlType), // DATA_TYPE
                 cqlType, // TYPE_NAME
                 0, // COLUMN_SIZE
                 0, // BUFFER_LENGTH

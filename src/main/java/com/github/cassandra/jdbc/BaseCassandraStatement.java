@@ -39,6 +39,7 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
     private boolean _closeOnCompletion;
     private BaseCassandraConnection _connection;
     private String _cursorName;
+
     protected final List<CassandraCqlStatement> batch = new ArrayList<CassandraCqlStatement>();
     protected final int concurrency = ResultSet.CONCUR_READ_ONLY;
     protected boolean escapeProcessing = true;
@@ -60,6 +61,14 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
                 .append(conn.hashCode()).append('/').append(hashCode())
                 .toString();
     }
+
+    protected CassandraConfiguration getConfiguration() {
+        return _connection.getConfiguration();
+    }
+
+    protected abstract CassandraDataTypeMappings getDataTypeMappings();
+
+    protected abstract CassandraDataTypeConverters getDataTypeConverters();
 
     /**
      * Gets cursor name set in statement.

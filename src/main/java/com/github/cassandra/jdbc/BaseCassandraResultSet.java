@@ -45,10 +45,10 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
     protected final CassandraResultSetMetaData metadata = new CassandraResultSetMetaData();
 
     protected final BaseCassandraStatement statement;
-    protected final ParsedSqlStatement parsedStatement;
+    protected final CassandraCqlStatement parsedStatement;
     protected boolean wasNull;
 
-    protected BaseCassandraResultSet(BaseCassandraStatement statement, ParsedSqlStatement parsedStatement) {
+    protected BaseCassandraResultSet(BaseCassandraStatement statement, CassandraCqlStatement parsedStatement) {
         super(statement == null || statement.quiet);
 
         this.statement = statement;

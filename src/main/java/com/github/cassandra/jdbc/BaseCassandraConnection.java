@@ -69,7 +69,7 @@ public abstract class BaseCassandraConnection extends BaseJdbcObject implements
                 break;
             case TYPE:
                 rs = new DummyCassandraResultSet(TYPE_COLUMNS,
-                        CassandraDataTypeMappings.TYPE_META_DATA);
+                        CassandraDataTypeMappings.instance.getTypeMetaData());
                 break;
 
             default:
@@ -234,8 +234,8 @@ public abstract class BaseCassandraConnection extends BaseJdbcObject implements
         validateState();
 
         if (config.isSqlFriendly()) {
-            ParsedSqlStatement stmt = ParsedSqlStatement.parse(sql);
-            sql = stmt.getSql();
+            CassandraCqlStatement stmt = CassandraCqlParser.parse(config, sql);
+            sql = stmt.getCql();
         }
 
         return Strings.nullToEmpty(sql);

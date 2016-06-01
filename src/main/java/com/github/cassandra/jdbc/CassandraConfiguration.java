@@ -23,7 +23,9 @@ package com.github.cassandra.jdbc;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.primitives.Ints;
+import org.pmw.tinylog.Logger;
 
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
@@ -37,6 +39,7 @@ public final class CassandraConfiguration {
     static final String DEFAULT_KEYSPACE = "system";
 
     // default settings
+    static final String DEFAULT_CONNECTION_URL = "java:c*//localhost/";
     static final String DEFAULT_PORT = "-1";
     static final String DEFAULT_PROVIDER = "datastax";
     static final String DEFAULT_QUERY_TRACE = "false";
@@ -198,6 +201,23 @@ public final class CassandraConfiguration {
                 .append(props.getProperty(KEY_USERNAME, DEFAULT_USERNAME));
 
         return builder.toString();
+    }
+
+    public static CassandraConfiguration load(InputStream stream) throws SQLException {
+        Properties props = new Properties();
+
+        try {
+            props.load(stream);
+        } catch (Exception e) {
+            Logger.error(e, "Failed to load Cassandra Configuration from given input stream {}", stream);
+            throw new SQLException(e);
+        }
+
+        return new CassandraConfiguration(props);
+    }
+
+    public CassandraConfiguration(Properties props) throws SQLException {
+        this(extractProperty(props, KEY_CONNECTION_URL, DEFAULT_CONNECTION_URL), props);
     }
 
     public CassandraConfiguration(String url, Properties props) throws SQLException {

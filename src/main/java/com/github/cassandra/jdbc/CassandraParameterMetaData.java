@@ -86,6 +86,10 @@ public class CassandraParameterMetaData extends BaseJdbcObject implements Parame
         return getParameterDefinition(param).getColumnTypeName();
     }
 
+    public Class getParameterClass(int param) throws SQLException {
+        return getParameterDefinition(param).getColumnClass();
+    }
+
     public String getParameterClassName(int param) throws SQLException {
         return getParameterDefinition(param).getColumnClassName();
     }

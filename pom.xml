@@ -12,8 +12,13 @@
     <inceptionYear>2015</inceptionYear>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jsqlparser.version>0.9.5</jsqlparser.version>
+        <!--
         <fastutil.version>7.0.12</fastutil.version>
+        <docker-client.version>3.5.12</docker-client.version>
+        -->
+        <antlr.version>3.5.2</antlr.version>
+        <jsqlparser.version>0.9.5</jsqlparser.version>
+        <cassandra.version>3.5</cassandra.version>
         <datastax-driver.version>3.0.2</datastax-driver.version>
         <snappy.version>1.0.5</snappy.version>
         <lz4.version>1.2.0</lz4.version>
@@ -21,11 +26,26 @@
         <java.version>1.6</java.version>
         <testng.version>6.9.10</testng.version>
         <mockito.version>1.10.19</mockito.version>
-        <docker-client.version>3.5.12</docker-client.version>
         <main.basedir>${project.basedir}</main.basedir>
+        <shade-plugin.version>2.4.3</shade-plugin.version>
+        <surefire-plugin.version>2.19.1</surefire-plugin.version>
         <shade.base>com.github.cassandra.jdbc.internal</shade.base>
     </properties>
     <dependencies>
+        <!-- later
+        <dependency>
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil</artifactId>
+            <version>${fastutil.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.spotify</groupId>
+            <artifactId>docker-client</artifactId>
+            <classifier>shaded</classifier>
+            <version>${docker-client.version}</version>
+            <scope>test</scope>
+        </dependency>
+        -->
         <dependency>
             <groupId>com.github.jsqlparser</groupId>
             <artifactId>jsqlparser</artifactId>
@@ -44,13 +64,28 @@
             <artifactId>tinylog</artifactId>
             <version>${tinylog.version}</version>
         </dependency>
-        <!-- later
         <dependency>
-            <groupId>it.unimi.dsi</groupId>
-            <artifactId>fastutil</artifactId>
-            <version>${fastutil.version}</version>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr-runtime</artifactId>
+            <version>${antlr.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>stringtemplate</artifactId>
+                    <groupId>org.antlr</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
-        -->
+        <dependency>
+            <groupId>org.apache.cassandra</groupId>
+            <artifactId>cassandra-all</artifactId>
+            <version>${cassandra.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <dependency>
             <groupId>com.datastax.cassandra</groupId>
             <artifactId>cassandra-driver-core</artifactId>
@@ -81,13 +116,6 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
             <version>${mockito.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.spotify</groupId>
-            <artifactId>docker-client</artifactId>
-            <classifier>shaded</classifier>
-            <version>${docker-client.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -128,9 +156,29 @@
                 </executions>
             </plugin>
             -->
+            <!--
+            Let's stick with what we have from cassandra lib
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr3-maven-plugin</artifactId>
+                <configuration>
+                    <outputDirectory>src/main/java/org/apache/cassandra/cql3</outputDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>antlr</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>antlr</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire-plugin.version}</version>
                 <configuration>
                     <groups>unit,base</groups>
                 </configuration>
@@ -138,6 +186,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
+                <version>${shade-plugin.version}</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -150,6 +199,14 @@
                             <dependencyReducedPomLocation>${project.build.directory}/pom.xml
                             </dependencyReducedPomLocation>
                             <relocations>
+                                <relocation>
+                                    <pattern>org.antlr</pattern>
+                                    <shadedPattern>${shade.base}.antlr</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.cassandra</pattern>
+                                    <shadedPattern>${shade.base}.cassandra</shadedPattern>
+                                </relocation>
                                 <relocation>
                                     <pattern>com.datastax</pattern>
                                     <shadedPattern>${shade.base}.datastax</shadedPattern>
@@ -175,7 +232,7 @@
                                     <shadedPattern>${shade.base}.snappy</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>net.jpountz.lz4</pattern>
+                                    <pattern>net.jpountz</pattern>
                                     <shadedPattern>${shade.base}.lz4</shadedPattern>
                                 </relocation>
                                 <relocation>
