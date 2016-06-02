@@ -47,15 +47,15 @@ public class CassandraDataTypeMappings {
     protected void init(List<Object[]> list) {
         addMappings(list, CassandraDataType.ASCII.getTypeName(), Types.VARCHAR, String.class,
                 Integer.MAX_VALUE, 0);
-        addMappings(list, CassandraDataType.BIGINT.getTypeName(), Types.BIGINT, Long.class, 19, 0);
+        addMappings(list, CassandraDataType.BIGINT.getTypeName(), Types.BIGINT, Long.class, 20, 0);
         addMappings(list, CassandraDataType.BLOB.getTypeName(), Types.BLOB, byte[].class, Integer.MAX_VALUE, 0);
-        addMappings(list, CassandraDataType.BOOLEAN.getTypeName(), Types.BOOLEAN, Boolean.class, 4, 0);
-        addMappings(list, CassandraDataType.COUNTER.getTypeName(), Types.BIGINT, Long.class, 19, 0);
+        addMappings(list, CassandraDataType.BOOLEAN.getTypeName(), Types.BOOLEAN, Boolean.class, 1, 0);
+        addMappings(list, CassandraDataType.COUNTER.getTypeName(), Types.BIGINT, Long.class, 20, 0);
         addMappings(list, CassandraDataType.DATE.getTypeName(), Types.DATE, Date.class, 10, 0);
         addMappings(list, CassandraDataType.DECIMAL.getTypeName(), Types.DECIMAL, BigDecimal.class,
-                Integer.MAX_VALUE, 2);
-        addMappings(list, CassandraDataType.DOUBLE.getTypeName(), Types.DOUBLE, Double.class, 22, 8);
-        addMappings(list, CassandraDataType.FLOAT.getTypeName(), Types.FLOAT, Float.class, 12, 4);
+                10, 0);
+        addMappings(list, CassandraDataType.DOUBLE.getTypeName(), Types.DOUBLE, Double.class, 22, 31);
+        addMappings(list, CassandraDataType.FLOAT.getTypeName(), Types.FLOAT, Float.class, 12, 31);
         addMappings(list, CassandraDataType.INET.getTypeName(), Types.VARCHAR, InetAddress.class, 200, 0);
         addMappings(list, CassandraDataType.INT.getTypeName(), Types.INTEGER, Integer.class, 10, 0);
         addMappings(list, CassandraDataType.LIST.getTypeName(), Types.JAVA_OBJECT, List.class,
@@ -67,13 +67,13 @@ public class CassandraDataTypeMappings {
         addMappings(list, CassandraDataType.SMALLINT.getTypeName(), Types.SMALLINT, Short.class, 6, 0);
         addMappings(list, CassandraDataType.TEXT.getTypeName(), Types.VARCHAR, String.class, Integer.MAX_VALUE,
                 0);
-        addMappings(list, CassandraDataType.TIME.getTypeName(), Types.TIME, Time.class, 50, 0);
-        addMappings(list, CassandraDataType.TIMESTAMP.getTypeName(), Types.TIMESTAMP, Timestamp.class, 50, 0);
-        addMappings(list, CassandraDataType.TIMEUUID.getTypeName(), Types.VARCHAR, UUID.class, 50, 0);
-        addMappings(list, CassandraDataType.TINYINT.getTypeName(), Types.TINYINT, Byte.class, 3, 0);
+        addMappings(list, CassandraDataType.TIME.getTypeName(), Types.TIME, Time.class, 8, 0);
+        addMappings(list, CassandraDataType.TIMESTAMP.getTypeName(), Types.TIMESTAMP, Timestamp.class, 19, 0);
+        addMappings(list, CassandraDataType.TIMEUUID.getTypeName(), Types.CHAR, UUID.class, 36, 0);
+        addMappings(list, CassandraDataType.TINYINT.getTypeName(), Types.TINYINT, Byte.class, 4, 0);
         addMappings(list, CassandraDataType.TUPLE.getTypeName(), Types.JAVA_OBJECT, Object.class,
                 Integer.MAX_VALUE, 0);
-        addMappings(list, CassandraDataType.UUID.getTypeName(), Types.VARCHAR, UUID.class, 50, 0);
+        addMappings(list, CassandraDataType.UUID.getTypeName(), Types.CHAR, UUID.class, 36, 0); // UUID1
         addMappings(list, CassandraDataType.VARCHAR.getTypeName(), Types.VARCHAR, String.class,
                 Integer.MAX_VALUE, 0);
         addMappings(list, CassandraDataType.VARINT.getTypeName(), Types.BIGINT, BigInteger.class, Integer.MAX_VALUE, 0);

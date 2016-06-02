@@ -72,6 +72,10 @@ public class CassandraCqlStmtConfiguration {
         sqlParser = Boolean.valueOf(props.getProperty(KEY_SQL_PARSER, String.valueOf(config.isSqlFriendly())));
     }
 
+    public int getFetchSize() {
+        return fetchSize;
+    }
+
     public CassandraStatementType getStatementType() {
         return this.type;
     }

@@ -20,6 +20,8 @@
  */
 package com.github.cassandra.jdbc;
 
+import com.google.common.collect.Iterables;
+
 import java.lang.reflect.Constructor;
 import java.sql.*;
 import java.util.ArrayList;
@@ -124,7 +126,6 @@ public class CassandraDriver implements Driver {
             throws SQLException {
         List<DriverPropertyInfo> list = new ArrayList<DriverPropertyInfo>();
 
-        CassandraConfiguration config = new CassandraConfiguration(url, props);
         list.add(createDriverPropertyInfo(KEY_USERNAME,
                 CassandraUtils.getPropertyValue(props, KEY_USERNAME), true,
                 null));
@@ -142,8 +143,7 @@ public class CassandraDriver implements Driver {
         list.add(createDriverPropertyInfo(KEY_CONSISTENCY_LEVEL, CassandraUtils
                 .getPropertyValue(props, KEY_CONSISTENCY_LEVEL,
                         DEFAULT_CONSISTENCY_LEVEL), false, new String[]{
-                "ONE", "LOCAL_ONE", "QUORUM", "LOCAL_QUORUM", "EACH_QUORUM",
-                "ALL"}));
+                "ANY", "ONE", "LOCAL_ONE", "QUORUM", "LOCAL_QUORUM", "EACH_QUORUM", "ALL"}));
         list.add(createDriverPropertyInfo(KEY_COMPRESSION, CassandraUtils
                         .getPropertyValue(props, KEY_COMPRESSION, DEFAULT_COMPRESSION),
                 false, new String[]{"NONE", "SNAPPY", "LZ4"}));
@@ -165,7 +165,7 @@ public class CassandraDriver implements Driver {
                         .getPropertyValue(props, KEY_KEEP_ALIVE, DEFAULT_KEEP_ALIVE),
                 false, new String[]{"true", "false"}));
 
-        return list.toArray(new DriverPropertyInfo[0]);
+        return Iterables.toArray(list, DriverPropertyInfo.class);
     }
 
     public boolean jdbcCompliant() {

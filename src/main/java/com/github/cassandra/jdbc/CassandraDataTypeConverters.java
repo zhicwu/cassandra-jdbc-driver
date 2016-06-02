@@ -1,15 +1,20 @@
 package com.github.cassandra.jdbc;
 
 import com.google.common.base.Function;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.CharStreams;
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Ints;
 import org.pmw.tinylog.Logger;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.sql.Blob;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -23,7 +28,17 @@ public final class CassandraDataTypeConverters {
     static {
         instance.addMapping(String.class, "", new Function<Object, String>() {
             public String apply(Object input) {
-                return String.valueOf(input);
+                String result;
+                if (input instanceof Readable) {
+                    try {
+                        result = CharStreams.toString(((Readable) input));
+                    } catch (IOException e) {
+                        throw new IllegalArgumentException("Failed to read from Readable " + input, e);
+                    }
+                } else {
+                    result = String.valueOf(input);
+                }
+                return result;
             }
         });
         instance.addMapping(java.util.UUID.class, java.util.UUID.randomUUID(), new Function<Object, UUID>() {
@@ -47,6 +62,27 @@ public final class CassandraDataTypeConverters {
                 }
             }
         });
+        instance.addMapping(Blob.class, new CassandraBlob(new byte[0]), new Function<Object, Blob>() {
+            public Blob apply(Object input) {
+                CassandraBlob blob;
+
+                if (input instanceof ByteBuffer) {
+                    blob = new CassandraBlob((ByteBuffer) input);
+                } else if (input instanceof byte[]) {
+                    blob = new CassandraBlob((byte[]) input);
+                } else if (input instanceof InputStream) {
+                    try {
+                        blob = new CassandraBlob(ByteStreams.toByteArray((InputStream) input));
+                    } catch (IOException e) {
+                        throw new IllegalArgumentException("Failed to read from input stream " + input, e);
+                    }
+                } else {
+                    blob = new CassandraBlob(String.valueOf(input).getBytes());
+                }
+
+                return blob;
+            }
+        });
         instance.addMapping(ByteBuffer.class, ByteBuffer.wrap(new byte[0]), new Function<Object, ByteBuffer>() {
             public ByteBuffer apply(Object input) {
                 return ByteBuffer.wrap(input instanceof byte[] ? (byte[]) input : String.valueOf(input).getBytes());
@@ -57,14 +93,14 @@ public final class CassandraDataTypeConverters {
                 return Boolean.valueOf(String.valueOf(input));
             }
         });
-        instance.addMapping(Byte.class, 0, new Function<Object, Byte>() {
+        instance.addMapping(Byte.class, (byte) 0, new Function<Object, Byte>() {
             public Byte apply(Object input) {
                 return input instanceof Number
                         ? ((Number) input).byteValue()
                         : Ints.tryParse(String.valueOf(input)).byteValue();
             }
         });
-        instance.addMapping(Short.class, 0, new Function<Object, Short>() {
+        instance.addMapping(Short.class, (short) 0, new Function<Object, Short>() {
             public Short apply(Object input) {
                 return input instanceof Number
                         ? ((Number) input).shortValue()
@@ -150,8 +186,14 @@ public final class CassandraDataTypeConverters {
         sealed = true;
     }
 
-    public <T> T convert(Object value, Class<T> type) {
-        return convert(value, type, false);
+    public <T> T defaultValueOf(Class<T> type) {
+        T value = (T) defaultValues.get(type.getName());
+
+        if (value == null && parent != null) {
+            value = parent.defaultValueOf(type);
+        }
+
+        return value;
     }
 
     public <T> T convert(Object value, Class<T> type, boolean replaceNullValue) {

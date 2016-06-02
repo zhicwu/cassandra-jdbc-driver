@@ -45,18 +45,26 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
     protected final CassandraResultSetMetaData metadata = new CassandraResultSetMetaData();
 
     protected final BaseCassandraStatement statement;
-    protected final CassandraCqlStatement parsedStatement;
+    protected final CassandraCqlStatement cqlStmt;
     protected boolean wasNull;
 
-    protected BaseCassandraResultSet(BaseCassandraStatement statement, CassandraCqlStatement parsedStatement) {
+    protected BaseCassandraResultSet(BaseCassandraStatement statement, CassandraCqlStatement cqlStmt) {
         super(statement == null || statement.quiet);
 
         this.statement = statement;
-        this.parsedStatement = parsedStatement;
+        this.cqlStmt = cqlStmt;
         this.wasNull = false;
 
         _rowIndex = 0;
         _exhausted = false;
+    }
+
+    protected CassandraDataTypeConverters getDataTypeConverters() {
+        return this.statement == null ? CassandraDataTypeConverters.instance : this.statement.getDataTypeConverters();
+    }
+
+    protected CassandraDataTypeMappings getDataTypeMappings() {
+        return this.statement == null ? CassandraDataTypeMappings.instance : this.statement.getDataTypeMappings();
     }
 
     protected int getCurrentRowIndex() {
@@ -212,20 +220,10 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
     }
 
     public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-        Object obj = getObject(columnIndex);
+        requestColumnAccess(columnIndex);
+        requestReadAccess(false);
 
-        BigDecimal result = BigDecimal.ZERO;
-        if (obj != null) {
-            if (obj instanceof BigDecimal) {
-                result = (BigDecimal) obj;
-            } else if (obj instanceof Number) {
-                result = BigDecimal.valueOf(((Number) obj).doubleValue());
-            } else {
-                result = new BigDecimal(String.valueOf(obj));
-            }
-        }
-
-        return result;
+        return getValue(columnIndex, BigDecimal.class);
     }
 
     public BigDecimal getBigDecimal(int columnIndex, int scale)
@@ -270,17 +268,10 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
     }
 
     public boolean getBoolean(int columnIndex) throws SQLException {
-        Object obj = getObject(columnIndex);
-        boolean result = false;
+        requestColumnAccess(columnIndex);
+        requestReadAccess(false);
 
-        if (obj instanceof Boolean) {
-            result = (Boolean) obj;
-        } else if (obj != null) {
-            result = Boolean.toString(true).equalsIgnoreCase(
-                    String.valueOf(obj));
-        }
-
-        return result;
+        return getValue(columnIndex, Boolean.class);
     }
 
     public boolean getBoolean(String columnLabel) throws SQLException {
@@ -288,18 +279,10 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
     }
 
     public byte getByte(int columnIndex) throws SQLException {
-        Object obj = getObject(columnIndex);
+        requestColumnAccess(columnIndex);
+        requestReadAccess(false);
 
-        byte result = 0;
-        if (obj != null) {
-            if (obj instanceof Number) {
-                result = ((Number) obj).byteValue();
-            } else {
-                result = Byte.parseByte(String.valueOf(obj));
-            }
-        }
-
-        return result;
+        return getValue(columnIndex, Byte.class);
     }
 
     public byte getByte(String columnLabel) throws SQLException {
@@ -353,18 +336,10 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
     }
 
     public Date getDate(int columnIndex) throws SQLException {
-        Object obj = getObject(columnIndex);
+        requestColumnAccess(columnIndex);
+        requestReadAccess(false);
 
-        Date result = null;
-        if (obj != null) {
-            if (obj instanceof Date) {
-                result = (Date) obj;
-            } else if (obj instanceof java.util.Date) {
-                result = new Date(((java.util.Date) obj).getTime());
-            }
-        }
-
-        return result;
+        return getValue(columnIndex, Date.class);
     }
 
     public Date getDate(int columnIndex, Calendar cal) throws SQLException {
@@ -385,18 +360,10 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
     }
 
     public double getDouble(int columnIndex) throws SQLException {
-        Object obj = getObject(columnIndex);
+        requestColumnAccess(columnIndex);
+        requestReadAccess(false);
 
-        double result = 0.0D;
-        if (obj != null) {
-            if (obj instanceof Number) {
-                result = ((Number) obj).doubleValue();
-            } else {
-                result = Double.parseDouble(String.valueOf(obj));
-            }
-        }
-
-        return result;
+        return getValue(columnIndex, Double.class);
     }
 
     public double getDouble(String columnLabel) throws SQLException {
@@ -417,18 +384,10 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
     }
 
     public float getFloat(int columnIndex) throws SQLException {
-        Object obj = getObject(columnIndex);
+        requestColumnAccess(columnIndex);
+        requestReadAccess(false);
 
-        float result = 0.0F;
-        if (obj != null) {
-            if (obj instanceof Number) {
-                result = ((Number) obj).floatValue();
-            } else {
-                result = Float.parseFloat(String.valueOf(obj));
-            }
-        }
-
-        return result;
+        return getValue(columnIndex, Float.class);
     }
 
     public float getFloat(String columnLabel) throws SQLException {
@@ -443,18 +402,10 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
     }
 
     public int getInt(int columnIndex) throws SQLException {
-        Object obj = getObject(columnIndex);
+        requestColumnAccess(columnIndex);
+        requestReadAccess(false);
 
-        int result = 0;
-        if (obj != null) {
-            if (obj instanceof Number) {
-                result = ((Number) obj).intValue();
-            } else {
-                result = Integer.parseInt(String.valueOf(obj));
-            }
-        }
-
-        return result;
+        return getValue(columnIndex, Integer.class);
     }
 
     public int getInt(String columnLabel) throws SQLException {
@@ -462,18 +413,10 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
     }
 
     public long getLong(int columnIndex) throws SQLException {
-        Object obj = getObject(columnIndex);
+        requestColumnAccess(columnIndex);
+        requestReadAccess(false);
 
-        long result = 0L;
-        if (obj != null) {
-            if (obj instanceof Number) {
-                result = ((Number) obj).longValue();
-            } else {
-                result = Long.parseLong(String.valueOf(obj));
-            }
-        }
-
-        return result;
+        return getValue(columnIndex, Long.class);
     }
 
     public long getLong(String columnLabel) throws SQLException {
@@ -588,18 +531,10 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
     }
 
     public short getShort(int columnIndex) throws SQLException {
-        Object obj = getObject(columnIndex);
+        requestColumnAccess(columnIndex);
+        requestReadAccess(false);
 
-        short result = 0;
-        if (obj != null) {
-            if (obj instanceof Number) {
-                result = ((Number) obj).shortValue();
-            } else {
-                result = Short.parseShort(String.valueOf(obj));
-            }
-        }
-
-        return result;
+        return getValue(columnIndex, Short.class);
     }
 
     public short getShort(String columnLabel) throws SQLException {
@@ -633,18 +568,10 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
     }
 
     public Time getTime(int columnIndex) throws SQLException {
-        Object obj = getObject(columnIndex);
+        requestColumnAccess(columnIndex);
+        requestReadAccess(false);
 
-        Time result = null;
-        if (obj != null) {
-            if (obj instanceof Time) {
-                result = (Time) obj;
-            } else if (obj instanceof java.util.Date) {
-                result = new Time(((java.util.Date) obj).getTime());
-            }
-        }
-
-        return result;
+        return getValue(columnIndex, Time.class);
     }
 
     public Time getTime(int columnIndex, Calendar cal) throws SQLException {
@@ -665,18 +592,10 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
     }
 
     public Timestamp getTimestamp(int columnIndex) throws SQLException {
-        Object obj = getObject(columnIndex);
+        requestColumnAccess(columnIndex);
+        requestReadAccess(false);
 
-        Timestamp result = null;
-        if (obj != null) {
-            if (obj instanceof Timestamp) {
-                result = (Timestamp) obj;
-            } else if (obj instanceof java.util.Date) {
-                result = new Timestamp(((java.util.Date) obj).getTime());
-            }
-        }
-
-        return result;
+        return getValue(columnIndex, Timestamp.class);
     }
 
     public Timestamp getTimestamp(int columnIndex, Calendar cal)

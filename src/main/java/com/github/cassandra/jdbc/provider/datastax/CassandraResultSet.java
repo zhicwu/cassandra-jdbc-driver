@@ -26,8 +26,6 @@ import com.datastax.driver.core.Row;
 import com.github.cassandra.jdbc.*;
 import org.pmw.tinylog.Logger;
 
-import java.nio.ByteBuffer;
-import java.sql.Blob;
 import java.sql.SQLException;
 
 /**
@@ -58,51 +56,29 @@ public class CassandraResultSet extends BaseCassandraResultSet {
     @Override
     protected <T> T getValue(int columnIndex, Class<T> clazz)
             throws SQLException {
-        Logger.trace(new StringBuilder(
-                "Trying to get value with inputs: line=").append(getRow())
-                .append(", column=").append(columnIndex).append(", type=")
-                .append(clazz).toString());
+        Logger.trace("Trying to get value with inputs: line={}, column={}, type={}", getRow(), columnIndex, clazz);
 
         Object rawValue = null;
         T result = null;
         if (_currentRow != null) {
             rawValue = _currentRow.getObject(columnIndex - 1);
 
-            Logger.trace(new StringBuilder("Got raw value [")
-                    .append(rawValue).append("] from line #")
-                    .append(getRow()).toString());
+            Logger.trace("Got raw value [{}] from line #{}", rawValue, getRow());
 
-            if (rawValue != null) {
-                wasNull = false;
-                if (String.class == clazz) {
-                    result = (T) String.valueOf(rawValue);
-                } else if (Object.class == clazz) {
-                    result = (T) (rawValue instanceof ByteBuffer ? ((ByteBuffer) rawValue).array() : rawValue);
-                } else if (Blob.class == clazz) {
-                    result = (T) new CassandraBlob((ByteBuffer) rawValue);
-                } else if (byte[].class == clazz) {
-                    result = (T) ((ByteBuffer) rawValue).array();
-                } else {
-                    try {
-                        result = clazz.cast(rawValue);
-                    } catch (ClassCastException e) {
-                        Logger.warn(e, new StringBuilder(
-                                "Not able to convert [").append(rawValue)
-                                .append("] to ").append(clazz).toString());
+            wasNull = rawValue == null;
 
-                        if (!quiet) {
-                            throw new SQLException(e);
-                        }
-                    }
+            try {
+                result = getDataTypeConverters().convert(rawValue, clazz, true);
+            } catch (ClassCastException e) {
+                Logger.warn(e, "Not able to convert [{}] to {}", rawValue, clazz);
+
+                if (!quiet) {
+                    throw new SQLException(e);
                 }
-            } else {
-                wasNull = true;
             }
         }
 
-        Logger.trace(new StringBuilder("Return value: raw=")
-                .append(rawValue).append(", converted=").append(result)
-                .toString());
+        Logger.trace("Return value: raw={}, converted={}", rawValue, result);
 
         return result;
     }

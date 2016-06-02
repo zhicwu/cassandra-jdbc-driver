@@ -60,6 +60,8 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
         _cursorName = new StringBuilder().append(CURSOR_PREFIX)
                 .append(conn.hashCode()).append('/').append(hashCode())
                 .toString();
+
+        fetchSize = conn.getConfiguration().getFetchSize();
     }
 
     protected CassandraConfiguration getConfiguration() {
@@ -135,7 +137,7 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
     public int getFetchSize() throws SQLException {
         validateState();
 
-        return fetchSize;
+        return getConfiguration().getFetchSize();
     }
 
     public ResultSet getGeneratedKeys() throws SQLException {

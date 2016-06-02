@@ -45,15 +45,15 @@ public class CassandraColumnDefinition {
     protected final String table;
     protected final boolean writable;
 
-    public CassandraColumnDefinition(String catalog, String table, String name,
+    public CassandraColumnDefinition(String schema, String table, String name,
                                      String type, boolean searchable) {
-        this(catalog, table, name, name, type, searchable, false);
+        this(schema, table, name, name, type, searchable, false);
     }
 
-    public CassandraColumnDefinition(String catalog, String table, String name,
+    public CassandraColumnDefinition(String schema, String table, String name,
                                      String label, String type, boolean searchable, boolean writable) {
-        this.catalog = Strings.nullToEmpty(catalog);
-        this.schema = EMPTY_STRING;
+        this.catalog = EMPTY_STRING;
+        this.schema = Strings.nullToEmpty(schema);
         this.table = Strings.nullToEmpty(table);
         this.name = Strings.nullToEmpty(name);
         this.label = Strings.isNullOrEmpty(label) ? name : label;

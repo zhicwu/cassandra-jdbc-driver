@@ -28,6 +28,7 @@ public enum CassandraStatementType {
     INSERT("DML", "INSERT"),
     UPDATE("DML", "UPDATE"),
     DELETE("DML", "DELETE"),
+    TRUNCATE("DML", "TRUNCATE"),
     UNKNOWN("DML", "UNKNOWN");
 
     private final static String TYPE_QUERY = "SELECT";

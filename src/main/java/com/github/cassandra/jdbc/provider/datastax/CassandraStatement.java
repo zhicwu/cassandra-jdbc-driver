@@ -22,16 +22,17 @@ package com.github.cassandra.jdbc.provider.datastax;
 
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.QueryTrace.Event;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.utils.UUIDs;
 import com.github.cassandra.jdbc.*;
 import com.google.common.base.Function;
 import org.pmw.tinylog.Level;
 import org.pmw.tinylog.Logger;
 
 import java.sql.Connection;
-import java.sql.Date;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.List;
+import java.util.UUID;
 
 import static com.github.cassandra.jdbc.CassandraUtils.EMPTY_STRING;
 
@@ -46,12 +47,76 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
     private static final CassandraDataTypeConverters converters
             = new CassandraDataTypeConverters(CassandraDataTypeConverters.instance);
 
+    private static final long EPOCH_MS = Timestamp.valueOf("1970-01-01 00:00:00.000").getTime();
+
     static {
         // add / override converters
         converters.addMapping(LocalDate.class, LocalDate.fromMillisSinceEpoch(System.currentTimeMillis()),
                 new Function<Object, LocalDate>() {
                     public LocalDate apply(Object input) {
-                        return LocalDate.fromMillisSinceEpoch(Date.valueOf(String.valueOf(input)).getTime());
+                        LocalDate date;
+                        if (input instanceof java.util.Date) {
+                            date = LocalDate.fromMillisSinceEpoch(((java.util.Date) input).getTime() - EPOCH_MS);
+                        } else {
+                            date = LocalDate.fromMillisSinceEpoch(
+                                    Date.valueOf(String.valueOf(input)).getTime() - EPOCH_MS);
+                        }
+                        return date;
+                    }
+                });
+        // Use DataStax UUIDs to generate time-based UUID
+        converters.addMapping(java.util.UUID.class, UUIDs.timeBased(), new Function<Object, UUID>() {
+            public UUID apply(Object input) {
+                return java.util.UUID.fromString(String.valueOf(input));
+            }
+        });
+        // workaround for Date, Time and Timestamp
+        converters.addMapping(Date.class, new Date(System.currentTimeMillis()),
+                new Function<Object, Date>() {
+                    public Date apply(Object input) {
+                        Date date;
+                        if (input instanceof LocalDate) {
+                            date = new Date(((LocalDate) input).getMillisSinceEpoch() + EPOCH_MS);
+                        } else if (input instanceof java.util.Date) {
+                            date = new Date(((java.util.Date) input).getTime());
+                        } else if (input instanceof Number) {
+                            date = new Date(((Number) input).longValue());
+                        } else {
+                            date = Date.valueOf(String.valueOf(input));
+                        }
+                        return date;
+                    }
+                });
+        converters.addMapping(Time.class, new Time(System.currentTimeMillis()),
+                new Function<Object, Time>() {
+                    public Time apply(Object input) {
+                        Time time;
+                        if (input instanceof LocalDate) {
+                            time = new Time(((LocalDate) input).getMillisSinceEpoch() + EPOCH_MS);
+                        } else if (input instanceof java.util.Date) {
+                            time = new Time(((java.util.Date) input).getTime());
+                        } else if (input instanceof Number) {
+                            time = new Time(((Number) input).longValue());
+                        } else {
+                            time = new Time(Time.valueOf(String.valueOf(input)).getTime());
+                        }
+                        return time;
+                    }
+                });
+        converters.addMapping(Timestamp.class, new Timestamp(System.currentTimeMillis()),
+                new Function<Object, Timestamp>() {
+                    public Timestamp apply(Object input) {
+                        Timestamp timestamp;
+                        if (input instanceof LocalDate) {
+                            timestamp = new Timestamp(((LocalDate) input).getMillisSinceEpoch() + EPOCH_MS);
+                        } else if (input instanceof java.util.Date) {
+                            timestamp = new Timestamp(((java.util.Date) input).getTime());
+                        } else if (input instanceof Number) {
+                            timestamp = new Timestamp(((Number) input).longValue());
+                        } else {
+                            timestamp = Timestamp.valueOf(String.valueOf(input));
+                        }
+                        return timestamp;
                     }
                 });
     }
@@ -89,7 +154,7 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
         Connection c = this.getConnection();
 
         boolean queryTrace = parsedStmt.getConfiguration().queryTraceEnabled();
-        SimpleStatement ss = new SimpleStatement(cql);
+        SimpleStatement ss = new SimpleStatement(parsedStmt.getCql());
         ss.setFetchSize(this.getFetchSize());
         if (!queryTrace && c instanceof CassandraConnection) {
             CassandraConnection cc = (CassandraConnection) c;
@@ -177,6 +242,8 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
     }
 
     protected void replaceCurrentResultSet(CassandraCqlStatement parsedStmt, ResultSet resultSet) {
+        this.cqlStmt = parsedStmt;
+
         if (currentResultSet != null) {
             try {
                 if (!currentResultSet.isClosed()) {
@@ -235,7 +302,7 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
 
         int[] results = new int[batch.size()];
         for (int i = 0; i < results.length; i++) {
-            results[i] = 0;
+            results[i] = SUCCESS_NO_INFO;
         }
 
         return results;
@@ -244,9 +311,9 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
     public boolean execute(String sql) throws SQLException {
         validateState();
 
-        ResultSet rs = executeCql(sql);
+        executeCql(sql);
 
-        return !cqlStmt.getConfiguration().getStatementType().isDDL();
+        return cqlStmt.getConfiguration().getStatementType().isQuery();
     }
 
     public boolean execute(String sql, int autoGeneratedKeys)
@@ -264,9 +331,9 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
     }
 
     public java.sql.ResultSet executeQuery(String sql) throws SQLException {
-        validateState();
-
-        executeCql(sql);
+        if (!execute(sql)) {
+            throw CassandraErrors.invalidQueryException(sql);
+        }
 
         return currentResultSet;
     }
@@ -274,9 +341,9 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
     public int executeUpdate(String sql) throws SQLException {
         validateState();
 
-        ResultSet resultSet = executeCql(sql);
+        executeCql(sql);
 
-        return cqlStmt.getConfiguration().getStatementType().isUpdate() && resultSet != null ? 0 : 1;
+        return cqlStmt.getConfiguration().getStatementType().isUpdate() ? 1 : 0;
     }
 
     public int executeUpdate(String sql, int autoGeneratedKeys)
@@ -295,22 +362,27 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
     }
 
     public java.sql.ResultSet getResultSet() throws SQLException {
-        return currentResultSet;
+        return cqlStmt.getConfiguration().getStatementType().isQuery() ? currentResultSet : null;
     }
 
     public int getUpdateCount() throws SQLException {
-        return -1;
+        CassandraStatementType stmtType = cqlStmt.getConfiguration().getStatementType();
+
+        return stmtType.isQuery() ? -1 : (stmtType.isUpdate() ? 1 : 0);
     }
 
     public java.sql.ResultSet executeQuery() throws SQLException {
+        // method inherited from BaseCassandraPreparedStatement
         throw CassandraErrors.notSupportedException();
     }
 
     public int executeUpdate() throws SQLException {
+        // method inherited from BaseCassandraPreparedStatement
         throw CassandraErrors.notSupportedException();
     }
 
     public boolean execute() throws SQLException {
+        // method inherited from BaseCassandraPreparedStatement
         throw CassandraErrors.notSupportedException();
     }
 

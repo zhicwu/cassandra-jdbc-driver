@@ -197,7 +197,7 @@ public abstract class BaseCassandraConnection extends BaseJdbcObject implements
         return config.getConnectionTimeout();
     }
 
-    public String getSchema() throws SQLException {
+    public String getCatalog() throws SQLException {
         validateState();
 
         return null;
@@ -383,7 +383,9 @@ public abstract class BaseCassandraConnection extends BaseJdbcObject implements
         return null;
     }
 
-    public void setSchema(String schema) throws SQLException {
+    public void setCatalog(String catalog) throws SQLException {
+        validateState();
+
         validateState();
 
         if (!quiet) {

@@ -111,7 +111,8 @@ public class CassandraPreparedStatement extends CassandraStatement {
             throws SQLException {
         Logger.debug("Trying to execute the following CQL:\n", cql);
 
-        CassandraCqlStatement parsedStmt = CassandraCqlParser.parse(getConfiguration(), cql);
+        CassandraCqlStatement parsedStmt = cqlStmt.getCql().equals(cql)
+                ? cqlStmt : CassandraCqlParser.parse(getConfiguration(), cql);
 
         boolean queryTrace = parsedStmt.getConfiguration().queryTraceEnabled();
         updateParameterMetaData(CassandraCqlParser.parse(getConfiguration(), cql), false);
@@ -172,7 +173,7 @@ public class CassandraPreparedStatement extends CassandraStatement {
 
         int[] results = new int[batch.size()];
         for (int i = 0; i < results.length; i++) {
-            results[i] = 0;
+            results[i] = SUCCESS_NO_INFO;
         }
 
         return results;
@@ -207,18 +208,23 @@ public class CassandraPreparedStatement extends CassandraStatement {
             params[i++] = entry.getValue();
         }
 
-        com.datastax.driver.core.ResultSet rs = executePreparedCql(sql, params);
+        executePreparedCql(sql, params);
 
 
-        return !cqlStmt.getConfiguration().getStatementType().isDDL();
+        return cqlStmt.getConfiguration().getStatementType().isQuery();
     }
 
     public ResultSet executeQuery(String sql) throws SQLException {
-        return execute(sql) ? currentResultSet : null;
+        if (!execute(sql)) {
+            throw CassandraErrors.invalidQueryException(sql);
+        }
+
+        return currentResultSet;
     }
 
     public int executeUpdate(String sql) throws SQLException {
-        // FIXME
-        return execute(sql) ? 1 : 0;
+        execute(sql);
+
+        return cqlStmt.getConfiguration().getStatementType().isUpdate() ? 1 : 0;
     }
 }

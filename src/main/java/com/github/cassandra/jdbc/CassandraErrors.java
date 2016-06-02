@@ -72,6 +72,12 @@ public final class CassandraErrors {
                 ERROR_CODE_GENERAL);
     }
 
+    public static SQLException invalidQueryException(String query) {
+        return new SQLException(CassandraUtils.getString(
+                "EXCEPTION_INVALID_QUERY", new Object[]{query}), null,
+                ERROR_CODE_GENERAL);
+    }
+
     public static SQLFeatureNotSupportedException notSupportedException() {
         return new SQLFeatureNotSupportedException(
                 CassandraUtils.getString("EXCEPTION_NOT_SUPPORTED"), null,

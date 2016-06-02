@@ -26,6 +26,8 @@ import org.testng.annotations.BeforeClass;
 
 import java.util.Properties;
 
+import static org.testng.Assert.assertTrue;
+
 public class DataStaxTestCase {
     protected CassandraConnection conn;
 
@@ -41,5 +43,9 @@ public class DataStaxTestCase {
     @AfterClass
     public void tearDown() throws Exception {
         conn.close();
+    }
+
+    protected void validateObjectType(Object value, Class clazz) {
+        assertTrue(value == null || clazz.isInstance(value), value + " is not instance of " + clazz);
     }
 }

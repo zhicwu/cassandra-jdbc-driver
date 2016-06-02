@@ -47,7 +47,7 @@ public class CassandraConnectionTest extends DataStaxTestCase {
         try {
             DatabaseMetaData metaData = conn.getMetaData();
             assertNotNull(metaData);
-            assertEquals("KEYSPACE", metaData.getCatalogTerm());
+            assertEquals("KEYSPACE", metaData.getSchemaTerm());
 
             ResultSet rs = metaData.getTableTypes();
             assertTrue(rs instanceof DummyCassandraResultSet);
@@ -57,49 +57,49 @@ public class CassandraConnectionTest extends DataStaxTestCase {
                     CassandraUtils.getAllData(rs)[0]);
             rs.close();
 
-            rs = metaData.getCatalogs();
+            rs = metaData.getSchemas();
             assertTrue(rs instanceof DummyCassandraResultSet);
-            assertEquals(extractColumnNames(CassandraUtils.CATALOG_COLUMNS),
+            assertEquals(extractColumnNames(CassandraUtils.SCHEMA_COLUMNS),
                     CassandraUtils.getColumnNames(rs));
             Logger.debug(CassandraUtils.getAllData(rs));
             rs.close();
 
-            rs = metaData.getTables("system", null, "peers", null);
+            rs = metaData.getTables(null, "system", "peers", null);
             assertTrue(rs instanceof DummyCassandraResultSet);
             assertEquals(extractColumnNames(CassandraUtils.TABLE_COLUMNS),
                     CassandraUtils.getColumnNames(rs));
             Logger.debug(CassandraUtils.getAllData(rs));
             rs.close();
 
-            rs = metaData.getColumns("system", null, "peers", null);
+            rs = metaData.getColumns(null, "system", "peers", null);
             assertTrue(rs instanceof DummyCassandraResultSet);
             assertEquals(extractColumnNames(CassandraUtils.COLUMN_COLUMNS),
                     CassandraUtils.getColumnNames(rs));
             Logger.debug(CassandraUtils.getAllData(rs));
             rs.close();
 
-            rs = metaData.getIndexInfo("system", null, "peers", false, true);
+            rs = metaData.getIndexInfo(null, "system", "peers", false, true);
             assertTrue(rs instanceof DummyCassandraResultSet);
             assertEquals(extractColumnNames(CassandraUtils.INDEX_COLUMNS),
                     CassandraUtils.getColumnNames(rs));
             Logger.debug(CassandraUtils.getAllData(rs));
             rs.close();
 
-            rs = metaData.getPrimaryKeys("system", null, "peers");
+            rs = metaData.getPrimaryKeys(null, "system", "peers");
             assertTrue(rs instanceof DummyCassandraResultSet);
             assertEquals(extractColumnNames(CassandraUtils.PK_COLUMNS),
                     CassandraUtils.getColumnNames(rs));
             Logger.debug(CassandraUtils.getAllData(rs));
             rs.close();
 
-            rs = metaData.getUDTs("system", null, "%", null);
+            rs = metaData.getUDTs(null, "system", "%", null);
             assertTrue(rs instanceof DummyCassandraResultSet);
             assertEquals(extractColumnNames(CassandraUtils.UDT_COLUMNS),
                     CassandraUtils.getColumnNames(rs));
             Logger.debug(CassandraUtils.getAllData(rs));
             rs.close();
 
-            rs = metaData.getColumns("system", null, "IndexInfo", null);
+            rs = metaData.getColumns(null, "system", "IndexInfo", null);
             assertTrue(rs instanceof DummyCassandraResultSet);
             assertEquals(extractColumnNames(CassandraUtils.COLUMN_COLUMNS),
                     CassandraUtils.getColumnNames(rs));

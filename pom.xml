@@ -252,12 +252,32 @@
                                         implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer"/>
                             </transformers>
                             <filters>
+                                <!-- we only need the parser its dependencies
+                                https://github.com/apache/cassandra/blob/cassandra-3.5/src/java/org/apache/cassandra/cql3/Cql.g
+                                -->
+                                <filter>
+                                    <artifact>org.apache.cassandra:cassandra-all</artifact>
+                                    <excludes>
+                                        <exclude>org/apache/cassandra/**</exclude>
+                                    </excludes>
+                                    <includes>
+                                        <include>org/apache/cassandra/auth/**</include>
+                                        <include>org/apache/cassandra/cql3/**</include>
+                                        <include>org/apache/cassandra/db/marshal/*</include>
+                                        <include>org/apache/cassandra/exceptions/*</include>
+                                        <include>org/apache/cassandra/utils/*</include>
+                                    </includes>
+                                </filter>
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/maven/**</exclude>
                                         <exclude>META-INF/*.xml</exclude>
                                         <exclude>LICENSE</exclude>
+                                        <exclude>LICENSE</exclude>
+                                        <exclude>org/apache/cassandra/net/**</exclude>
+                                        <exclude>org/apache/cassandra/thrift/**</exclude>
+                                        <exclude>org/apache/cassandra/tools/**</exclude>
                                     </excludes>
                                 </filter>
                             </filters>

@@ -20,6 +20,7 @@
  */
 package com.github.cassandra.jdbc;
 
+import org.pmw.tinylog.Logger;
 import org.testng.annotations.Test;
 
 import java.sql.Connection;
@@ -49,34 +50,31 @@ public class CassandraDriverTest {
         }
     }
 
-    @Test(groups = {"unit", "base"})
+    @Test(groups = {"unit", "server"})
     public void testConnect() {
         CassandraDriver driver = new CassandraDriver();
-        Properties props = new Properties();
-        props.setProperty(KEY_USERNAME, "dse");
-        props.setProperty(KEY_PASSWORD, "111");
+
         try {
-            Connection conn = driver
-                    .connect(
-                            "jdbc:c*:datastax://localhost/system_auth?compression=snappy&consistencyLevel=ONE",
-                            props);
+            CassandraConfiguration config
+                    = CassandraConfiguration.load(getClass().getResourceAsStream("/connection.properties"));
+            Properties props = new Properties();
+            props.setProperty(KEY_USERNAME, config.getUserName());
+            props.setProperty(KEY_PASSWORD, config.getPassword());
+
+            Connection conn = driver.connect(config.getConnectionUrl(), props);
             assertTrue(conn instanceof BaseCassandraConnection);
             assertTrue(conn.getClass().getName()
                     .endsWith("datastax.CassandraConnection"));
 
-            conn.setCatalog("system");
+            conn.setSchema("system");
             ResultSet rs = conn.createStatement().executeQuery(
                     "select * from peers limit 5");
             while (rs.next()) {
-                System.out.println(rs.getRow() + "\n=====");
+                Logger.debug("{}\n=====", rs.getRow());
                 for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
                     Object obj = rs.getObject(i);
-                    System.out.println(new StringBuilder()
-                            .append("[")
-                            .append(rs.getMetaData().getColumnName(i))
-                            .append("]=[")
-                            .append(obj == null ? "null" : obj.getClass() + "@"
-                                    + obj.hashCode()).append("]").toString());
+                    Logger.debug("[{}]=[{}]", rs.getMetaData().getColumnName(i),
+                            obj == null ? "null" : obj.getClass() + "@" + obj.hashCode());
                 }
             }
             rs.close();

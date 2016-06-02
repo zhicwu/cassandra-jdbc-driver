@@ -34,7 +34,6 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
         DatabaseMetaData {
     static final String DEFAULT_PRODUCT_NAME = "Apache Cassandra";
     static final String DEFAULT_PRODUCT_VERSION = "2.x";
-    static final String KEY_SCHEMA_PATTERN = "schemaPattern";
 
     private final BaseCassandraConnection _conn;
     private final Properties _props;
@@ -120,7 +119,11 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     public ResultSet getCatalogs() throws SQLException {
         validateState();
 
-        return _conn.getObjectMetaData(CassandraObjectType.KEYSPACE, null);
+        if (!quiet) {
+            throw CassandraErrors.notSupportedException();
+        }
+
+        return CassandraUtils.DUMMY_RESULT_SET;
     }
 
     public String getCatalogSeparator() throws SQLException {
@@ -128,7 +131,7 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public String getCatalogTerm() throws SQLException {
-        return "KEYSPACE";
+        return EMPTY_STRING;
     }
 
     public ResultSet getClientInfoProperties() throws SQLException {
@@ -464,26 +467,25 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     public ResultSet getSchemas() throws SQLException {
         validateState();
 
-        if (!quiet) {
-            throw CassandraErrors.notSupportedException();
-        }
-
-        return CassandraUtils.DUMMY_RESULT_SET;
+        return _conn.getObjectMetaData(CassandraObjectType.KEYSPACE, null);
     }
 
     public ResultSet getSchemas(String catalog, String schemaPattern)
             throws SQLException {
         validateState();
 
-        if (!quiet) {
-            throw CassandraErrors.notSupportedException();
-        }
+        Properties queryPatterns = new Properties();
+        queryPatterns.setProperty(KEY_CATALOG, CassandraUtils
+                .isNullOrEmptyString(catalog) ? EMPTY_STRING : catalog);
+        queryPatterns.setProperty(KEY_SCHEMA_PATTERN, CassandraUtils
+                .isNullOrEmptyString(schemaPattern) ? EMPTY_STRING
+                : schemaPattern);
 
-        return CassandraUtils.DUMMY_RESULT_SET;
+        return _conn.getObjectMetaData(CassandraObjectType.KEYSPACE, queryPatterns);
     }
 
     public String getSchemaTerm() throws SQLException {
-        return "";
+        return "KEYSPACE";
     }
 
     public String getSearchStringEscape() throws SQLException {
@@ -613,7 +615,7 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public boolean isCatalogAtStart() throws SQLException {
-        return true;
+        return false;
     }
 
     public boolean isReadOnly() throws SQLException {
@@ -730,15 +732,15 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public boolean supportsCatalogsInDataManipulation() throws SQLException {
-        return true;
+        return false;
     }
 
     public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
-        return true;
+        return false;
     }
 
     public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException {
-        return true;
+        return false;
     }
 
     public boolean supportsCatalogsInProcedureCalls() throws SQLException {
@@ -746,7 +748,7 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public boolean supportsCatalogsInTableDefinitions() throws SQLException {
-        return true;
+        return false;
     }
 
     public boolean supportsColumnAliasing() throws SQLException {
@@ -908,23 +910,23 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public boolean supportsSchemasInDataManipulation() throws SQLException {
-        return false;
+        return true;
     }
 
     public boolean supportsSchemasInIndexDefinitions() throws SQLException {
-        return false;
+        return true;
     }
 
     public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
-        return false;
+        return true;
     }
 
     public boolean supportsSchemasInProcedureCalls() throws SQLException {
-        return false;
+        return true;
     }
 
     public boolean supportsSchemasInTableDefinitions() throws SQLException {
-        return false;
+        return true;
     }
 
     public boolean supportsSelectForUpdate() throws SQLException {

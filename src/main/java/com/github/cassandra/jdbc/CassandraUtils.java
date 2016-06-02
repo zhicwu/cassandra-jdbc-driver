@@ -49,7 +49,7 @@ public class CassandraUtils {
     public static final String KEY_DRIVER_VERSION = "driverVersion";
 
     public static final String EMPTY_STRING = "";
-    public static final String[][] CATALOG_COLUMNS = new String[][]{{
+    public static final String[][] SCHEMA_COLUMNS = new String[][]{{
             "TABLE_CAT", "text"}};
     public static final String[][] COLUMN_COLUMNS = new String[][]{
             {"TABLE_CAT", "text"}, {"TABLE_SCHEM", "text"},
@@ -106,6 +106,7 @@ public class CassandraUtils {
     public static final String KEY_STRING_FUNCTIONS = "stringFunctions";
 
     public static final String KEY_SYSTEM_FUNCTIONS = "systemFunctions";
+    public static final String KEY_SCHEMA_PATTERN = "schemaPattern";
     public static final String KEY_TABLE_PATTERN = "tableNamePattern";
 
     public static final String KEY_TIMEDATE_FUNCTIONS = "timeDateFunctions";
