@@ -31,7 +31,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Time;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -113,51 +112,25 @@ public class CassandraPreparedStatement extends CassandraStatement {
 
         CassandraCqlStatement parsedStmt = cqlStmt.getCql().equals(cql)
                 ? cqlStmt : CassandraCqlParser.parse(getConfiguration(), cql);
+        CassandraCqlStmtConfiguration stmtConf = parsedStmt.getConfiguration();
 
-        boolean queryTrace = parsedStmt.getConfiguration().queryTraceEnabled();
         updateParameterMetaData(CassandraCqlParser.parse(getConfiguration(), cql), false);
 
         PreparedStatement preparedStmt = getInnerPreparedStatement(cql);
-        if (!queryTrace && getConnection() instanceof CassandraConnection) {
-            CassandraConnection cc = (CassandraConnection) getConnection();
-
-            if (cc.getConfiguration().isQueryTrace()) {
-                preparedStmt.enableTracing();
-            }
-        }
-
         BoundStatement boundStatement = preparedStmt.bind(params);
-        boundStatement.setReadTimeoutMillis(parsedStmt.getConfiguration().getReadTimeout());
+
+        configureStatement(boundStatement, stmtConf);
         com.datastax.driver.core.ResultSet rs = session.execute(boundStatement);
-
-        List<ExecutionInfo> list = rs.getAllExecutionInfo();
-        int size = list == null ? 0 : list.size();
-
-        if (size > 0) {
-            int index = 1;
-
-            for (ExecutionInfo info : rs.getAllExecutionInfo()) {
-                Logger.debug(getExecutionInfoAsString(info, index, size));
-
-                QueryTrace q = info.getQueryTrace();
-                if (queryTrace && q != null) {
-                    Logger.debug(getQueryTraceAsString(q, index, size));
-                }
-
-                index++;
-            }
-
-            Logger.debug("Executed successfully with results: exhausted={}", !rs.isExhausted());
-        }
-
-        replaceCurrentResultSet(parsedStmt, rs);
+        postStatementExecution(parsedStmt, rs);
 
         return rs;
     }
 
     @Override
     public int[] executeBatch() throws SQLException {
-        BatchStatement batchStmt = new BatchStatement(BatchStatement.Type.UNLOGGED);
+        CassandraEnums.Batch mode = getConfiguration().getBatch();
+        BatchStatement batchStmt = new BatchStatement(
+                mode == CassandraEnums.Batch.LOGGED ? BatchStatement.Type.LOGGED : BatchStatement.Type.UNLOGGED);
 
 
         for (CassandraCqlStatement stmt : batch) {

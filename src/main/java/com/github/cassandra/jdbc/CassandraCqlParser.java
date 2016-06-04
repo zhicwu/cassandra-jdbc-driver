@@ -86,7 +86,7 @@ public class CassandraCqlParser {
     private static CassandraCqlStatement parseSql(CassandraConfiguration config, String sql, Map<String, String> hints) {
         CassandraStatementType stmtType = CassandraStatementType.UNKNOWN;
         if (Strings.isNullOrEmpty(sql)) {
-            return new CassandraCqlStatement(sql, new CassandraCqlStmtConfiguration(config, stmtType, hints), null);
+            return new CassandraCqlStatement(sql, new CassandraCqlStmtConfiguration(config, stmtType, hints));
         }
 
         CassandraCqlStatement sqlStmt = null;
@@ -129,7 +129,7 @@ public class CassandraCqlParser {
         }
 
         if (sqlStmt == null) {
-            sqlStmt = new CassandraCqlStatement(sql, new CassandraCqlStmtConfiguration(config, stmtType, hints), null);
+            sqlStmt = new CassandraCqlStatement(sql, new CassandraCqlStmtConfiguration(config, stmtType, hints));
         }
 
         return sqlStmt;
@@ -139,7 +139,7 @@ public class CassandraCqlParser {
                                                   Map<String, String> hints) {
         CassandraStatementType stmtType = CassandraStatementType.UNKNOWN;
         if (Strings.isNullOrEmpty(cql)) {
-            return new CassandraCqlStatement(cql, new CassandraCqlStmtConfiguration(config, stmtType, hints), null);
+            return new CassandraCqlStatement(cql, new CassandraCqlStmtConfiguration(config, stmtType, hints));
         }
 
         CassandraCqlStatement cqlStmt = null;
@@ -179,7 +179,7 @@ public class CassandraCqlParser {
         }
 
         if (cqlStmt == null) {
-            cqlStmt = new CassandraCqlStatement(cql, new CassandraCqlStmtConfiguration(config, stmtType, hints), null);
+            cqlStmt = new CassandraCqlStatement(cql, new CassandraCqlStmtConfiguration(config, stmtType, hints));
         }
 
         return cqlStmt;

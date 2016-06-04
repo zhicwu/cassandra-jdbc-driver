@@ -1,0 +1,46 @@
+# general configuration
+locale : en_US
+
+# the configuration below for the driver is pretty much same as the following connection url:
+# jdbc:c*:datastax://localhost:-1/system_auth?user=cassandra&password=cassandra&quiet=true&sqlFriendly=true&...
+driver :
+  # DataStax Java driver as primary, and possiblly astyanax for Cassandra 2.0.x later
+  provider : datastax
+  # comma separated hosts(port is optional there and only the first one will be considered)
+  hosts : localhost
+  # non-positive port implies the default port will be used in the provider, which is datastax in this case
+  port : -1
+  # by default everyone has access to system_auth keyspace
+  keyspace : system_auth
+  user : cassandra
+  password : cassandra
+
+  # be quiet for unspoorted JDBC features
+  quiet : true
+  # this enables SQL parser, which tries to translate SQL into equivalent CQL(s) - think about MDX to SQL
+  sqlFriendly : true
+  # if you turn tracing read/write requests on, you'll see more logs(DEBUG level) in backend on how it goes
+  # more on https://docs.datastax.com/en/cql/3.3/cql/cql_reference/tracing_r.html
+  tracing : false
+
+  readConsistencyLevel : &CL LOCAL_ONE
+  # you may use ANY for better write performance, if hinted handoff is not going to be an issue in your case
+  # also please be aware of that counter table does not support ANY at the moment
+  writeConsistencyLevel : LOCAL_ONE
+  consistencyLevel : *CL
+
+  readAsync : false
+  writeAsync : false
+
+  batch : UNLOGGED # LOGGED or UNLOGGED
+  fetchSize : 100
+  readTimeout : 30 # in seconds
+  connectTimeout : 5 # in seconds
+  keepAlive : true
+  compression : LZ4 # NONE, LZ4 or SNAPPY
+
+# logging configuration for tinylog(http://www.tinylog.org/configuration)
+logger :
+  level : INFO
+  stacktrace : -1
+  format : "{date:yyyy-MM-dd HH:mm:ss} [{thread}] {class_name}.{method}({line}) {level}: {message}"

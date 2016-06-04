@@ -90,7 +90,7 @@ final class DataStaxSessionFactory {
 
         // set query options
         QueryOptions queryOptions = new QueryOptions();
-        queryOptions.setConsistencyLevel(ConsistencyLevel.valueOf(config.getConsistencyLevel()));
+        queryOptions.setConsistencyLevel(ConsistencyLevel.valueOf(config.getConsistencyLevel().name()));
         queryOptions.setFetchSize(config.getFetchSize());
         builder.withQueryOptions(queryOptions);
 
@@ -119,7 +119,7 @@ final class DataStaxSessionFactory {
         builder.withPoolingOptions(poolOptions);
 
         // set compression
-        builder.withCompression(ProtocolOptions.Compression.valueOf(config.getCompression()));
+        builder.withCompression(ProtocolOptions.Compression.valueOf(config.getCompression().name()));
 
         // FIXME set policies based on configuration
         if (!Strings.isNullOrEmpty(config.getLocalDc())) {

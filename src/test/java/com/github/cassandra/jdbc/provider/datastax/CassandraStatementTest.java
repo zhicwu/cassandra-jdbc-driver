@@ -21,6 +21,7 @@
 package com.github.cassandra.jdbc.provider.datastax;
 
 import com.datastax.driver.core.LocalDate;
+import com.github.cassandra.jdbc.BaseCassandraTest;
 import com.github.cassandra.jdbc.CassandraUtils;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -34,7 +35,7 @@ import java.util.UUID;
 
 import static org.testng.Assert.*;
 
-public class CassandraStatementTest extends DataStaxTestCase {
+public class CassandraStatementTest extends BaseCassandraTest {
     @DataProvider(name = "upsert-sql")
     public Object[][] createTestSql() {
         return new Object[][]{

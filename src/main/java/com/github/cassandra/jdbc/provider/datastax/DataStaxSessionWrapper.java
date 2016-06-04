@@ -28,58 +28,70 @@ import org.pmw.tinylog.Logger;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class DataStaxSessionWrapper implements AutoCloseable {
+final class DataStaxSessionWrapper implements AutoCloseable {
     private final AtomicInteger references = new AtomicInteger(0);
 
     private Session session;
 
-    protected DataStaxSessionWrapper(Session session) {
+    DataStaxSessionWrapper(Session session) {
         this.session = session;
     }
 
-    protected void validateState() throws SQLException {
+    private void validateState() throws SQLException {
         if (session == null || session.isClosed()) {
             session = null;
             throw CassandraErrors.connectionClosedException();
         }
     }
 
-    protected ResultSet execute(String cql) throws SQLException {
+    ResultSet execute(String cql) throws SQLException {
         validateState();
 
         return session.execute(cql);
     }
 
-    protected ResultSet execute(Statement statement) throws SQLException {
+    ResultSet execute(Statement statement) throws SQLException {
         validateState();
 
         return session.execute(statement);
     }
 
-    protected Metadata getClusterMetaData() throws SQLException {
+    ResultSetFuture executeAsync(String cql) throws SQLException {
+        validateState();
+
+        return session.executeAsync(cql);
+    }
+
+    ResultSetFuture executeAsync(Statement statement) throws SQLException {
+        validateState();
+
+        return session.executeAsync(statement);
+    }
+
+    Metadata getClusterMetaData() throws SQLException {
         validateState();
 
         return session.getCluster().getMetadata();
     }
 
-    protected PreparedStatement prepare(String cql) throws SQLException {
+    PreparedStatement prepare(String cql) throws SQLException {
         validateState();
 
         return session.prepare(cql);
     }
 
-    protected String getLoggedKeyspace() throws SQLException {
+    String getLoggedKeyspace() throws SQLException {
         validateState();
 
         return session.getLoggedKeyspace();
     }
 
-    public boolean isClosed() {
-        return session == null || session.isClosed();
+    void open() {
+        references.incrementAndGet();
     }
 
-    public void open() {
-        references.incrementAndGet();
+    boolean isClosed() {
+        return session == null || session.isClosed();
     }
 
     public void close() throws Exception {

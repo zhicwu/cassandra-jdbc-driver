@@ -31,7 +31,6 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Properties;
 
 public class CassandraServerTest {
     @BeforeGroups(groups = {"server"})
@@ -55,9 +54,7 @@ public class CassandraServerTest {
         Cluster cluster = null;
 
         try {
-            Properties props = new Properties();
-            props.load(getClass().getResourceAsStream("/connection.properties"));
-            CassandraConfiguration conf = new CassandraConfiguration(props.getProperty("url"), props);
+            CassandraConfiguration conf = CassandraConfiguration.DEFAULT;
             Cluster.Builder builder = Cluster.builder();
             for (String host : Splitter.on(',').trimResults().omitEmptyStrings().split(conf.getHosts())) {
                 builder.addContactPoint(host);

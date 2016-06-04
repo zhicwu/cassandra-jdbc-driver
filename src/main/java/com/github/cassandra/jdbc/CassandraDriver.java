@@ -26,9 +26,8 @@ import java.lang.reflect.Constructor;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
-
-import static com.github.cassandra.jdbc.CassandraConfiguration.*;
 
 /**
  * Cassandra JDBC driver.
@@ -37,7 +36,7 @@ import static com.github.cassandra.jdbc.CassandraConfiguration.*;
  */
 public class CassandraDriver implements Driver {
     public static final int VERSION_MAJOR = 0;
-    public static final int VERSION_MINOR = 4;
+    public static final int VERSION_MINOR = 5;
     public static final int VERSION_PATCH = 0;
 
     static final String MSG_PREFIX = "MESSAGE_PROP_";
@@ -77,17 +76,28 @@ public class CassandraDriver implements Driver {
         return conn;
     }
 
-    private DriverPropertyInfo createDriverPropertyInfo(String propertyName,
-                                                        String propertyValue, boolean required, String[] choices) {
+    private DriverPropertyInfo createDriverPropertyInfo(String propertyName, Object propertyValue) {
+        Class propertyClass = propertyValue == null ? Object.class : propertyValue.getClass();
+
         DriverPropertyInfo info = new DriverPropertyInfo(propertyName,
-                propertyValue);
-        info.required = required;
+                String.valueOf(propertyValue));
+        info.required = false;
         info.description = CassandraUtils.getString(new StringBuilder(
                 MSG_PREFIX).append(propertyName.toUpperCase())
                 .append(MSG_SUFFIX).toString());
 
-        if (choices != null && choices.length > 0) {
-            info.choices = choices;
+        if (propertyClass.isEnum()) {
+            Object[] values = propertyClass.getEnumConstants();
+
+            int len = values == null ? 0 : values.length;
+            if (len > 0) {
+                String[] choices = new String[len];
+                for (int i = 0; i < len; i++) {
+                    choices[i] = String.valueOf(values[i]);
+                }
+
+                info.choices = choices;
+            }
         }
 
         return info;
@@ -126,44 +136,10 @@ public class CassandraDriver implements Driver {
             throws SQLException {
         List<DriverPropertyInfo> list = new ArrayList<DriverPropertyInfo>();
 
-        list.add(createDriverPropertyInfo(KEY_USERNAME,
-                CassandraUtils.getPropertyValue(props, KEY_USERNAME), true,
-                null));
-        list.add(createDriverPropertyInfo(KEY_PASSWORD,
-                CassandraUtils.getPropertyValue(props, KEY_PASSWORD), true,
-                null));
-        list.add(createDriverPropertyInfo(KEY_PORT,
-                CassandraUtils.getPropertyValue(props, KEY_PORT), false, null));
-        list.add(createDriverPropertyInfo(KEY_CONNECT_TIMEOUT, CassandraUtils
-                .getPropertyValue(props, KEY_CONNECT_TIMEOUT,
-                        DEFAULT_CONNECT_TIMEOUT), false, null));
-        list.add(createDriverPropertyInfo(KEY_READ_TIMEOUT,
-                CassandraUtils.getPropertyValue(props, KEY_READ_TIMEOUT,
-                        DEFAULT_READ_TIMEOUT), false, null));
-        list.add(createDriverPropertyInfo(KEY_CONSISTENCY_LEVEL, CassandraUtils
-                .getPropertyValue(props, KEY_CONSISTENCY_LEVEL,
-                        DEFAULT_CONSISTENCY_LEVEL), false, new String[]{
-                "ANY", "ONE", "LOCAL_ONE", "QUORUM", "LOCAL_QUORUM", "EACH_QUORUM", "ALL"}));
-        list.add(createDriverPropertyInfo(KEY_COMPRESSION, CassandraUtils
-                        .getPropertyValue(props, KEY_COMPRESSION, DEFAULT_COMPRESSION),
-                false, new String[]{"NONE", "SNAPPY", "LZ4"}));
-        list.add(createDriverPropertyInfo(KEY_FETCH_SIZE, CassandraUtils
-                        .getPropertyValue(props, KEY_FETCH_SIZE, DEFAULT_FETCH_SIZE),
-                false, null));
-        list.add(createDriverPropertyInfo(KEY_LOCAL_DC,
-                CassandraUtils.getPropertyValue(props, KEY_LOCAL_DC), false,
-                null));
-        list.add(createDriverPropertyInfo(
-                KEY_SQL_FRIENDLY,
-                CassandraUtils.getPropertyValue(props, KEY_SQL_FRIENDLY,
-                        String.valueOf(DEFAULT_SQL_FRIENDLY)), false,
-                new String[]{"true", "false"}));
-        list.add(createDriverPropertyInfo(KEY_QUERY_TRACE, CassandraUtils
-                        .getPropertyValue(props, KEY_QUERY_TRACE, DEFAULT_QUERY_TRACE),
-                false, new String[]{"true", "false"}));
-        list.add(createDriverPropertyInfo(KEY_KEEP_ALIVE, CassandraUtils
-                        .getPropertyValue(props, KEY_KEEP_ALIVE, DEFAULT_KEEP_ALIVE),
-                false, new String[]{"true", "false"}));
+        for (Map.Entry<String, Object> entry : CassandraConfiguration.DEFAULT.toSortedMap().entrySet()) {
+            String key = entry.getKey();
+            list.add(createDriverPropertyInfo(key, entry.getValue()));
+        }
 
         return Iterables.toArray(list, DriverPropertyInfo.class);
     }

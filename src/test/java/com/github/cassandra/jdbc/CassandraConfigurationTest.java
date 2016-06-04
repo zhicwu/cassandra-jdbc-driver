@@ -25,10 +25,22 @@ import org.testng.annotations.Test;
 import java.util.Properties;
 
 import static com.github.cassandra.jdbc.CassandraConfiguration.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 
 public class CassandraConfigurationTest {
+    @Test(groups = {"unit", "base"})
+    public void testextractDriverConfig() {
+        Properties props = new Properties();
+        props.setProperty("hosts", "host1.test.com,host2.test.com,host3.test.com");
+        props.setProperty("port", "999");
+        props.setProperty("tracing", "true");
+        props.setProperty("consistencyLevel", "QUORUM");
+        CassandraConfiguration.DriverConfig config = generateDriverConfig(props);
+        assertEquals(config.hosts, "host1.test.com,host2.test.com,host3.test.com");
+        assertEquals(config.port, 999);
+        assertEquals(config.tracing, true);
+        assertEquals(config.consistencyLevel, CassandraEnums.ConsistencyLevel.QUORUM);
+    }
 
     @Test(groups = {"unit", "base"})
     public void testParseConnectionURL() {
@@ -44,28 +56,28 @@ public class CassandraConfigurationTest {
 
             url = "jdbc:c*://host1";
             props = CassandraConfiguration.parseConnectionURL(url);
-            assertEquals("datastax", props.getProperty(KEY_PROVIDER));
+            assertNull(props.getProperty(KEY_PROVIDER));
             assertEquals("host1", props.getProperty(KEY_HOSTS));
-            assertEquals("system", props.getProperty(KEY_KEYSPACE));
+            assertNull(props.getProperty(KEY_KEYSPACE));
 
             url = "jdbc:c*://host2/?cc=1";
             props = CassandraConfiguration.parseConnectionURL(url);
-            assertEquals("datastax", props.getProperty(KEY_PROVIDER));
+            assertNull(props.getProperty(KEY_PROVIDER));
             assertEquals("host2", props.getProperty(KEY_HOSTS));
-            assertEquals("system", props.getProperty(KEY_KEYSPACE));
+            assertNull(props.getProperty(KEY_KEYSPACE));
             assertEquals("1", props.getProperty("cc"));
 
             url = "jdbc:c*://host3/system_auth";
             props = CassandraConfiguration.parseConnectionURL(url);
-            assertEquals("datastax", props.getProperty(KEY_PROVIDER));
+            assertNull(props.getProperty(KEY_PROVIDER));
             assertEquals("host3", props.getProperty(KEY_HOSTS));
             assertEquals("system_auth", props.getProperty(KEY_KEYSPACE));
 
             url = "jdbc:c*://host4?a=b&c=1&consistencyLevel=ANY&compression=lz4&connectTimeout=10&readTimeout=50&localDc=DD";
             props = CassandraConfiguration.parseConnectionURL(url);
-            assertEquals("datastax", props.getProperty(KEY_PROVIDER));
+            assertNull(props.getProperty(KEY_PROVIDER));
             assertEquals("host4", props.getProperty(KEY_HOSTS));
-            assertEquals("system", props.getProperty(KEY_KEYSPACE));
+            assertNull(props.getProperty(KEY_KEYSPACE));
             assertEquals("b", props.getProperty("a"));
             assertEquals("1", props.getProperty("c"));
             assertEquals("ANY", props.getProperty(KEY_CONSISTENCY_LEVEL));

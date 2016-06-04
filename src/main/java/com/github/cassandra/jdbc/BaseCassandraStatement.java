@@ -84,7 +84,7 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
     public void addBatch(String sql) throws SQLException {
         validateState();
 
-        batch.add(new CassandraCqlStatement(_connection.nativeSQL(sql)));
+        batch.add(CassandraCqlParser.parse(getConfiguration(), sql));
     }
 
     public void cancel() throws SQLException {
@@ -106,20 +106,6 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
         validateState();
 
         this._closeOnCompletion = true;
-    }
-
-    public int[] executeBatch() throws SQLException {
-        validateState();
-
-        int[] results = new int[batch.size()];
-
-        int idx = 0;
-        for (CassandraCqlStatement stmt : batch) {
-            // FIXME this is rude...
-            results[idx++] = execute(stmt.getCql()) ? 0 : 1;
-        }
-
-        return results;
     }
 
     public Connection getConnection() throws SQLException {

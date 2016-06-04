@@ -76,7 +76,8 @@ public class CassandraDataTypeMappings {
         addMappings(list, CassandraDataType.UUID.getTypeName(), Types.CHAR, UUID.class, 36, 0); // UUID1
         addMappings(list, CassandraDataType.VARCHAR.getTypeName(), Types.VARCHAR, String.class,
                 Integer.MAX_VALUE, 0);
-        addMappings(list, CassandraDataType.VARINT.getTypeName(), Types.BIGINT, BigInteger.class, Integer.MAX_VALUE, 0);
+        addMappings(list, CassandraDataType.VARINT.getTypeName(), Types.BIGINT, BigInteger.class,
+                Integer.MAX_VALUE, 0);
     }
 
     protected CassandraDataTypeMappings() {

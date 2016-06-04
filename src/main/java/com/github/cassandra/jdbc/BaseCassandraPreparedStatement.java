@@ -62,7 +62,7 @@ public abstract class BaseCassandraPreparedStatement extends
             params[index++] = p;
         }
 
-        this.batch.add(new CassandraCqlStatement(cqlStmt.getCql(), params));
+        this.batch.add(new CassandraCqlStatement(cqlStmt.getCql(), cqlStmt.getConfiguration(), params));
 
         this.clearParameters();
     }

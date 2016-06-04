@@ -18,31 +18,40 @@
  * under the License.
  *
  */
-package com.github.cassandra.jdbc.provider.datastax;
+package com.github.cassandra.jdbc;
 
-import com.github.cassandra.jdbc.CassandraDriver;
+import com.github.cassandra.jdbc.provider.datastax.CassandraConnection;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
-import java.util.Properties;
+import java.sql.SQLException;
 
 import static org.testng.Assert.assertTrue;
 
-public class DataStaxTestCase {
+public class BaseCassandraTest {
     protected CassandraConnection conn;
 
     @BeforeClass
-    public void setUp() throws Exception {
+    public void setUp() {
         CassandraDriver driver = new CassandraDriver();
 
-        Properties props = new Properties();
-        props.load(getClass().getResourceAsStream("/connection.properties"));
-        conn = (CassandraConnection) driver.connect(props.getProperty("url"), props);
+        try {
+            CassandraConfiguration config = CassandraConfiguration.DEFAULT;
+            conn = (CassandraConnection) driver.connect(config.getConnectionUrl(), config.toProperties());
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @AfterClass
-    public void tearDown() throws Exception {
-        conn.close();
+    public void tearDown() {
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+
+            }
+        }
     }
 
     protected void validateObjectType(Object value, Class clazz) {

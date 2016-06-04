@@ -20,6 +20,7 @@
  */
 package com.github.cassandra.jdbc.provider.datastax;
 
+import com.github.cassandra.jdbc.BaseCassandraTest;
 import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
@@ -34,7 +35,7 @@ import java.util.UUID;
 
 import static org.testng.Assert.*;
 
-public class CassandraPreparedStatementTest extends DataStaxTestCase {
+public class CassandraPreparedStatementTest extends BaseCassandraTest {
     private static final String TEST_KEY = "key";
 
     @Test(groups = {"unit", "server"})

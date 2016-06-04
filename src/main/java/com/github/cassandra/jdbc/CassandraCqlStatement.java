@@ -36,10 +36,6 @@ public class CassandraCqlStatement {
     private final CassandraCqlStmtConfiguration config;
     private final Object[] parameters;
 
-    public CassandraCqlStatement(String cql, Object... params) {
-        this(cql, null, params);
-    }
-
     public CassandraCqlStatement(String cql, CassandraCqlStmtConfiguration config, Object... params) {
         this.cql = Strings.nullToEmpty(cql);
         this.config = config;

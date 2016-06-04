@@ -80,8 +80,7 @@ public class CassandraCqlParserTest {
     @Test(groups = {"unit", "base"}, dataProvider = "parse-sql")
     public void testParseSql(String sql, String expectedSql, CassandraStatementType expectedType) {
         try {
-            CassandraCqlStatement stmt = CassandraCqlParser.parse(
-                    CassandraConfiguration.load(getClass().getResourceAsStream("/connection.properties")), sql);
+            CassandraCqlStatement stmt = CassandraCqlParser.parse(CassandraConfiguration.DEFAULT, sql);
 
             assertEquals(stmt.getCql(), expectedSql);
             assertEquals(stmt.getConfiguration().getStatementType(), expectedType);
@@ -93,21 +92,20 @@ public class CassandraCqlParserTest {
     @Test(groups = {"unit", "base"})
     public void testMagicComments() {
         String sql = "-- set consistency_level = aNY;fetch_size=991;;;\n" +
-                "-- set no_limit=true ; query_trace = true\n" +
+                "-- set no_limit=true ; tracing = true\n" +
                 "-- set read_timeout = 51\n" +
                 "-- set replace_null_value = true  ; sql_parser = true\n" +
                 "select * from system.local";
 
         try {
-            CassandraCqlStatement stmt = CassandraCqlParser.parse(
-                    CassandraConfiguration.load(getClass().getResourceAsStream("/connection.properties")), sql);
+            CassandraCqlStatement stmt = CassandraCqlParser.parse(CassandraConfiguration.DEFAULT, sql);
 
             CassandraCqlStmtConfiguration conf = stmt.getConfiguration();
             assertEquals(conf.getConsistencyLevel(), "ANY");
             assertEquals(conf.getFetchSize(), 991);
             assertEquals(conf.getReadTimeout(), 51 * 1000);
             assertEquals(conf.noLimit(), true);
-            assertEquals(conf.queryTraceEnabled(), true);
+            assertEquals(conf.tracingEnabled(), true);
             assertEquals(conf.replaceNullValue(), true);
             assertEquals(conf.sqlParserEnabled(), true);
         } catch (Exception e) {

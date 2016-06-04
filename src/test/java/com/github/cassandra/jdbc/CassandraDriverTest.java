@@ -55,8 +55,7 @@ public class CassandraDriverTest {
         CassandraDriver driver = new CassandraDriver();
 
         try {
-            CassandraConfiguration config
-                    = CassandraConfiguration.load(getClass().getResourceAsStream("/connection.properties"));
+            CassandraConfiguration config = CassandraConfiguration.DEFAULT;
             Properties props = new Properties();
             props.setProperty(KEY_USERNAME, config.getUserName());
             props.setProperty(KEY_PASSWORD, config.getPassword());
@@ -93,6 +92,13 @@ public class CassandraDriverTest {
             DriverPropertyInfo[] info = driver.getPropertyInfo(url, new Properties());
             assertNotNull(info);
             assertTrue(info.length > 1);
+
+            for (DriverPropertyInfo i : info) {
+                if (i.name.equals("consistencyLevel")) {
+                    assertNotNull(i.choices);
+                    assertTrue(i.choices.length > 1);
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
             fail("Exception happened during test: " + e.getMessage());

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.cassandra</groupId>
     <artifactId>cassandra-jdbc-driver</artifactId>
-    <version>0.4.0</version>
+    <version>0.5.0</version>
     <name>Cassandra JDBC Driver</name>
     <url>http://github.com/zhicwu/cassandra-jdbc-driver</url>
     <description>Type 4 JDBC driver for Apache Cassandra built on top of existing great libs like java driver from
@@ -16,6 +16,7 @@
         <fastutil.version>7.0.12</fastutil.version>
         <docker-client.version>3.5.12</docker-client.version>
         -->
+        <snakeyaml.version>1.17</snakeyaml.version>
         <antlr.version>3.5.2</antlr.version>
         <jsqlparser.version>0.9.5</jsqlparser.version>
         <cassandra.version>3.5</cassandra.version>
@@ -63,6 +64,11 @@
             <groupId>org.tinylog</groupId>
             <artifactId>tinylog</artifactId>
             <version>${tinylog.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml.version}</version>
         </dependency>
         <dependency>
             <groupId>org.antlr</groupId>
@@ -199,6 +205,10 @@
                             <dependencyReducedPomLocation>${project.build.directory}/pom.xml
                             </dependencyReducedPomLocation>
                             <relocations>
+                                <relocation>
+                                    <pattern>org.yaml.snakeyaml</pattern>
+                                    <shadedPattern>${shade.base}.snakeyaml</shadedPattern>
+                                </relocation>
                                 <relocation>
                                     <pattern>org.antlr</pattern>
                                     <shadedPattern>${shade.base}.antlr</shadedPattern>

@@ -22,34 +22,88 @@ package com.github.cassandra.jdbc;
 
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.collect.Maps;
 import com.google.common.primitives.Ints;
+import org.pmw.tinylog.Configurator;
+import org.pmw.tinylog.Level;
 import org.pmw.tinylog.Logger;
+import org.yaml.snakeyaml.Yaml;
 
-import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 public final class CassandraConfiguration {
+    public static final class DriverConfig {
+        public String provider = "datastax";
+        public String hosts = "localhost";
+        public int port = -1;
+        public String keyspace = "system";
+        public String user = "cassandra";
+        public String password = "cassandra";
+        public boolean quiet = true;
+        public CassandraEnums.ConsistencyLevel readConsistencyLevel = CassandraEnums.ConsistencyLevel.LOCAL_ONE;
+        public CassandraEnums.ConsistencyLevel writeConsistencyLevel = CassandraEnums.ConsistencyLevel.ANY;
+        public CassandraEnums.ConsistencyLevel consistencyLevel = readConsistencyLevel;
+        public boolean sqlFriendly = true;
+        public boolean tracing = false;
+        public CassandraEnums.Batch batch = CassandraEnums.Batch.UNLOGGED;
+        public boolean readAsync = false;
+        public boolean writeAsync = false;
+        public int fetchSize = 100;
+        public int readTimeout = 30;
+        public int connectTimeout = 5;
+        public boolean keepAlive = true;
+        public CassandraEnums.Compression compression = CassandraEnums.Compression.LZ4;
+        public String localDc = "";
+        public String loadBalancingPolicy = "";
+        public String fallbackPolicy = "";
+
+        // FIXME needs a better way to manage provider-specific configuration
+        Properties advanced = new Properties();
+
+        public DriverConfig() {
+        }
+
+        public SortedMap<String, Object> toSortedMap() {
+            SortedMap<String, Object> map = Maps.newTreeMap();
+
+            Field[] fields = DriverConfig.class.getFields();
+
+            for (Field field : fields) {
+                try {
+                    map.put(field.getName(), field.get(this));
+                } catch (IllegalAccessException e) {
+                    // ignore non-public fields
+                }
+            }
+
+            return map;
+        }
+
+        Properties toProperties() {
+            Properties props = new Properties();
+
+            props.putAll(toSortedMap());
+
+            return props;
+        }
+    }
+
+    public static final class LoggerConfig {
+        public Level level = Level.INFO;
+        public int stacktrace = -1;
+        public String format = "{date:yyyy-MM-dd HH:mm:ss} [{thread}] {class_name}.{method}({line}) {level}: {message}";
+    }
+
+    public static final class YamlConfig {
+        public Locale locale = Locale.US;
+
+        public DriverConfig driver = new DriverConfig();
+        public LoggerConfig logger = new LoggerConfig();
+    }
+
     static final String INVALID_URL = "Invalid connection URL";
-
-    static final String DEFAULT_FETCH_SIZE = "100";
-    static final String DEFAULT_HOSTS = "localhost";
-    static final String DEFAULT_KEEP_ALIVE = "true";
-    static final String DEFAULT_KEYSPACE = "system";
-
-    // default settings
-    static final String DEFAULT_CONNECTION_URL = "java:c*//localhost/";
-    static final String DEFAULT_PORT = "-1";
-    static final String DEFAULT_PROVIDER = "datastax";
-    static final String DEFAULT_QUERY_TRACE = "false";
-    static final String DEFAULT_READ_TIMEOUT = "30"; // 30 seconds
-    static final String DEFAULT_QUIET = "true";
-    static final String DEFAULT_SQL_FRIENDLY = "true";
-    static final String DEFAULT_USERNAME = "cassandra";
-    static final String DEFAULT_COMPRESSION = "LZ4";
-    static final String DEFAULT_CONNECT_TIMEOUT = "5"; // 5 seconds
-    static final String DEFAULT_CONSISTENCY_LEVEL = "LOCAL_ONE";
 
     static final String DRIVER_PROTOCOL = "jdbc:c*:";
 
@@ -81,30 +135,34 @@ public final class CassandraConfiguration {
 
     static final String TOKEN_URL_SEPARATOR = "//";
 
-    private final boolean autoCommit = true;
-    private final boolean readOnly = false;
-    private final String provider;
-    private final String connectionUrl;
-    private final String userName;
-    private final String password;
-    private final String hosts;
-    private final int port;
-    private final String keyspace;
-    private final boolean quiet;
-    private final boolean sqlFriendly;
-    private final boolean queryTrace;
-    private final int connectionTimeout;
-    private final int readTimeout;
-    private final boolean keepAlive;
-    private final String consistencyLevel;
-    private final String localDc;
-    private final String loadBalancingPolicy;
-    private final String fallbackPolicy;
-    private final int fetchSize;
-    private final String compression;
+    static final String YAML_KVP_SEPARATOR = " : ";
 
-    private final Properties additionalProperties;
+    static final CassandraConfiguration DEFAULT;
 
+    static {
+        Yaml yaml = new Yaml();
+        YamlConfig defaultConfig = new YamlConfig();
+        try {
+            defaultConfig = yaml.loadAs(CassandraConfiguration.class.getResourceAsStream("/config.yaml"),
+                    YamlConfig.class);
+        } catch (Throwable t) {
+            Logger.warn(t, "Failed to load default configuration, but that's cool");
+        }
+
+        // configure tinylog
+        Configurator.defaultConfig()
+                .formatPattern(defaultConfig.logger.format)
+                .level(defaultConfig.logger.level)
+                .locale(defaultConfig.locale)
+                .maxStackTraceElements(defaultConfig.logger.stacktrace)
+                .activate();
+
+        try {
+            DEFAULT = new CassandraConfiguration(defaultConfig.driver);
+        } catch (SQLException e) {
+            throw CassandraErrors.unexpectedException(e);
+        }
+    }
 
     static boolean isValidUrl(String url) {
         return !Strings.isNullOrEmpty(url) && url.startsWith(DRIVER_PROTOCOL);
@@ -120,21 +178,17 @@ public final class CassandraConfiguration {
     static Properties parseConnectionURL(String url) throws SQLException {
         Properties props = new Properties();
 
-        // example URL:
-        // jdbc:c*:datastax://host1:9160,host2/keyspace1?consistency=LOCAL_ONE
+        // example URL: jdbc:c*:datastax://host1:9160,host2/keyspace1?consistency=LOCAL_ONE
         String[] parts = url.split(TOKEN_URL_SEPARATOR);
         boolean invalidUrl = true;
 
         if (parts.length == 2) {
             // get provider
             String provider = parts[0].substring(DRIVER_PROTOCOL.length());
-            if (Strings.isNullOrEmpty(provider)) {
-                provider = DEFAULT_PROVIDER;
-            } else {
-                // this will also ignore extra protocol codes like ":a:b:c:d:"
+            if (!Strings.isNullOrEmpty(provider)) {
                 provider = provider.split(TOKEN_PROTO_SEPARATOR)[0];
+                props.setProperty(KEY_PROVIDER, provider);
             }
-            props.setProperty(KEY_PROVIDER, provider);
 
             String restUrl = parts[1];
             int ksIdx = restUrl.indexOf('/');
@@ -147,12 +201,10 @@ public final class CassandraConfiguration {
                 // get keyspace
                 String keyspace = restUrl.substring(ksIdx + 1,
                         pIdx > ksIdx ? pIdx : restUrl.length());
-                if (Strings.isNullOrEmpty(keyspace)) {
-                    keyspace = DEFAULT_KEYSPACE;
+                if (!Strings.isNullOrEmpty(keyspace)) {
+                    props.setProperty(KEY_KEYSPACE, keyspace);
                 }
-                props.setProperty(KEY_KEYSPACE, keyspace);
             } else {
-                props.setProperty(KEY_KEYSPACE, DEFAULT_KEYSPACE);
                 props.setProperty(KEY_HOSTS,
                         pIdx > 0 ? restUrl.substring(0, pIdx) : restUrl);
             }
@@ -184,40 +236,68 @@ public final class CassandraConfiguration {
         return props;
     }
 
-    static String extractProperty(Properties props, String key, String defaultValue) {
-        String value = (String) props.remove(key);
-        return value == null ? Strings.nullToEmpty(defaultValue) : value;
+    static DriverConfig generateDriverConfig(Properties props) {
+        Properties current = DEFAULT.config.toProperties();
+        current.putAll(props);
+
+        StringBuilder builder = new StringBuilder();
+        for (Map.Entry entry : current.entrySet()) {
+            String key = (String) entry.getKey();
+            builder.append(key).append(YAML_KVP_SEPARATOR).append(entry.getValue()).append('\n');
+        }
+
+        return new Yaml().loadAs(builder.toString().trim(), DriverConfig.class);
     }
 
-    static String buildSimplifiedConnectionUrl(Properties props) {
+    static String buildSimplifiedConnectionUrl(DriverConfig config) {
         StringBuilder builder = new StringBuilder(DRIVER_PROTOCOL);
-        builder.append(props.getProperty(KEY_PROVIDER, DEFAULT_PROVIDER))
+        builder.append(config.provider)
                 .append(':')
                 .append(TOKEN_URL_SEPARATOR)
-                .append(props.getProperty(KEY_HOSTS, DEFAULT_HOSTS))
-                .append('/')
-                .append(props.getProperty(KEY_KEYSPACE, DEFAULT_KEYSPACE))
+                .append(config.hosts);
+
+        if (config.port > 0) {
+            builder.append(':').append(config.port);
+        }
+
+        builder.append('/')
+                .append(config.keyspace)
                 .append('?').append(KEY_USERNAME).append('=')
-                .append(props.getProperty(KEY_USERNAME, DEFAULT_USERNAME));
+                .append(config.user);
 
         return builder.toString();
     }
 
-    public static CassandraConfiguration load(InputStream stream) throws SQLException {
-        Properties props = new Properties();
+    private final boolean autoCommit = true;
+    private final boolean readOnly = false;
+    private final String connectionUrl;
+    private final DriverConfig config;
 
-        try {
-            props.load(stream);
-        } catch (Exception e) {
-            Logger.error(e, "Failed to load Cassandra Configuration from given input stream {}", stream);
-            throw new SQLException(e);
+    private void init() {
+        int tentativePort = config.port;
+        Splitter splitter = Splitter.on(':').trimResults().omitEmptyStrings().limit(2);
+        StringBuilder sb = new StringBuilder();
+        for (String host : Splitter.on(',').trimResults().omitEmptyStrings().split(
+                config.hosts)) {
+            List<String> h = splitter.splitToList(host);
+            sb.append(h.get(0)).append(',');
+            if (h.size() > 1 && tentativePort <= 0) {
+                tentativePort = Ints.tryParse(h.get(1));
+            }
         }
 
-        return new CassandraConfiguration(props);
+        config.hosts = sb.deleteCharAt(sb.length() - 1).toString();
+        config.port = tentativePort;
+
+        // update timeouts
+        config.connectTimeout = config.connectTimeout * 1000;
+        config.readTimeout = config.readTimeout * 1000;
     }
 
-    public CassandraConfiguration(Properties props) throws SQLException {
-        this(extractProperty(props, KEY_CONNECTION_URL, DEFAULT_CONNECTION_URL), props);
+    private CassandraConfiguration(DriverConfig config) throws SQLException {
+        this.config = config;
+        init();
+        this.connectionUrl = buildSimplifiedConnectionUrl(config);
     }
 
     public CassandraConfiguration(String url, Properties props) throws SQLException {
@@ -226,43 +306,15 @@ public final class CassandraConfiguration {
         connProps.putAll(parseConnectionURL(url));
         connProps.putAll(props);
 
-        provider = extractProperty(connProps, KEY_PROVIDER, DEFAULT_PROVIDER);
-        connectionUrl = buildSimplifiedConnectionUrl(connProps);
-        userName = extractProperty(connProps, KEY_USERNAME, DEFAULT_USERNAME);
-        password = extractProperty(connProps, KEY_PASSWORD, DEFAULT_USERNAME);
+        config = generateDriverConfig(connProps);
 
-        int tentativePort = Ints.tryParse(extractProperty(connProps, KEY_PORT, DEFAULT_PORT));
-        Splitter splitter = Splitter.on(':').trimResults().omitEmptyStrings().limit(2);
-        StringBuilder sb = new StringBuilder();
-        for (String host : Splitter.on(',').trimResults().omitEmptyStrings().split(
-                extractProperty(connProps, KEY_HOSTS, DEFAULT_HOSTS))) {
-            List<String> h = splitter.splitToList(host);
-            sb.append(h.get(0)).append(',');
-            if (h.size() > 1 && tentativePort <= 0) {
-                tentativePort = Ints.tryParse(h.get(1));
-            }
-        }
-        hosts = sb.deleteCharAt(sb.length() - 1).toString();
-        port = tentativePort;
-        keyspace = extractProperty(connProps, KEY_KEYSPACE, DEFAULT_KEYSPACE);
-        quiet = Boolean.valueOf(extractProperty(connProps, KEY_QUIET, DEFAULT_QUIET).toLowerCase());
-        sqlFriendly = Boolean.valueOf(extractProperty(connProps, KEY_SQL_FRIENDLY, DEFAULT_SQL_FRIENDLY).toLowerCase());
-        queryTrace = Boolean.valueOf(extractProperty(connProps, KEY_QUERY_TRACE, DEFAULT_QUERY_TRACE).toLowerCase());
-        connectionTimeout = Integer.parseInt(extractProperty(connProps, KEY_CONNECT_TIMEOUT, DEFAULT_CONNECT_TIMEOUT)) * 1000;
-        readTimeout = Integer.parseInt(extractProperty(connProps, KEY_READ_TIMEOUT, DEFAULT_READ_TIMEOUT)) * 1000;
-        keepAlive = Boolean.valueOf(extractProperty(connProps, KEY_KEEP_ALIVE, DEFAULT_KEEP_ALIVE).toLowerCase());
-        consistencyLevel = extractProperty(connProps, KEY_CONSISTENCY_LEVEL, DEFAULT_CONSISTENCY_LEVEL).toUpperCase();
-        localDc = extractProperty(connProps, KEY_LOCAL_DC, null);
-        loadBalancingPolicy = "";
-        fallbackPolicy = "";
-        fetchSize = Integer.parseInt(extractProperty(connProps, KEY_FETCH_SIZE, DEFAULT_FETCH_SIZE));
-        compression = extractProperty(connProps, KEY_COMPRESSION, DEFAULT_COMPRESSION).toUpperCase();
+        init();
 
-        additionalProperties = connProps;
+        connectionUrl = buildSimplifiedConnectionUrl(config);
     }
 
     public String getProvider() {
-        return provider;
+        return config.provider;
     }
 
     public String getConnectionUrl() {
@@ -270,23 +322,23 @@ public final class CassandraConfiguration {
     }
 
     public String getUserName() {
-        return userName;
+        return config.user;
     }
 
     public String getPassword() {
-        return password;
+        return config.password;
     }
 
     public String getHosts() {
-        return hosts;
+        return config.hosts;
     }
 
     public int getPort() {
-        return port;
+        return config.port;
     }
 
     public String getKeyspace() {
-        return keyspace;
+        return config.keyspace;
     }
 
     public boolean isAutoCommit() {
@@ -298,64 +350,92 @@ public final class CassandraConfiguration {
     }
 
     public boolean isSqlFriendly() {
-        return sqlFriendly;
+        return config.sqlFriendly;
     }
 
     public boolean isQuiet() {
-        return quiet;
+        return config.quiet;
     }
 
-    public boolean isQueryTrace() {
-        return queryTrace;
+    public boolean isTracingEnabled() {
+        return config.tracing;
     }
 
     public int getConnectionTimeout() {
-        return connectionTimeout;
+        return config.connectTimeout;
     }
 
     public int getReadTimeout() {
-        return readTimeout;
+        return config.readTimeout;
     }
 
     public boolean isKeepAlive() {
-        return keepAlive;
+        return config.keepAlive;
     }
 
-    public String getConsistencyLevel() {
-        return consistencyLevel;
+    public CassandraEnums.ConsistencyLevel getReadConsistencyLevel() {
+        return config.readConsistencyLevel;
+    }
+
+    public CassandraEnums.ConsistencyLevel getWriteConsistencyLevel() {
+        return config.writeConsistencyLevel;
+    }
+
+    public CassandraEnums.ConsistencyLevel getConsistencyLevel() {
+        return config.consistencyLevel;
     }
 
     @Deprecated
     public String getLocalDc() {
-        return localDc;
+        return config.localDc;
     }
 
     public String getLoadBalancingPolicy() {
-        return loadBalancingPolicy;
+        return config.loadBalancingPolicy;
     }
 
     public String getFallbackPolicy() {
-        return fallbackPolicy;
+        return config.fallbackPolicy;
+    }
+
+    public CassandraEnums.Batch getBatch() {
+        return config.batch;
+    }
+
+    public boolean readAsync() {
+        return config.readAsync;
+    }
+
+    public boolean writeAsync() {
+        return config.writeAsync;
     }
 
     public int getFetchSize() {
-        return fetchSize;
+        return config.fetchSize;
     }
 
-    public String getCompression() {
-        return compression;
+    public CassandraEnums.Compression getCompression() {
+        return config.compression;
     }
 
     public boolean containsAdditionalProperty(String key) {
-        return additionalProperties.containsKey(key);
+        return config.advanced.containsKey(key);
     }
 
     public String getAdditionalProperty(String key, String defaultValue) {
-        return additionalProperties.getProperty(key, defaultValue);
+        return config.advanced.getProperty(key, defaultValue);
     }
 
     public int getAdditionalProperty(String key, int defaultValue) {
         String value = getAdditionalProperty(key, null);
         return Strings.isNullOrEmpty(value) ? defaultValue : Integer.valueOf(value);
+    }
+
+    public Properties toProperties() {
+        return config.toProperties();
+    }
+
+    public SortedMap<String, Object> toSortedMap() {
+        return config.toSortedMap();
     }
 }

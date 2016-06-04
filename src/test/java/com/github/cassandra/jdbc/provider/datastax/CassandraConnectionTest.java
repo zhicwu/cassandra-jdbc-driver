@@ -20,6 +20,7 @@
  */
 package com.github.cassandra.jdbc.provider.datastax;
 
+import com.github.cassandra.jdbc.BaseCassandraTest;
 import com.github.cassandra.jdbc.CassandraUtils;
 import com.github.cassandra.jdbc.DummyCassandraResultSet;
 import org.pmw.tinylog.Logger;
@@ -31,7 +32,7 @@ import java.sql.SQLException;
 
 import static org.testng.Assert.*;
 
-public class CassandraConnectionTest extends DataStaxTestCase {
+public class CassandraConnectionTest extends BaseCassandraTest {
     private String[] extractColumnNames(String[][] columns) {
         String[] names = new String[columns.length];
         int index = 0;

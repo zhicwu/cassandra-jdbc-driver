@@ -22,17 +22,13 @@ package com.github.cassandra.jdbc.provider.datastax;
 
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.QueryTrace.Event;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.utils.UUIDs;
 import com.github.cassandra.jdbc.*;
-import com.google.common.base.Function;
 import org.pmw.tinylog.Level;
 import org.pmw.tinylog.Logger;
 
-import java.sql.Connection;
-import java.sql.*;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.List;
-import java.util.UUID;
 
 import static com.github.cassandra.jdbc.CassandraUtils.EMPTY_STRING;
 
@@ -43,83 +39,6 @@ import static com.github.cassandra.jdbc.CassandraUtils.EMPTY_STRING;
  */
 public class CassandraStatement extends BaseCassandraPreparedStatement {
     private static final Level LOG_LEVEL = Logger.getLevel(CassandraStatement.class);
-
-    private static final CassandraDataTypeConverters converters
-            = new CassandraDataTypeConverters(CassandraDataTypeConverters.instance);
-
-    private static final long EPOCH_MS = Timestamp.valueOf("1970-01-01 00:00:00.000").getTime();
-
-    static {
-        // add / override converters
-        converters.addMapping(LocalDate.class, LocalDate.fromMillisSinceEpoch(System.currentTimeMillis()),
-                new Function<Object, LocalDate>() {
-                    public LocalDate apply(Object input) {
-                        LocalDate date;
-                        if (input instanceof java.util.Date) {
-                            date = LocalDate.fromMillisSinceEpoch(((java.util.Date) input).getTime() - EPOCH_MS);
-                        } else {
-                            date = LocalDate.fromMillisSinceEpoch(
-                                    Date.valueOf(String.valueOf(input)).getTime() - EPOCH_MS);
-                        }
-                        return date;
-                    }
-                });
-        // Use DataStax UUIDs to generate time-based UUID
-        converters.addMapping(java.util.UUID.class, UUIDs.timeBased(), new Function<Object, UUID>() {
-            public UUID apply(Object input) {
-                return java.util.UUID.fromString(String.valueOf(input));
-            }
-        });
-        // workaround for Date, Time and Timestamp
-        converters.addMapping(Date.class, new Date(System.currentTimeMillis()),
-                new Function<Object, Date>() {
-                    public Date apply(Object input) {
-                        Date date;
-                        if (input instanceof LocalDate) {
-                            date = new Date(((LocalDate) input).getMillisSinceEpoch() + EPOCH_MS);
-                        } else if (input instanceof java.util.Date) {
-                            date = new Date(((java.util.Date) input).getTime());
-                        } else if (input instanceof Number) {
-                            date = new Date(((Number) input).longValue());
-                        } else {
-                            date = Date.valueOf(String.valueOf(input));
-                        }
-                        return date;
-                    }
-                });
-        converters.addMapping(Time.class, new Time(System.currentTimeMillis()),
-                new Function<Object, Time>() {
-                    public Time apply(Object input) {
-                        Time time;
-                        if (input instanceof LocalDate) {
-                            time = new Time(((LocalDate) input).getMillisSinceEpoch() + EPOCH_MS);
-                        } else if (input instanceof java.util.Date) {
-                            time = new Time(((java.util.Date) input).getTime());
-                        } else if (input instanceof Number) {
-                            time = new Time(((Number) input).longValue());
-                        } else {
-                            time = new Time(Time.valueOf(String.valueOf(input)).getTime());
-                        }
-                        return time;
-                    }
-                });
-        converters.addMapping(Timestamp.class, new Timestamp(System.currentTimeMillis()),
-                new Function<Object, Timestamp>() {
-                    public Timestamp apply(Object input) {
-                        Timestamp timestamp;
-                        if (input instanceof LocalDate) {
-                            timestamp = new Timestamp(((LocalDate) input).getMillisSinceEpoch() + EPOCH_MS);
-                        } else if (input instanceof java.util.Date) {
-                            timestamp = new Timestamp(((java.util.Date) input).getTime());
-                        } else if (input instanceof Number) {
-                            timestamp = new Timestamp(((Number) input).longValue());
-                        } else {
-                            timestamp = Timestamp.valueOf(String.valueOf(input));
-                        }
-                        return timestamp;
-                    }
-                });
-    }
 
     protected CassandraResultSet currentResultSet;
     protected DataStaxSessionWrapper session;
@@ -138,36 +57,26 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
 
     @Override
     protected CassandraDataTypeMappings getDataTypeMappings() {
-        return DataStaxDataTypeMappings.instance;
+        return DataStaxDataTypes.mappings;
     }
 
     @Override
     protected CassandraDataTypeConverters getDataTypeConverters() {
-        return converters;
+        return DataStaxDataTypes.converters;
     }
 
-    protected ResultSet executeCql(String cql) throws SQLException {
-        Logger.debug("Trying to execute the following CQL:\n{}", cql);
+    protected void configureStatement(Statement stmt, CassandraCqlStmtConfiguration config) throws SQLException {
+        stmt.setConsistencyLevel(ConsistencyLevel.valueOf(config.getConsistencyLevel()));
+        stmt.setFetchSize(config.hasSetFetchSize() ? config.getFetchSize() : this.getFetchSize());
 
-        CassandraCqlStatement parsedStmt = CassandraCqlParser.parse(getConfiguration(), cql);
-
-        Connection c = this.getConnection();
-
-        boolean queryTrace = parsedStmt.getConfiguration().queryTraceEnabled();
-        SimpleStatement ss = new SimpleStatement(parsedStmt.getCql());
-        ss.setFetchSize(this.getFetchSize());
-        if (!queryTrace && c instanceof CassandraConnection) {
-            CassandraConnection cc = (CassandraConnection) c;
-
-            if (cc.getConfiguration().isQueryTrace()) {
-                queryTrace = true;
-                ss.enableTracing();
-            }
+        if (config.tracingEnabled()) {
+            stmt.enableTracing();
         }
 
-        ss.setReadTimeoutMillis(parsedStmt.getConfiguration().getReadTimeout());
-        ResultSet rs = session.execute(ss);
+        stmt.setReadTimeoutMillis(config.getReadTimeout());
+    }
 
+    protected void postStatementExecution(CassandraCqlStatement parsedStmt, ResultSet rs) {
         if (LOG_LEVEL.compareTo(Level.DEBUG) >= 0) {
             List<ExecutionInfo> list = rs.getAllExecutionInfo();
             int size = list == null ? 0 : list.size();
@@ -179,7 +88,7 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
                     Logger.debug(getExecutionInfoAsString(info, index, size));
 
                     QueryTrace q = info.getQueryTrace();
-                    if (queryTrace && q != null) {
+                    if (parsedStmt.getConfiguration().tracingEnabled() && q != null) {
                         Logger.debug(getQueryTraceAsString(q, index, size));
                     }
 
@@ -191,6 +100,19 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
         }
 
         replaceCurrentResultSet(parsedStmt, rs);
+    }
+
+    protected ResultSet executeCql(String cql) throws SQLException {
+        Logger.debug("Trying to execute the following CQL:\n{}", cql);
+
+        CassandraCqlStatement parsedStmt = CassandraCqlParser.parse(getConfiguration(), cql);
+        CassandraCqlStmtConfiguration stmtConf = parsedStmt.getConfiguration();
+
+        SimpleStatement ss = new SimpleStatement(parsedStmt.getCql());
+
+        configureStatement(ss, stmtConf);
+        ResultSet rs = session.execute(ss);
+        postStatementExecution(parsedStmt, rs);
 
         return rs;
     }
@@ -292,7 +214,9 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
 
     @Override
     public int[] executeBatch() throws SQLException {
-        BatchStatement batchStmt = new BatchStatement(BatchStatement.Type.UNLOGGED);
+        CassandraEnums.Batch mode = getConfiguration().getBatch();
+        BatchStatement batchStmt = new BatchStatement(
+                mode == CassandraEnums.Batch.LOGGED ? BatchStatement.Type.LOGGED : BatchStatement.Type.UNLOGGED);
 
         for (CassandraCqlStatement stmt : batch) {
             batchStmt.add(new SimpleStatement(stmt.getCql()));
