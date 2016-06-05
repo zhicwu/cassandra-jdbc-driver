@@ -120,7 +120,14 @@ public class CassandraPreparedStatement extends CassandraStatement {
         BoundStatement boundStatement = preparedStmt.bind(params);
 
         configureStatement(boundStatement, stmtConf);
-        com.datastax.driver.core.ResultSet rs = session.execute(boundStatement);
+
+        com.datastax.driver.core.ResultSet rs = null;
+        if (stmtConf.noWait()) {
+            session.executeAsync(boundStatement);
+        } else {
+            rs = session.execute(boundStatement);
+        }
+
         postStatementExecution(parsedStmt, rs);
 
         return rs;

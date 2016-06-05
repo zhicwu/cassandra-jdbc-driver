@@ -29,9 +29,9 @@ import java.util.Properties;
 
 public class CassandraCqlStmtConfiguration {
     static final String KEY_CONSISTENCY_LEVEL = "consistency_level";
-    static final String KEY_EXEC_ASYNC = "exec_async";
     static final String KEY_FETCH_SIZE = "fetch_size";
     static final String KEY_NO_LIMIT = "no_limit";
+    static final String KEY_NO_WAIT = "no_wait";
     static final String KEY_READ_TIMEOUT = "read_timeout";
     static final String KEY_REPLACE_NULL_VALUE = "replace_null_value";
     static final String KEY_SQL_PARSER = "sql_parser";
@@ -41,9 +41,9 @@ public class CassandraCqlStmtConfiguration {
     private final CassandraConfiguration config;
 
     private final String consistencyLevel;
-    private final boolean execAsync;
     private final int fetchSize;
     private final boolean noLimit;
+    private final boolean noWait;
     private final int readTimeout; // in seconds
     private final boolean replaceNullValue;
     private final boolean sqlParser;
@@ -69,20 +69,16 @@ public class CassandraCqlStmtConfiguration {
         consistencyLevel = props.getProperty(KEY_CONSISTENCY_LEVEL, preferredCL.name()).trim().toUpperCase();
 
         String value = props.getProperty(KEY_FETCH_SIZE);
-        execAsync = Boolean.valueOf(props.getProperty(KEY_EXEC_ASYNC, null));
         // -1 implies using the one defined in Statement / PreparedStatement
         fetchSize = Strings.isNullOrEmpty(value) ? -1 : Ints.tryParse(value);
         noLimit = Boolean.valueOf(props.getProperty(KEY_NO_LIMIT, null));
+        noWait = Boolean.valueOf(props.getProperty(KEY_NO_WAIT, null));
         tracing = Boolean.valueOf(props.getProperty(KEY_TRACING, String.valueOf(config.isTracingEnabled())));
         value = props.getProperty(KEY_READ_TIMEOUT);
         // convert second to millisecond
         readTimeout = Strings.isNullOrEmpty(value) ? config.getReadTimeout() : Ints.tryParse(value) * 1000;
         replaceNullValue = Boolean.valueOf(props.getProperty(KEY_REPLACE_NULL_VALUE, null));
         sqlParser = Boolean.valueOf(props.getProperty(KEY_SQL_PARSER, String.valueOf(config.isSqlFriendly())));
-    }
-
-    public boolean executeAsync() {
-        return execAsync;
     }
 
     public boolean hasSetFetchSize() {
@@ -119,6 +115,10 @@ public class CassandraCqlStmtConfiguration {
         return noLimit;
     }
 
+    public boolean noWait() {
+        return noWait;
+    }
+
     public boolean tracingEnabled() {
         return tracing;
     }
@@ -133,7 +133,7 @@ public class CassandraCqlStmtConfiguration {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(consistencyLevel, execAsync, fetchSize, noLimit, tracing,
+        return Objects.hashCode(consistencyLevel, fetchSize, noLimit, noWait, tracing,
                 readTimeout, replaceNullValue, sqlParser);
     }
 
@@ -148,9 +148,9 @@ public class CassandraCqlStmtConfiguration {
         final CassandraCqlStmtConfiguration other = (CassandraCqlStmtConfiguration) obj;
 
         return Objects.equal(this.consistencyLevel, other.consistencyLevel)
-                && Objects.equal(this.execAsync, other.execAsync)
                 && Objects.equal(this.fetchSize, other.fetchSize)
                 && Objects.equal(this.noLimit, other.noLimit)
+                && Objects.equal(this.noWait, other.noWait)
                 && Objects.equal(this.tracing, other.tracing)
                 && Objects.equal(this.readTimeout, other.readTimeout)
                 && Objects.equal(this.replaceNullValue, other.replaceNullValue)
@@ -161,9 +161,9 @@ public class CassandraCqlStmtConfiguration {
     public String toString() {
         return Objects.toStringHelper(this)
                 .addValue(this.consistencyLevel)
-                .addValue(this.execAsync)
                 .addValue(this.fetchSize)
                 .addValue(this.noLimit)
+                .addValue(this.noWait)
                 .addValue(this.tracing)
                 .addValue(this.readTimeout)
                 .addValue(this.replaceNullValue)

@@ -74,10 +74,13 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
         }
 
         stmt.setReadTimeoutMillis(config.getReadTimeout());
+
+        // TODO: for prepared statement, we'd better set routing key as hints for token-aware load-balancing policy
+        // http://www.cyanicautomation.com/cassandra-routing-keys-datastax-c-driver/
     }
 
     protected void postStatementExecution(CassandraCqlStatement parsedStmt, ResultSet rs) {
-        if (LOG_LEVEL.compareTo(Level.DEBUG) >= 0) {
+        if (LOG_LEVEL.compareTo(Level.DEBUG) >= 0 && rs != null) {
             List<ExecutionInfo> list = rs.getAllExecutionInfo();
             int size = list == null ? 0 : list.size();
 
@@ -111,7 +114,14 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
         SimpleStatement ss = new SimpleStatement(parsedStmt.getCql());
 
         configureStatement(ss, stmtConf);
-        ResultSet rs = session.execute(ss);
+
+        ResultSet rs = null;
+        if (stmtConf.noWait()) {
+            session.executeAsync(ss);
+        } else {
+            rs = session.execute(ss);
+        }
+
         postStatementExecution(parsedStmt, rs);
 
         return rs;
@@ -123,7 +133,7 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
 
         if (info != null) {
             builder.append("Execution Info ").append(index).append(" of ")
-                    .append(size).append(":\n* schema aggrement: ")
+                    .append(size).append(":\n* schema agreement: ")
                     .append(info.isSchemaInAgreement())
                     .append("\n* achieved consistency level: ")
                     .append(info.getAchievedConsistencyLevel())
@@ -212,7 +222,6 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
         }
     }
 
-    @Override
     public int[] executeBatch() throws SQLException {
         CassandraEnums.Batch mode = getConfiguration().getBatch();
         BatchStatement batchStmt = new BatchStatement(

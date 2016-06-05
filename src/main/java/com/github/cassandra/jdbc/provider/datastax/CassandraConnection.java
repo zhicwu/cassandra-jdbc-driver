@@ -25,10 +25,8 @@ import com.github.cassandra.jdbc.*;
 import com.google.common.base.Strings;
 import org.pmw.tinylog.Logger;
 
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -41,9 +39,14 @@ import static com.github.cassandra.jdbc.CassandraUtils.*;
  * @author Zhichun Wu
  */
 public class CassandraConnection extends BaseCassandraConnection {
-    static final String CQL_TO_GET_VERSION = "select release_version from system.local where key='local' limit 1";
+    static final Statement CQL_TO_GET_VERSION = new SimpleStatement(
+            "select release_version from system.local where key='local' limit 1");
 
     static final String DRIVER_NAME = "DataStax Java Driver";
+
+    static {
+        CQL_TO_GET_VERSION.setConsistencyLevel(ConsistencyLevel.LOCAL_ONE);
+    }
 
     private DataStaxSessionWrapper _session;
 
@@ -462,8 +465,8 @@ public class CassandraConnection extends BaseCassandraConnection {
         }
     }
 
-    public Statement createStatement(int resultSetType,
-                                     int resultSetConcurrency, int resultSetHoldability)
+    public java.sql.Statement createStatement(int resultSetType,
+                                              int resultSetConcurrency, int resultSetHoldability)
             throws SQLException {
         validateState();
 
@@ -476,8 +479,8 @@ public class CassandraConnection extends BaseCassandraConnection {
         return _keyspace;
     }
 
-    public PreparedStatement prepareStatement(String sql, int resultSetType,
-                                              int resultSetConcurrency, int resultSetHoldability)
+    public java.sql.PreparedStatement prepareStatement(String sql, int resultSetType,
+                                                       int resultSetConcurrency, int resultSetHoldability)
             throws SQLException {
         validateState();
 

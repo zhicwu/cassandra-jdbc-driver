@@ -48,8 +48,6 @@ public final class CassandraConfiguration {
         public boolean sqlFriendly = true;
         public boolean tracing = false;
         public CassandraEnums.Batch batch = CassandraEnums.Batch.UNLOGGED;
-        public boolean readAsync = false;
-        public boolean writeAsync = false;
         public int fetchSize = 100;
         public int readTimeout = 30;
         public int connectTimeout = 5;
@@ -400,14 +398,6 @@ public final class CassandraConfiguration {
 
     public CassandraEnums.Batch getBatch() {
         return config.batch;
-    }
-
-    public boolean readAsync() {
-        return config.readAsync;
-    }
-
-    public boolean writeAsync() {
-        return config.writeAsync;
     }
 
     public int getFetchSize() {

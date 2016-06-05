@@ -44,27 +44,19 @@ final class DataStaxSessionWrapper implements AutoCloseable {
         }
     }
 
-    ResultSet execute(String cql) throws SQLException {
-        validateState();
-
-        return session.execute(cql);
-    }
-
     ResultSet execute(Statement statement) throws SQLException {
         validateState();
 
         return session.execute(statement);
     }
 
-    ResultSetFuture executeAsync(String cql) throws SQLException {
-        validateState();
-
-        return session.executeAsync(cql);
-    }
-
     ResultSetFuture executeAsync(Statement statement) throws SQLException {
         validateState();
 
+        // DataStax Java driver is asynchronous by default: http://www.datastax.com/dev/blog/java-driver-async-queries
+        // this should be only used in two scenarios:
+        // 1) insertion when nobody cares if there's any data lost (e.g. vast amount of logs)
+        // 2) batch processing based on execution plan (e.g. "select ... in" mentioned in above article)
         return session.executeAsync(statement);
     }
 

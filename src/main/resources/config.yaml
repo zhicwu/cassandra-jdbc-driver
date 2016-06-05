@@ -29,9 +29,6 @@ driver :
   writeConsistencyLevel : LOCAL_ONE
   consistencyLevel : *CL
 
-  readAsync : false
-  writeAsync : false
-
   batch : UNLOGGED # LOGGED or UNLOGGED
   fetchSize : 100
   readTimeout : 30 # in seconds

@@ -26,6 +26,7 @@ import org.testng.annotations.Test;
 
 import static com.github.cassandra.jdbc.parser.SqlToCqlTranslator.DEFAULT_ROW_LIMIT;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 public class CassandraCqlParserTest {
@@ -94,7 +95,7 @@ public class CassandraCqlParserTest {
         String sql = "-- set consistency_level = aNY;fetch_size=991;;;\n" +
                 "-- set no_limit=true ; tracing = true\n" +
                 "-- set read_timeout = 51\n" +
-                "-- set replace_null_value = true  ; sql_parser = true\n" +
+                "-- set replace_null_value = true  ; sql_parser = true; no_wait = true\n" +
                 "select * from system.local";
 
         try {
@@ -104,10 +105,11 @@ public class CassandraCqlParserTest {
             assertEquals(conf.getConsistencyLevel(), "ANY");
             assertEquals(conf.getFetchSize(), 991);
             assertEquals(conf.getReadTimeout(), 51 * 1000);
-            assertEquals(conf.noLimit(), true);
-            assertEquals(conf.tracingEnabled(), true);
-            assertEquals(conf.replaceNullValue(), true);
-            assertEquals(conf.sqlParserEnabled(), true);
+            assertTrue(conf.noLimit());
+            assertTrue(conf.tracingEnabled());
+            assertTrue(conf.replaceNullValue());
+            assertTrue(conf.sqlParserEnabled());
+            assertTrue(conf.noWait());
         } catch (Exception e) {
             fail("Failed", e);
         }

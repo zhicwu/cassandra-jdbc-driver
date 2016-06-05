@@ -184,4 +184,30 @@ public class CassandraStatementTest extends BaseCassandraTest {
             fail("Error occurred during testing: " + e.getMessage());
         }
     }
+
+    @Test(groups = {"unit", "server"})
+    public void testAsyncQuery() {
+        String cql = "-- set no_wait = true\nselect * from system.peers limit 1";
+
+        try {
+            java.sql.Statement s = conn.createStatement();
+            assertTrue(s instanceof CassandraStatement);
+
+            boolean result = s.execute(cql);
+            assertEquals(result, true);
+            java.sql.ResultSet rs = s.getResultSet();
+            assertNotNull(rs);
+
+            String[] columns = CassandraUtils.getColumnNames(rs);
+            Object[][] data = CassandraUtils.getAllData(rs);
+            assertTrue(columns.length == 0);
+            assertTrue(data.length == 0);
+
+            rs.close();
+            s.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Error occurred during testing: " + e.getMessage());
+        }
+    }
 }
