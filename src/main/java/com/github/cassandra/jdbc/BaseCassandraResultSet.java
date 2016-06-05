@@ -46,6 +46,8 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
 
     protected final BaseCassandraStatement statement;
     protected final CassandraCqlStatement cqlStmt;
+    protected final int maxRows;
+    protected final int maxFieldSize;
     protected boolean wasNull;
 
     protected BaseCassandraResultSet(BaseCassandraStatement statement, CassandraCqlStatement cqlStmt) {
@@ -54,6 +56,9 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
         this.statement = statement;
         this.cqlStmt = cqlStmt;
         this.wasNull = false;
+
+        this.maxRows = statement == null ? 0 : statement.maxRows;
+        this.maxFieldSize = statement == null ? 0 : statement.maxFieldSize;
 
         _rowIndex = 0;
         _exhausted = false;
@@ -714,7 +719,7 @@ public abstract class BaseCassandraResultSet extends BaseJdbcObject implements
         boolean movedToNext = tryIterate();
         if (movedToNext) {
             _rowIndex++;
-            _exhausted = !hasMore();
+            _exhausted = (maxRows > 0 && _rowIndex >= maxRows) || !hasMore();
         } else {
             _exhausted = true;
             _rowIndex = -1;

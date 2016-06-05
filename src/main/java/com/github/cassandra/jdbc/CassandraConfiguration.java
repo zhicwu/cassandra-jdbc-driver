@@ -49,8 +49,8 @@ public final class CassandraConfiguration {
         public boolean tracing = false;
         public CassandraEnums.Batch batch = CassandraEnums.Batch.UNLOGGED;
         public int fetchSize = 100;
-        public int readTimeout = 30;
-        public int connectTimeout = 5;
+        public int readTimeout = 30 * 1000;
+        public int connectionTimeout = 5 * 1000;
         public boolean keepAlive = true;
         public CassandraEnums.Compression compression = CassandraEnums.Compression.LZ4;
         public String localDc = "";
@@ -107,7 +107,7 @@ public final class CassandraConfiguration {
 
     static final String KEY_COMPRESSION = "compression";
 
-    static final String KEY_CONNECT_TIMEOUT = "connectTimeout";
+    static final String KEY_CONNECTION_TIMEOUT = "connectionTimeout";
 
     static final String KEY_CONNECTION_URL = "url";
 
@@ -288,7 +288,7 @@ public final class CassandraConfiguration {
         config.port = tentativePort;
 
         // update timeouts
-        config.connectTimeout = config.connectTimeout * 1000;
+        config.connectionTimeout = config.connectionTimeout * 1000;
         config.readTimeout = config.readTimeout * 1000;
     }
 
@@ -360,7 +360,7 @@ public final class CassandraConfiguration {
     }
 
     public int getConnectionTimeout() {
-        return config.connectTimeout;
+        return config.connectionTimeout;
     }
 
     public int getReadTimeout() {

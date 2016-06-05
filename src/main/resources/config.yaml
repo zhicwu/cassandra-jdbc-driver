@@ -32,7 +32,7 @@ driver :
   batch : UNLOGGED # LOGGED or UNLOGGED
   fetchSize : 100
   readTimeout : 30 # in seconds
-  connectTimeout : 5 # in seconds
+  connectionTimeout : 5 # in seconds
   keepAlive : true
   compression : LZ4 # NONE, LZ4 or SNAPPY
 

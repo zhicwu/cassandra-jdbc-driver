@@ -23,6 +23,7 @@ package com.github.cassandra.jdbc.provider.datastax;
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.QueryTrace.Event;
 import com.github.cassandra.jdbc.*;
+import com.google.common.base.Strings;
 import org.pmw.tinylog.Level;
 import org.pmw.tinylog.Logger;
 
@@ -67,6 +68,10 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
 
     protected void configureStatement(Statement stmt, CassandraCqlStmtConfiguration config) throws SQLException {
         stmt.setConsistencyLevel(ConsistencyLevel.valueOf(config.getConsistencyLevel()));
+        String scl = config.getSerialConsistencyLevel();
+        if (!Strings.isNullOrEmpty(scl)) {
+            stmt.setSerialConsistencyLevel(ConsistencyLevel.valueOf(scl));
+        }
         stmt.setFetchSize(config.hasSetFetchSize() ? config.getFetchSize() : this.getFetchSize());
 
         if (config.tracingEnabled()) {

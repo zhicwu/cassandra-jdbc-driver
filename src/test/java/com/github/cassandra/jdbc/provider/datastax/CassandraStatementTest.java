@@ -146,6 +146,33 @@ public class CassandraStatementTest extends BaseCassandraTest {
         }
     }
 
+    @Test(groups = {"unit", "server"}, dependsOnMethods = {"testInsertBasicData"})
+    public void testMaxRows() {
+        String cql = "select * from \"test_drive\".\"basic_data_type\" tbl";
+
+        try {
+            java.sql.Statement s = conn.createStatement();
+            assertTrue(s instanceof CassandraStatement);
+
+            s.setMaxRows(1);
+            ResultSet rs = s.executeQuery(cql);
+            assertTrue(rs instanceof CassandraResultSet);
+            assertNotNull(rs);
+            assertTrue(rs == s.getResultSet());
+
+            String[] columns = CassandraUtils.getColumnNames(rs);
+            Object[][] data = CassandraUtils.getAllData(rs);
+            assertTrue(columns.length > 0);
+            assertTrue(data.length == 1);
+
+            rs.close();
+            s.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Error occurred during testing: " + e.getMessage());
+        }
+    }
+
     @Test(groups = {"unit", "server"})
     public void testSimpleQuery() {
         String cql = "select * from system.peers limit 1";

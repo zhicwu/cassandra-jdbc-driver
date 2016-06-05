@@ -73,7 +73,7 @@ public class CassandraConfigurationTest {
             assertEquals("host3", props.getProperty(KEY_HOSTS));
             assertEquals("system_auth", props.getProperty(KEY_KEYSPACE));
 
-            url = "jdbc:c*://host4?a=b&c=1&consistencyLevel=ANY&compression=lz4&connectTimeout=10&readTimeout=50&localDc=DD";
+            url = "jdbc:c*://host4?a=b&c=1&consistencyLevel=ANY&compression=lz4&connectionTimeout=10&readTimeout=50&localDc=DD";
             props = CassandraConfiguration.parseConnectionURL(url);
             assertNull(props.getProperty(KEY_PROVIDER));
             assertEquals("host4", props.getProperty(KEY_HOSTS));
@@ -82,7 +82,7 @@ public class CassandraConfigurationTest {
             assertEquals("1", props.getProperty("c"));
             assertEquals("ANY", props.getProperty(KEY_CONSISTENCY_LEVEL));
             assertEquals("lz4", props.getProperty(KEY_COMPRESSION));
-            assertEquals("10", props.getProperty(KEY_CONNECT_TIMEOUT));
+            assertEquals("10", props.getProperty(KEY_CONNECTION_TIMEOUT));
             assertEquals("50", props.getProperty(KEY_READ_TIMEOUT));
             assertEquals("DD", props.getProperty(KEY_LOCAL_DC));
         } catch (Exception e) {

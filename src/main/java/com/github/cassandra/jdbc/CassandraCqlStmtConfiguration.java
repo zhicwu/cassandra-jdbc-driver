@@ -28,19 +28,20 @@ import java.util.Map;
 import java.util.Properties;
 
 public class CassandraCqlStmtConfiguration {
-    static final String KEY_CONSISTENCY_LEVEL = "consistency_level";
-    static final String KEY_FETCH_SIZE = "fetch_size";
-    static final String KEY_NO_LIMIT = "no_limit";
-    static final String KEY_NO_WAIT = "no_wait";
-    static final String KEY_READ_TIMEOUT = "read_timeout";
-    static final String KEY_REPLACE_NULL_VALUE = "replace_null_value";
-    static final String KEY_SQL_PARSER = "sql_parser";
-    static final String KEY_TRACING = "tracing";
+    private static final String KEY_CONSISTENCY_LEVEL = "consistency_level";
+    private static final String KEY_FETCH_SIZE = "fetch_size";
+    private static final String KEY_NO_LIMIT = "no_limit";
+    private static final String KEY_NO_WAIT = "no_wait";
+    private static final String KEY_READ_TIMEOUT = "read_timeout";
+    private static final String KEY_REPLACE_NULL_VALUE = "replace_null_value";
+    private static final String KEY_SQL_PARSER = "sql_parser";
+    private static final String KEY_TRACING = "tracing";
 
     private final CassandraStatementType type;
     private final CassandraConfiguration config;
 
     private final String consistencyLevel;
+    private final String serialConsistencyLevel;
     private final int fetchSize;
     private final boolean noLimit;
     private final boolean noWait;
@@ -67,6 +68,10 @@ public class CassandraCqlStmtConfiguration {
         }
 
         consistencyLevel = props.getProperty(KEY_CONSISTENCY_LEVEL, preferredCL.name()).trim().toUpperCase();
+        // TODO better to check if there's IF condition in the update CQL before doing so
+        serialConsistencyLevel = type.isUpdate()
+                && (preferredCL == CassandraEnums.ConsistencyLevel.LOCAL_SERIAL
+                || preferredCL == CassandraEnums.ConsistencyLevel.SERIAL) ? preferredCL.name() : null;
 
         String value = props.getProperty(KEY_FETCH_SIZE);
         // -1 implies using the one defined in Statement / PreparedStatement
@@ -111,6 +116,10 @@ public class CassandraCqlStmtConfiguration {
         return consistencyLevel;
     }
 
+    public String getSerialConsistencyLevel() {
+        return serialConsistencyLevel;
+    }
+
     public boolean noLimit() {
         return noLimit;
     }
@@ -133,7 +142,7 @@ public class CassandraCqlStmtConfiguration {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(consistencyLevel, fetchSize, noLimit, noWait, tracing,
+        return Objects.hashCode(consistencyLevel, serialConsistencyLevel, fetchSize, noLimit, noWait, tracing,
                 readTimeout, replaceNullValue, sqlParser);
     }
 
@@ -148,6 +157,7 @@ public class CassandraCqlStmtConfiguration {
         final CassandraCqlStmtConfiguration other = (CassandraCqlStmtConfiguration) obj;
 
         return Objects.equal(this.consistencyLevel, other.consistencyLevel)
+                && Objects.equal(this.serialConsistencyLevel, other.serialConsistencyLevel)
                 && Objects.equal(this.fetchSize, other.fetchSize)
                 && Objects.equal(this.noLimit, other.noLimit)
                 && Objects.equal(this.noWait, other.noWait)
@@ -161,6 +171,7 @@ public class CassandraCqlStmtConfiguration {
     public String toString() {
         return Objects.toStringHelper(this)
                 .addValue(this.consistencyLevel)
+                .addValue(this.serialConsistencyLevel)
                 .addValue(this.fetchSize)
                 .addValue(this.noLimit)
                 .addValue(this.noWait)
