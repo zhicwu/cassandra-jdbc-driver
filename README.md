@@ -15,7 +15,7 @@ of Cassandra. Having said that, it is NOT recommended to use this for production
 OK, you have been warned :) Now go ahead to download the latest driver and give it a shot!
 
 ## Where we are?
-[0.4.0 Release](https://github.com/zhicwu/cassandra-jdbc-driver/releases/tag/0.4.0) - Beta
+[0.5.0 Release](https://github.com/zhicwu/cassandra-jdbc-driver/releases/tag/0.5.0) - Beta
 
 ## What's next?
 - Advanced types(LOBs, Collections and UDTs) support
