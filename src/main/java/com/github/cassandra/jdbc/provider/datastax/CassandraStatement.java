@@ -116,6 +116,8 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
         CassandraCqlStatement parsedStmt = CassandraCqlParser.parse(getConfiguration(), cql);
         CassandraCqlStmtConfiguration stmtConf = parsedStmt.getConfiguration();
 
+        Logger.debug("Statement Configuration:\n{}", stmtConf);
+
         SimpleStatement ss = new SimpleStatement(parsedStmt.getCql());
 
         configureStatement(ss, stmtConf);

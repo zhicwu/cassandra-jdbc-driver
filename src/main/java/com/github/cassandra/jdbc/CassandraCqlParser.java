@@ -55,7 +55,8 @@ public class CassandraCqlParser {
             .compile("(?i)\\.(select|insert|update|delete|into|from|where|key|alter|drop|create)([>=<\\.,\\s])",
                     Pattern.DOTALL | Pattern.MULTILINE);
 
-    private static final Pattern MAGIC_COMMENT_PATTERN = Pattern.compile("(?i)^--\\s+set\\s+(.*)$", Pattern.MULTILINE);
+    private static final Pattern MAGIC_COMMENT_PATTERN = Pattern
+            .compile("(?i)^(//|--)\\s+set\\s+(.*)$", Pattern.MULTILINE);
 
     private static final Splitter PARAM_SPLITTER = Splitter.on(';').trimResults().omitEmptyStrings();
     private static final Splitter KVP_SPLITTER = Splitter.on('=').trimResults().limit(2);
@@ -64,7 +65,9 @@ public class CassandraCqlParser {
     private static final String HINT_CREATE = "Create";
     private static final String HINT_DROP = "Drop";
 
-    private static final Cache<String, CassandraCqlStatement> STMT_CACHE = CacheBuilder.newBuilder().maximumSize(100).build();
+    // FIXME the cache should be bounded to each connection, or better each connectionUrl
+    private static final Cache<String, CassandraCqlStatement> STMT_CACHE =
+            CacheBuilder.newBuilder().maximumSize(CassandraConfiguration.DEFAULT.getCqlCacheSize()).build();
 
     private static Map<String, String> parseMagicComments(String sql) {
         Map<String, String> attributes = new HashMap<String, String>();
@@ -72,7 +75,7 @@ public class CassandraCqlParser {
         // extract attributes from magic comment
         Matcher m = MAGIC_COMMENT_PATTERN.matcher(sql);
         while (m.find()) {
-            for (String attr : PARAM_SPLITTER.split(m.group(1))) {
+            for (String attr : PARAM_SPLITTER.split(m.group(2))) {
                 List<String> kvp = KVP_SPLITTER.splitToList(attr);
                 if (kvp.size() == 2) {
                     attributes.put(kvp.get(0).toLowerCase(), kvp.get(1));
@@ -90,6 +93,7 @@ public class CassandraCqlParser {
         }
 
         CassandraCqlStatement sqlStmt = null;
+        CassandraCqlStmtConfiguration stmtConfig = null;
         try {
             // workaround for limitation of JSqlParser - escaping keyword-like columns
             Matcher m = SQL_KEYWORDS_PATTERN.matcher(sql);
@@ -102,11 +106,6 @@ public class CassandraCqlParser {
             sql = s.toString();
             if (s instanceof Select) {
                 stmtType = CassandraStatementType.SELECT;
-
-                Select select = (Select) s;
-                SqlToCqlTranslator trans = new SqlToCqlTranslator();
-                select.getSelectBody().accept(trans);
-                sql = select.toString();
             } else if (sql.startsWith(CassandraStatementType.INSERT.getType())) {
                 stmtType = CassandraStatementType.INSERT;
             } else if (sql.startsWith(CassandraStatementType.UPDATE.getType())) {
@@ -122,6 +121,15 @@ public class CassandraCqlParser {
             } else if (sql.startsWith(CassandraStatementType.DROP.getType())) {
                 stmtType = CassandraStatementType.DROP;
             }
+
+            stmtConfig = new CassandraCqlStmtConfiguration(config, stmtType, hints);
+
+            if (stmtType.isQuery()) {
+                Select select = (Select) s;
+                SqlToCqlTranslator trans = new SqlToCqlTranslator(stmtConfig);
+                select.getSelectBody().accept(trans);
+                sql = select.toString();
+            }
         } catch (Throwable t) {
             Logger.debug("Failed to parse the given SQL, fall back to CQL parser");
             sqlStmt = parseCql(config, sql, hints);
@@ -129,7 +137,8 @@ public class CassandraCqlParser {
         }
 
         if (sqlStmt == null) {
-            sqlStmt = new CassandraCqlStatement(sql, new CassandraCqlStmtConfiguration(config, stmtType, hints));
+            sqlStmt = new CassandraCqlStatement(sql, stmtConfig == null
+                    ? new CassandraCqlStmtConfiguration(config, stmtType, hints) : stmtConfig);
         }
 
         return sqlStmt;
@@ -143,6 +152,7 @@ public class CassandraCqlParser {
         }
 
         CassandraCqlStatement cqlStmt = null;
+        CassandraCqlStmtConfiguration stmtConfig = null;
         try {
             ANTLRStringStream input = new ANTLRStringStream(cql);
             CqlLexer lexer = new CqlLexer(input);
@@ -174,12 +184,21 @@ public class CassandraCqlParser {
             } else if (stmtClassName.startsWith(HINT_DROP)) {
                 stmtType = CassandraStatementType.DROP;
             }
+
+            stmtConfig = new CassandraCqlStmtConfiguration(config, stmtType, hints);
+
+            if (stmtType.isQuery()) {
+                SelectStatement.RawStatement select = (SelectStatement.RawStatement) stmt;
+                // CqlFormatter
+                // select.getLimit()
+            }
         } catch (Throwable t) {
             Logger.warn(t, "Not able to parse given CQL - treat it as is\n{}\n", cql);
         }
 
         if (cqlStmt == null) {
-            cqlStmt = new CassandraCqlStatement(cql, new CassandraCqlStmtConfiguration(config, stmtType, hints));
+            cqlStmt = new CassandraCqlStatement(cql, stmtConfig == null
+                    ? new CassandraCqlStmtConfiguration(config, stmtType, hints) : stmtConfig);
         }
 
         return cqlStmt;
@@ -199,7 +218,7 @@ public class CassandraCqlParser {
                 }
             });
 
-            Logger.debug("Parsed CQL:\n{}", parsedStmt.getCql());
+            // Logger.debug("Parsed CQL:\n{}", parsedStmt.getCql());
 
             return parsedStmt;
         } catch (ExecutionException e) {

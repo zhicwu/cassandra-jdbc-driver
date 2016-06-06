@@ -52,11 +52,11 @@ public class CassandraConnection extends BaseCassandraConnection {
 
     private String _keyspace;
 
-    public CassandraConnection(CassandraConfiguration config) {
-        super(config);
+    public CassandraConnection(CassandraConfiguration driverConfig) {
+        super(driverConfig);
 
-        _keyspace = config.getKeyspace();
-        _session = DataStaxSessionFactory.getSession(config);
+        _keyspace = driverConfig.getKeyspace();
+        _session = DataStaxSessionFactory.getSession(driverConfig);
 
         // populate meta data
         metaData.setProperty(KEY_DRIVER_NAME, DRIVER_NAME);
@@ -67,28 +67,6 @@ public class CassandraConnection extends BaseCassandraConnection {
         if (versions != null && versions.length > 1) {
             metaData.setProperty(KEY_DRIVER_MAJOR_VERSION, versions[0]);
             metaData.setProperty(KEY_DRIVER_MINOR_VERSION, versions[1]);
-        }
-
-        // get database version
-        String dbVersion = EMPTY_STRING;
-        Row row = null;
-        try {
-            row = _session.execute(CQL_TO_GET_VERSION).one();
-        } catch (SQLException e) {
-            Logger.warn(e, "Failed to get DB version");
-        }
-
-        if (row != null) {
-            dbVersion = row.getString(0);
-        }
-
-        if (!Strings.isNullOrEmpty(dbVersion)) {
-            metaData.setProperty(KEY_PRODUCT_VERSION, dbVersion);
-            versions = dbVersion.split(".");
-            if (versions != null && versions.length > 1) {
-                metaData.setProperty(KEY_DB_MAJOR_VERSION, versions[0]);
-                metaData.setProperty(KEY_DB_MINOR_VERSION, versions[1]);
-            }
         }
     }
 

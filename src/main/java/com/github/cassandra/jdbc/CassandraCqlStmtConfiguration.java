@@ -28,6 +28,9 @@ import java.util.Map;
 import java.util.Properties;
 
 public class CassandraCqlStmtConfiguration {
+    private static final String FLD_STATEMENT_TYPE = "StatementType";
+    private static final String FLD_SERIAL_CONSISTENCY_LEVEL = "SerialConsistencyLevel";
+
     private static final String KEY_CONSISTENCY_LEVEL = "consistency_level";
     private static final String KEY_FETCH_SIZE = "fetch_size";
     private static final String KEY_NO_LIMIT = "no_limit";
@@ -37,8 +40,8 @@ public class CassandraCqlStmtConfiguration {
     private static final String KEY_SQL_PARSER = "sql_parser";
     private static final String KEY_TRACING = "tracing";
 
-    private final CassandraStatementType type;
-    private final CassandraConfiguration config;
+    private final CassandraStatementType stmtType;
+    private final CassandraConfiguration connectionConfig;
 
     private final String consistencyLevel;
     private final String serialConsistencyLevel;
@@ -50,40 +53,44 @@ public class CassandraCqlStmtConfiguration {
     private final boolean sqlParser;
     private final boolean tracing;
 
-    public CassandraCqlStmtConfiguration(CassandraConfiguration config, CassandraStatementType type,
-                                         Map<String, String> hints) {
-        this.config = config;
-        this.type = type;
+    public CassandraCqlStmtConfiguration(CassandraConfiguration connectionConfig, CassandraStatementType stmtType,
+                                         Map<String, String> stmtOptions) {
+        this.connectionConfig = connectionConfig;
+        this.stmtType = stmtType;
 
-        Properties props = new Properties();
-        if (hints != null) {
-            props.putAll(hints);
+        Properties options = new Properties();
+        if (stmtOptions != null) {
+            options.putAll(stmtOptions);
         }
 
-        CassandraEnums.ConsistencyLevel preferredCL = config.getConsistencyLevel();
-        if (type.isQuery()) {
-            preferredCL = config.getReadConsistencyLevel();
-        } else if (type.isUpdate()) {
-            preferredCL = config.getWriteConsistencyLevel();
+        CassandraEnums.ConsistencyLevel preferredCL = connectionConfig.getConsistencyLevel();
+        if (stmtType.isQuery()) {
+            preferredCL = connectionConfig.getReadConsistencyLevel();
+        } else if (stmtType.isUpdate()) {
+            preferredCL = connectionConfig.getWriteConsistencyLevel();
         }
 
-        consistencyLevel = props.getProperty(KEY_CONSISTENCY_LEVEL, preferredCL.name()).trim().toUpperCase();
+        consistencyLevel = options.getProperty(KEY_CONSISTENCY_LEVEL, preferredCL.name()).trim().toUpperCase();
         // TODO better to check if there's IF condition in the update CQL before doing so
-        serialConsistencyLevel = type.isUpdate()
+        serialConsistencyLevel = stmtType.isUpdate()
                 && (preferredCL == CassandraEnums.ConsistencyLevel.LOCAL_SERIAL
                 || preferredCL == CassandraEnums.ConsistencyLevel.SERIAL) ? preferredCL.name() : null;
 
-        String value = props.getProperty(KEY_FETCH_SIZE);
+        String value = options.getProperty(KEY_FETCH_SIZE);
         // -1 implies using the one defined in Statement / PreparedStatement
         fetchSize = Strings.isNullOrEmpty(value) ? -1 : Ints.tryParse(value);
-        noLimit = Boolean.valueOf(props.getProperty(KEY_NO_LIMIT, null));
-        noWait = Boolean.valueOf(props.getProperty(KEY_NO_WAIT, null));
-        tracing = Boolean.valueOf(props.getProperty(KEY_TRACING, String.valueOf(config.isTracingEnabled())));
-        value = props.getProperty(KEY_READ_TIMEOUT);
+        noLimit = Boolean.valueOf(options.getProperty(KEY_NO_LIMIT, null));
+        noWait = Boolean.valueOf(options.getProperty(KEY_NO_WAIT, null));
+        tracing = Boolean.valueOf(options.getProperty(KEY_TRACING, String.valueOf(connectionConfig.isTracingEnabled())));
+        value = options.getProperty(KEY_READ_TIMEOUT);
         // convert second to millisecond
-        readTimeout = Strings.isNullOrEmpty(value) ? config.getReadTimeout() : Ints.tryParse(value) * 1000;
-        replaceNullValue = Boolean.valueOf(props.getProperty(KEY_REPLACE_NULL_VALUE, null));
-        sqlParser = Boolean.valueOf(props.getProperty(KEY_SQL_PARSER, String.valueOf(config.isSqlFriendly())));
+        readTimeout = Strings.isNullOrEmpty(value) ? connectionConfig.getReadTimeout() : Ints.tryParse(value) * 1000;
+        replaceNullValue = Boolean.valueOf(options.getProperty(KEY_REPLACE_NULL_VALUE, null));
+        sqlParser = Boolean.valueOf(options.getProperty(KEY_SQL_PARSER, String.valueOf(connectionConfig.isSqlFriendly())));
+    }
+
+    public CassandraConfiguration getConnectionConfig() {
+        return this.connectionConfig;
     }
 
     public boolean hasSetFetchSize() {
@@ -95,7 +102,7 @@ public class CassandraCqlStmtConfiguration {
     }
 
     public CassandraStatementType getStatementType() {
-        return this.type;
+        return this.stmtType;
     }
 
     /**
@@ -142,7 +149,7 @@ public class CassandraCqlStmtConfiguration {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(consistencyLevel, serialConsistencyLevel, fetchSize, noLimit, noWait, tracing,
+        return Objects.hashCode(stmtType, consistencyLevel, serialConsistencyLevel, fetchSize, noLimit, noWait, tracing,
                 readTimeout, replaceNullValue, sqlParser);
     }
 
@@ -156,7 +163,8 @@ public class CassandraCqlStmtConfiguration {
         }
         final CassandraCqlStmtConfiguration other = (CassandraCqlStmtConfiguration) obj;
 
-        return Objects.equal(this.consistencyLevel, other.consistencyLevel)
+        return Objects.equal(this.stmtType, other.stmtType)
+                && Objects.equal(this.consistencyLevel, other.consistencyLevel)
                 && Objects.equal(this.serialConsistencyLevel, other.serialConsistencyLevel)
                 && Objects.equal(this.fetchSize, other.fetchSize)
                 && Objects.equal(this.noLimit, other.noLimit)
@@ -170,15 +178,16 @@ public class CassandraCqlStmtConfiguration {
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-                .addValue(this.consistencyLevel)
-                .addValue(this.serialConsistencyLevel)
-                .addValue(this.fetchSize)
-                .addValue(this.noLimit)
-                .addValue(this.noWait)
-                .addValue(this.tracing)
-                .addValue(this.readTimeout)
-                .addValue(this.replaceNullValue)
-                .addValue(this.sqlParser)
+                .add(FLD_STATEMENT_TYPE, this.stmtType)
+                .add(KEY_CONSISTENCY_LEVEL, this.consistencyLevel)
+                .add(FLD_SERIAL_CONSISTENCY_LEVEL, this.serialConsistencyLevel)
+                .add(KEY_FETCH_SIZE, this.fetchSize)
+                .add(KEY_NO_LIMIT, this.noLimit)
+                .add(KEY_NO_WAIT, this.noWait)
+                .add(KEY_TRACING, this.tracing)
+                .add(KEY_READ_TIMEOUT, this.readTimeout)
+                .add(KEY_REPLACE_NULL_VALUE, this.replaceNullValue)
+                .add(KEY_SQL_PARSER, this.sqlParser)
                 .toString();
     }
 }

@@ -44,15 +44,15 @@ public abstract class BaseCassandraConnection extends BaseJdbcObject implements
     protected final CassandraConfiguration config;
     protected final CassandraDatabaseMetaData metaData;
 
-    public BaseCassandraConnection(CassandraConfiguration config) {
-        super(config.isQuiet());
+    public BaseCassandraConnection(CassandraConfiguration driverConfig) {
+        super(driverConfig.isQuiet());
         _txIsolationLevel = TRANSACTION_NONE;
 
-        this.config = config;
+        this.config = driverConfig;
 
         metaData = new CassandraDatabaseMetaData(this);
-        metaData.setProperty(CassandraConfiguration.KEY_CONNECTION_URL, config.getConnectionUrl());
-        metaData.setProperty(CassandraConfiguration.KEY_USERNAME, config.getUserName());
+        metaData.setProperty(CassandraConfiguration.KEY_CONNECTION_URL, driverConfig.getConnectionUrl());
+        metaData.setProperty(CassandraConfiguration.KEY_USERNAME, driverConfig.getUserName());
     }
 
     protected abstract <T> T createObject(Class<T> clazz) throws SQLException;
@@ -60,7 +60,7 @@ public abstract class BaseCassandraConnection extends BaseJdbcObject implements
     protected ResultSet getObjectMetaData(CassandraObjectType objectType,
                                           Properties queryPatterns, Object... additionalHints)
             throws SQLException {
-        ResultSet rs = new DummyCassandraResultSet();
+        ResultSet rs;
 
         switch (objectType) {
             case TABLE_TYPE:

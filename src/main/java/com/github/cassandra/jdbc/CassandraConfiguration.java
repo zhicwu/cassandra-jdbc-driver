@@ -49,6 +49,8 @@ public final class CassandraConfiguration {
         public boolean tracing = false;
         public CassandraEnums.Batch batch = CassandraEnums.Batch.UNLOGGED;
         public int fetchSize = 100;
+        public long rowLimit = 10000L;
+        public int cqlCacheSize = 1000;
         public int readTimeout = 30 * 1000;
         public int connectionTimeout = 5 * 1000;
         public boolean keepAlive = true;
@@ -402,6 +404,14 @@ public final class CassandraConfiguration {
 
     public int getFetchSize() {
         return config.fetchSize;
+    }
+
+    public long getRowLimit() {
+        return config.rowLimit;
+    }
+
+    public int getCqlCacheSize() {
+        return config.cqlCacheSize;
     }
 
     public CassandraEnums.Compression getCompression() {

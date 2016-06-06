@@ -24,11 +24,10 @@ package com.github.cassandra.jdbc;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static com.github.cassandra.jdbc.parser.SqlToCqlTranslator.DEFAULT_ROW_LIMIT;
 import static org.testng.Assert.*;
 
 public class CassandraCqlParserTest {
-    @DataProvider(name = "parse-sql")
+    @DataProvider(name = "sql-scripts")
     public Object[][] createTestSql() {
         return new Object[][]{
                 {"use system", "use system", CassandraStatementType.UNKNOWN},
@@ -37,10 +36,12 @@ public class CassandraCqlParserTest {
                 {"alter table a alter b type text", "alter table a alter b type text",
                         CassandraStatementType.ALTER},
                 {"drop table a", "DROP table a", CassandraStatementType.DROP},
-                {"-- set a=b\n-- set c=1\nselect * from a", "SELECT * FROM a LIMIT " + DEFAULT_ROW_LIMIT,
+                {"-- set a=b\n-- set c=1\nselect * from a", "SELECT * FROM a LIMIT " +
+                        CassandraConfiguration.DEFAULT.getRowLimit(),
                         CassandraStatementType.SELECT},
                 {"Select 1 as a", "SELECT 1 AS a", CassandraStatementType.SELECT},
-                {"select a + 1 as a from b", "SELECT a + 1 AS a FROM b LIMIT " + DEFAULT_ROW_LIMIT,
+                {"select a + 1 as a from b", "SELECT a + 1 AS a FROM b LIMIT " +
+                        CassandraConfiguration.DEFAULT.getRowLimit(),
                         CassandraStatementType.SELECT},
                 {"select \ntbl.key,tbl.bootstrapped,tbl.cluster_name,tbl.cql_version," +
                         "tbl.data_center,tbl.dse_version,tbl.gossip_generation,tbl.host_id," +
@@ -51,7 +52,7 @@ public class CassandraCqlParserTest {
                                 "dse_version, gossip_generation, host_id, native_protocol_version, " +
                                 "partitioner, rack, release_version, schema_version, thrift_version, " +
                                 "tokens, truncated_at, workload FROM \"system\".\"local\" LIMIT " +
-                                DEFAULT_ROW_LIMIT, CassandraStatementType.SELECT
+                                CassandraConfiguration.DEFAULT.getRowLimit(), CassandraStatementType.SELECT
                 },
                 {"select tbl.id_uuid,tbl.binary_data,tbl.date_date,tbl.date_time,tbl.date_timestamp," +
                         "tbl.id_timeuuid,tbl.net_inet,tbl.num_big_integer,tbl.num_decimal,tbl.num_double," +
@@ -61,7 +62,7 @@ public class CassandraCqlParserTest {
                                 "id_timeuuid, net_inet, num_big_integer, num_decimal, num_double, num_float, " +
                                 "num_int, num_small_int, num_tiny_int, num_varint, str_ascii, str_text, " +
                                 "str_varchar, true_or_false FROM \"test_drive\".\"basic_data_type\" LIMIT " +
-                                DEFAULT_ROW_LIMIT, CassandraStatementType.SELECT
+                                CassandraConfiguration.DEFAULT.getRowLimit(), CassandraStatementType.SELECT
                 },
                 {"select * from a where b = 1 allow filtering", "select * from a where b = 1 allow filtering",
                         CassandraStatementType.SELECT
@@ -76,7 +77,7 @@ public class CassandraCqlParserTest {
         };
     }
 
-    @Test(groups = {"unit", "base"}, dataProvider = "parse-sql")
+    @Test(groups = {"unit", "base"}, dataProvider = "sql-scripts")
     public void testParseSql(String sql, String expectedSql, CassandraStatementType expectedType) {
         try {
             CassandraCqlStatement stmt = CassandraCqlParser.parse(CassandraConfiguration.DEFAULT, sql);
@@ -93,7 +94,8 @@ public class CassandraCqlParserTest {
         String sql = "-- set consistency_level = aNY;fetch_size=991;;;\n" +
                 "-- set no_limit=true ; tracing = true\n" +
                 "-- set read_timeout = 51\n" +
-                "-- set replace_null_value = true  ; sql_parser = true; no_wait = true\n" +
+                "-- set replace_null_value = true  ; sql_parser = true; \n" +
+                "// set no_wait = true\n" +
                 "select * from system.local";
 
         try {

@@ -26,11 +26,17 @@ driver :
   readConsistencyLevel : &CL LOCAL_ONE
   # you may use ANY for better write performance, if hinted handoff is not going to be an issue in your case
   # also please be aware of that counter table does not support ANY at the moment
-  writeConsistencyLevel : LOCAL_ONE
+  writeConsistencyLevel : *CL
   consistencyLevel : *CL
 
-  batch : UNLOGGED # LOGGED or UNLOGGED
+  # LOGGED or UNLOGGED, you may set COUNTER in magic comments
+  batch : UNLOGGED
+  # parsing SQL / CQL is not free hence we cache what we did before
+  cqlCacheSize : 1000
+  # set 0 to let the provider the decide what's the best
   fetchSize : 100
+  # append "LIMIT 10000" to all queries by default, set 0 to disable this
+  rowLimit : 10000
   readTimeout : 30 # in seconds
   connectionTimeout : 5 # in seconds
   keepAlive : true

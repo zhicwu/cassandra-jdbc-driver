@@ -84,21 +84,9 @@ public class DummyCassandraResultSet extends BaseCassandraResultSet {
         Object obj = currentRow[columnIndex - 1];
         T result = null;
 
-        if (obj != null) {
-            wasNull = false;
-
-            Logger.trace("Got raw value [{}] from line {} of {}", obj, getRow(), data.length);
-
-            if (String.class == clazz) {
-                result = (T) String.valueOf(obj);
-            } else if (Object.class == clazz) {
-                result = (T) obj;
-            } else {
-                result = clazz.cast(obj);
-            }
-        } else {
-            wasNull = true;
-        }
+        Logger.trace("Got raw value [{}] from line {} of {}", obj, getRow(), data.length);
+        wasNull = obj == null;
+        result = this.getDataTypeConverters().convert(obj, clazz, false);
 
         Logger.trace("Return value: raw={}, converted={}", obj, result);
 

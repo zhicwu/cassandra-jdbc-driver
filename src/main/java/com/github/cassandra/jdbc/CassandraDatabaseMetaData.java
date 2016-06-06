@@ -20,6 +20,8 @@
  */
 package com.github.cassandra.jdbc;
 
+import com.google.common.base.Strings;
+
 import java.sql.*;
 import java.util.Properties;
 
@@ -32,11 +34,20 @@ import static com.github.cassandra.jdbc.CassandraUtils.*;
  */
 public class CassandraDatabaseMetaData extends BaseJdbcObject implements
         DatabaseMetaData {
-    static final String DEFAULT_PRODUCT_NAME = "Apache Cassandra";
-    static final String DEFAULT_PRODUCT_VERSION = "2.x";
+    private static final String DEFAULT_PRODUCT_NAME = "Apache Cassandra";
+    private static final String DEFAULT_PRODUCT_VERSION = "2.x";
+
+    private static final String CQL_TO_GET_VERSION = "-- set consistency_level = LOCAL_ONE\n" +
+            "select release_version from system.local where key='local' limit 1";
+
+    private static final String CQL_SYS_FUNCTIONS = "maxTimeuuid,minTimeuuid,now,token,uuid";
+    private static final String CQL_NUM_FUNCTIONS = "avg,count,max,min,sum";
+    private static final String CQL_TIME_FUNCTIONS = "toDate,toTimestamp,toUnixTimestamp,dateOf,unixTimestampOf";
 
     private final BaseCassandraConnection _conn;
     private final Properties _props;
+
+    private boolean populated = false;
 
     protected CassandraDatabaseMetaData(BaseCassandraConnection conn) {
         super(conn == null || conn.quiet);
@@ -61,12 +72,47 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
         }
     }
 
+    protected void populate() {
+        if (!populated) {
+            java.sql.Statement stmt = null;
+            try {
+                stmt = _conn.createStatement();
+                ResultSet rs = stmt.executeQuery(CQL_TO_GET_VERSION);
+
+                String dbVersion = null;
+                if (rs.next()) {
+                    dbVersion = rs.getString(1);
+                }
+
+                if (!Strings.isNullOrEmpty(dbVersion)) {
+                    this.setProperty(KEY_PRODUCT_VERSION, dbVersion);
+                    String[] versions = dbVersion.split(".");
+                    if (versions != null && versions.length > 1) {
+                        this.setProperty(KEY_DB_MAJOR_VERSION, versions[0]);
+                        this.setProperty(KEY_DB_MINOR_VERSION, versions[1]);
+                    }
+                }
+
+                populated = true;
+            } catch (SQLException e) {
+                e.printStackTrace();
+            } finally {
+                if (stmt != null) {
+                    try {
+                        stmt.close();
+                    } catch (SQLException e) {
+                    }
+                }
+            }
+        }
+    }
+
     public boolean allProceduresAreCallable() throws SQLException {
         return false;
     }
 
     public boolean allTablesAreSelectable() throws SQLException {
-        return false;
+        return true;
     }
 
     public boolean autoCommitFailureClosesAllResultSets() throws SQLException {
@@ -194,11 +240,15 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public int getDatabaseMajorVersion() throws SQLException {
+        populate();
+
         return Integer.parseInt(CassandraUtils.getPropertyValue(_props,
                 KEY_DB_MAJOR_VERSION, DEFAULT_DB_MAJOR_VERSION));
     }
 
     public int getDatabaseMinorVersion() throws SQLException {
+        populate();
+
         return Integer.parseInt(CassandraUtils.getPropertyValue(_props,
                 KEY_DB_MINOR_VERSION, DEFAULT_DB_MINOR_VERSION));
     }
@@ -209,6 +259,8 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public String getDatabaseProductVersion() throws SQLException {
+        populate();
+
         return CassandraUtils.getPropertyValue(_props, KEY_PRODUCT_VERSION,
                 DEFAULT_PRODUCT_VERSION);
     }
@@ -318,7 +370,7 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public int getMaxBinaryLiteralLength() throws SQLException {
-        return 0;
+        return Integer.MAX_VALUE;
     }
 
     public int getMaxCatalogNameLength() throws SQLException {
@@ -326,7 +378,7 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public int getMaxCharLiteralLength() throws SQLException {
-        return 0;
+        return Integer.MAX_VALUE;
     }
 
     public int getMaxColumnNameLength() throws SQLException {
@@ -374,7 +426,7 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public int getMaxSchemaNameLength() throws SQLException {
-        return 0;
+        return 32;
     }
 
     public int getMaxStatementLength() throws SQLException {
@@ -386,7 +438,7 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public int getMaxTableNameLength() throws SQLException {
-        return 0;
+        return 32;
     }
 
     public int getMaxTablesInSelect() throws SQLException {
@@ -398,7 +450,7 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public String getNumericFunctions() throws SQLException {
-        return CassandraUtils.getPropertyValue(_props, KEY_NUMERIC_FUNCTIONS);
+        return CQL_NUM_FUNCTIONS;
     }
 
     public ResultSet getPrimaryKeys(String catalog, String schema, String table)
@@ -501,7 +553,7 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public String getStringFunctions() throws SQLException {
-        return CassandraUtils.getPropertyValue(_props, KEY_STRING_FUNCTIONS);
+        return EMPTY_STRING;
     }
 
     public ResultSet getSuperTables(String catalog, String schemaPattern,
@@ -527,7 +579,7 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public String getSystemFunctions() throws SQLException {
-        return CassandraUtils.getPropertyValue(_props, KEY_SYSTEM_FUNCTIONS);
+        return CQL_SYS_FUNCTIONS;
     }
 
     public ResultSet getTablePrivileges(String catalog, String schemaPattern,
@@ -566,7 +618,7 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public String getTimeDateFunctions() throws SQLException {
-        return CassandraUtils.getPropertyValue(_props, KEY_TIMEDATE_FUNCTIONS);
+        return CQL_TIME_FUNCTIONS;
     }
 
     public ResultSet getTypeInfo() throws SQLException {
@@ -692,7 +744,7 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public boolean storesMixedCaseIdentifiers() throws SQLException {
-        return false;
+        return true;
     }
 
     public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {

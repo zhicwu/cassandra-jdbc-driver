@@ -41,22 +41,23 @@ final class DataStaxSessionFactory {
     private final static Cache<String, DataStaxSessionWrapper> _sessionCache;
 
     static {
-        _sessionCache = CacheBuilder.newBuilder().weakValues().removalListener(new RemovalListener<String, DataStaxSessionWrapper>() {
-            public void onRemoval(RemovalNotification<String, DataStaxSessionWrapper> notification) {
-                DataStaxSessionWrapper session = notification.getValue();
+        _sessionCache = CacheBuilder.newBuilder().weakValues().removalListener(
+                new RemovalListener<String, DataStaxSessionWrapper>() {
+                    public void onRemoval(RemovalNotification<String, DataStaxSessionWrapper> notification) {
+                        DataStaxSessionWrapper session = notification.getValue();
 
-                Logger.debug("Closing [{}] (cause: {})...", session, notification.getCause());
-                if (session != null) {
-                    try {
-                        session.close();
-                    } catch (Throwable t) {
-                        Logger.debug(t, "Error occurred when closing session");
+                        Logger.debug("Closing [{}] (cause: {})...", session, notification.getCause());
+                        if (session != null) {
+                            try {
+                                session.close();
+                            } catch (Throwable t) {
+                                Logger.debug(t, "Error occurred when closing session");
+                            }
+                        }
+
+                        Logger.debug("Closed [{0}].", session);
                     }
-                }
-
-                Logger.debug("Closed [{0}].", session);
-            }
-        }).build();
+                }).build();
     }
 
     private static DataStaxSessionWrapper newSession(CassandraConfiguration config) {
@@ -91,7 +92,9 @@ final class DataStaxSessionFactory {
         // set query options
         QueryOptions queryOptions = new QueryOptions();
         queryOptions.setConsistencyLevel(ConsistencyLevel.valueOf(config.getConsistencyLevel().name()));
-        queryOptions.setFetchSize(config.getFetchSize());
+        if (config.getFetchSize() > 0) {
+            queryOptions.setFetchSize(config.getFetchSize());
+        }
         builder.withQueryOptions(queryOptions);
 
         // set pool options - use same defaults as in V3

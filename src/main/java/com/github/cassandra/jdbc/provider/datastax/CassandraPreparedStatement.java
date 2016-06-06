@@ -114,6 +114,8 @@ public class CassandraPreparedStatement extends CassandraStatement {
                 ? cqlStmt : CassandraCqlParser.parse(getConfiguration(), cql);
         CassandraCqlStmtConfiguration stmtConf = parsedStmt.getConfiguration();
 
+        Logger.debug("Statement Configuration:\n{}", stmtConf);
+
         updateParameterMetaData(CassandraCqlParser.parse(getConfiguration(), cql), false);
 
         PreparedStatement preparedStmt = getInnerPreparedStatement(cql);

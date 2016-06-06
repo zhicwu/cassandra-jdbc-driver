@@ -20,6 +20,7 @@
  */
 package com.github.cassandra.jdbc.parser;
 
+import com.github.cassandra.jdbc.CassandraCqlStmtConfiguration;
 import net.sf.jsqlparser.expression.*;
 import net.sf.jsqlparser.expression.operators.arithmetic.*;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
@@ -34,7 +35,11 @@ import java.util.List;
 
 public class SqlToCqlTranslator implements SelectVisitor, FromItemVisitor,
         SelectItemVisitor, ExpressionVisitor {
-    public static final long DEFAULT_ROW_LIMIT = 10000L;
+    private final CassandraCqlStmtConfiguration config;
+
+    public SqlToCqlTranslator(CassandraCqlStmtConfiguration config) {
+        this.config = config;
+    }
 
     public void visit(Addition addition) {
         // throw new UnsupportedOperationException("Not supported yet.");
@@ -243,22 +248,28 @@ public class SqlToCqlTranslator implements SelectVisitor, FromItemVisitor,
             index++;
         }
 
-        Limit limit = plainSelect.getLimit();
-        if (limit == null) {
-            limit = new Limit();
-            limit.setRowCount(DEFAULT_ROW_LIMIT);
-            plainSelect.setLimit(limit);
-        } else {
-            // turn off not supported features
-            limit.setLimitAll(false);
-            limit.setOffsetJdbcParameter(false);
-            limit.setOffset(-1);
+        long rowLimit = config.getConnectionConfig().getRowLimit();
+        if (config.noLimit()) {
+            plainSelect.setLimit(null);
+        } else if (rowLimit > 0) {
+            Limit limit = plainSelect.getLimit();
+            if (limit == null) {
+                limit = new Limit();
+                limit.setRowCount(rowLimit);
+                plainSelect.setLimit(limit);
+            } else {
+                // turn off not supported features
+                limit.setLimitAll(false);
+                limit.setOffsetJdbcParameter(false);
+                limit.setOffset(-1);
 
-            // apply default limits
-            if (limit.getRowCount() <= 0) {
-                limit.setRowCount(DEFAULT_ROW_LIMIT);
+                // apply default limits
+                if (limit.getRowCount() <= 0) {
+                    limit.setRowCount(rowLimit);
+                }
             }
         }
+
     }
 
     public void visit(RegExpMatchOperator rexpr) {

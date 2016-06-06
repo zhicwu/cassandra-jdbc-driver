@@ -19,6 +19,7 @@
         <snakeyaml.version>1.17</snakeyaml.version>
         <antlr.version>3.5.2</antlr.version>
         <jsqlparser.version>0.9.5</jsqlparser.version>
+        <jamm.version>0.3.0</jamm.version>
         <cassandra.version>3.5</cassandra.version>
         <datastax-driver.version>3.0.2</datastax-driver.version>
         <snappy.version>1.0.5</snappy.version>
@@ -80,6 +81,11 @@
                     <groupId>org.antlr</groupId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jbellis</groupId>
+            <artifactId>jamm</artifactId>
+            <version>${jamm.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cassandra</groupId>
@@ -213,6 +219,11 @@
                                     <pattern>org.antlr</pattern>
                                     <shadedPattern>${shade.base}.antlr</shadedPattern>
                                 </relocation>
+                                <!-- sigh... jamm is required by cassandra -->
+                                <relocation>
+                                    <pattern>org.github.jamm</pattern>
+                                    <shadedPattern>${shade.base}.jamm</shadedPattern>
+                                </relocation>
                                 <relocation>
                                     <pattern>org.apache.cassandra</pattern>
                                     <shadedPattern>${shade.base}.cassandra</shadedPattern>
@@ -267,14 +278,16 @@
                                 -->
                                 <filter>
                                     <artifact>org.apache.cassandra:cassandra-all</artifact>
-                                    <excludes>
-                                        <exclude>org/apache/cassandra/**</exclude>
-                                    </excludes>
                                     <includes>
                                         <include>org/apache/cassandra/auth/**</include>
+                                        <include>org/apache/cassandra/cache/*</include>
+                                        <include>org/apache/cassandra/config/*</include>
                                         <include>org/apache/cassandra/cql3/**</include>
                                         <include>org/apache/cassandra/db/marshal/*</include>
                                         <include>org/apache/cassandra/exceptions/*</include>
+                                        <include>org/apache/cassandra/io/util/*</include>
+                                        <include>org/apache/cassandra/serializers/*</include>
+                                        <include>org/apache/cassandra/transport/*</include>
                                         <include>org/apache/cassandra/utils/*</include>
                                     </includes>
                                 </filter>
@@ -284,10 +297,6 @@
                                         <exclude>META-INF/maven/**</exclude>
                                         <exclude>META-INF/*.xml</exclude>
                                         <exclude>LICENSE</exclude>
-                                        <exclude>LICENSE</exclude>
-                                        <exclude>org/apache/cassandra/net/**</exclude>
-                                        <exclude>org/apache/cassandra/thrift/**</exclude>
-                                        <exclude>org/apache/cassandra/tools/**</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
