@@ -23,6 +23,32 @@ CREATE TABLE IF NOT EXISTS test_drive.basic_data_type (
 );
 TRUNCATE TABLE test_drive.basic_data_type;
 
+CREATE TABLE IF NOT EXISTS test_drive.static_data_type (
+	id1 uuid,
+	id2 uuid,
+ 	id_uuid uuid static,
+ 	str_ascii ascii static,
+	num_big_integer bigint static,
+	binary_data blob static,
+	true_or_false boolean static,
+	date_date date static,
+	num_decimal decimal static,
+	num_double double static,
+	num_float float static,
+	net_inet inet static,
+	num_int int static,
+	num_small_int smallint static,
+	str_text text static,
+	date_time time static,
+	date_timestamp timestamp static,
+	id_timeuuid timeuuid static,
+	num_tiny_int tinyint static,
+	str_varchar varchar static,
+	num_varint varint static,
+	primary key (id1, id2)
+);
+TRUNCATE TABLE test_drive.static_data_type;
+
 CREATE TABLE IF NOT EXISTS test_drive.counter_data_type (
  	id_uuid uuid PRIMARY KEY,
  	num_counter counter

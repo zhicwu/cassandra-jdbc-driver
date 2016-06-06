@@ -20,6 +20,7 @@
  */
 package com.github.cassandra.jdbc.provider.datastax;
 
+import com.datastax.driver.core.LocalDate;
 import com.github.cassandra.jdbc.BaseCassandraTest;
 import org.testng.annotations.Test;
 
@@ -156,7 +157,10 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
         String queryCql = "select date_date from test_drive.basic_data_type where id_uuid = ?";
         UUID id = UUID.randomUUID();
         String date = "2015-01-01";
+        LocalDate ld = LocalDate.fromMillisSinceEpoch(System.currentTimeMillis());
+        Date d = Date.valueOf(date);
         try {
+            // set date by string
             java.sql.PreparedStatement s = conn.prepareStatement(insertCql);
             s.setObject(1, id);
             s.setObject(2, date);
@@ -168,6 +172,36 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             ResultSet rs = s.executeQuery();
             rs.next();
             assertEquals(rs.getDate(1), Date.valueOf(date));
+            rs.close();
+            s.close();
+
+            // by LocalDate
+            s = conn.prepareStatement(insertCql);
+            s.setObject(1, id);
+            s.setObject(2, ld);
+            s.execute();
+            s.close();
+
+            s = conn.prepareStatement(queryCql);
+            s.setObject(1, id);
+            rs = s.executeQuery();
+            rs.next();
+            assertEquals(rs.getObject(1), ld);
+            rs.close();
+            s.close();
+
+            // by date
+            s = conn.prepareStatement(insertCql);
+            s.setObject(1, id);
+            s.setDate(2, d);
+            s.execute();
+            s.close();
+
+            s = conn.prepareStatement(queryCql);
+            s.setObject(1, id);
+            rs = s.executeQuery();
+            rs.next();
+            assertEquals(rs.getDate(1), d);
             rs.close();
             s.close();
         } catch (Exception e) {
@@ -182,7 +216,10 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
         String queryCql = "select date_time from test_drive.basic_data_type where id_uuid = ?";
         UUID id = UUID.randomUUID();
         String time = "15:15:15";
+        long tl = System.currentTimeMillis();
+        Time t = Time.valueOf(time);
         try {
+            // set time by string
             java.sql.PreparedStatement s = conn.prepareStatement(insertCql);
             s.setObject(1, id);
             s.setObject(2, Time.valueOf(time));
@@ -194,6 +231,95 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             ResultSet rs = s.executeQuery();
             rs.next();
             assertEquals(rs.getTime(1), Time.valueOf(time));
+            rs.close();
+            s.close();
+
+            // by long
+            s = conn.prepareStatement(insertCql);
+            s.setObject(1, id);
+            s.setObject(2, tl);
+            s.execute();
+            s.close();
+
+            s = conn.prepareStatement(queryCql);
+            s.setObject(1, id);
+            rs = s.executeQuery();
+            rs.next();
+            assertEquals(rs.getObject(1), tl);
+            rs.close();
+            s.close();
+
+            // by time
+            s = conn.prepareStatement(insertCql);
+            s.setObject(1, id);
+            s.setObject(2, t);
+            s.execute();
+            s.close();
+
+            s = conn.prepareStatement(queryCql);
+            s.setObject(1, id);
+            rs = s.executeQuery();
+            rs.next();
+            assertEquals(rs.getTime(1), t);
+            rs.close();
+            s.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Error occurred during testing: " + e.getMessage());
+        }
+    }
+
+    @Test(groups = {"unit", "server"})
+    public void testTimestamp() {
+        String insertCql = "insert into test_drive.basic_data_type(id_uuid, date_timestamp) values(?, ?)";
+        String queryCql = "select date_timestamp from test_drive.basic_data_type where id_uuid = ?";
+        UUID id = UUID.randomUUID();
+        String timestamp = "2019-02-01 12:12:21";
+        long ts = System.currentTimeMillis();
+        Timestamp t = Timestamp.valueOf(timestamp);
+        try {
+            // set time by string
+            java.sql.PreparedStatement s = conn.prepareStatement(insertCql);
+            s.setObject(1, id);
+            s.setString(2, timestamp);
+            s.execute();
+            s.close();
+
+            s = conn.prepareStatement(queryCql);
+            s.setObject(1, id);
+            ResultSet rs = s.executeQuery();
+            rs.next();
+            assertEquals(rs.getTimestamp(1), t);
+            rs.close();
+            s.close();
+
+            // by long
+            s = conn.prepareStatement(insertCql);
+            s.setObject(1, id);
+            s.setObject(2, ts);
+            s.execute();
+            s.close();
+
+            s = conn.prepareStatement(queryCql);
+            s.setObject(1, id);
+            rs = s.executeQuery();
+            rs.next();
+            assertEquals(rs.getObject(1), new java.util.Date(ts));
+            rs.close();
+            s.close();
+
+            // by timestamp
+            s = conn.prepareStatement(insertCql);
+            s.setObject(1, id);
+            s.setObject(2, t);
+            s.execute();
+            s.close();
+
+            s = conn.prepareStatement(queryCql);
+            s.setObject(1, id);
+            rs = s.executeQuery();
+            rs.next();
+            assertEquals(rs.getTimestamp(1), t);
             rs.close();
             s.close();
         } catch (Exception e) {

@@ -45,6 +45,12 @@ public class CassandraStatementTest extends BaseCassandraTest {
                         "num_tiny_int,num_varint,str_ascii,str_text,str_varchar,true_or_false)\n" +
                         "values(uuid(),textAsBlob('123'),'2016-05-31','13:30:54.234','2016-05-31 13:30:54.234',now()," +
                         "'127.0.0.1',1,1,1.1,1.1,1,1,1,1,'a','aaa','aaa',true)"},
+                // static data types
+                {"insert into test_drive.static_data_type(id1,id2,id_uuid,binary_data,date_date,date_time," +
+                        "date_timestamp,id_timeuuid,net_inet,num_big_integer,num_decimal,num_double,num_float," +
+                        "num_int,num_small_int,num_tiny_int,num_varint,str_ascii,str_text,str_varchar,true_or_false)\n" +
+                        "values(uuid(),uuid(),uuid(),textAsBlob('123'),'2016-05-31','13:30:54.234'," +
+                        "'2016-05-31 13:30:54.234',now(),'127.0.0.1',1,1,1.1,1.1,1,1,1,1,'a','aaa','aaa',true)"},
                 // counter
                 {"update test_drive.counter_data_type set num_counter = num_counter + 123 where id_uuid = uuid()"},
                 // list
