@@ -20,13 +20,15 @@
  */
 package com.github.cassandra.jdbc.provider.datastax;
 
-import com.datastax.driver.core.LocalDate;
 import com.datastax.driver.core.TupleType;
 import com.datastax.driver.core.utils.UUIDs;
 import com.github.cassandra.jdbc.CassandraDataType;
 import com.github.cassandra.jdbc.CassandraDataTypeConverters;
 import com.github.cassandra.jdbc.CassandraDataTypeMappings;
 import com.google.common.base.Function;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalDateTime;
+import org.joda.time.LocalTime;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -34,7 +36,6 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.sql.Time;
-import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.List;
 import java.util.Map;
@@ -42,8 +43,6 @@ import java.util.Set;
 import java.util.UUID;
 
 final class DataStaxDataTypes extends CassandraDataTypeMappings {
-    private static final long EPOCH_MS = Timestamp.valueOf("1970-01-01 00:00:00.000").getTime();
-
     static final CassandraDataTypeMappings mappings = new CassandraDataTypeMappings() {
         @Override
         protected void init(List<Object[]> list) {
@@ -61,20 +60,20 @@ final class DataStaxDataTypes extends CassandraDataTypeMappings {
             addMappings(list, CassandraDataType.FLOAT.getTypeName(), Types.FLOAT, Float.class, 12, 4);
             addMappings(list, CassandraDataType.INET.getTypeName(), Types.VARCHAR, InetAddress.class, 200, 0);
             addMappings(list, CassandraDataType.INT.getTypeName(), Types.INTEGER, Integer.class, 10, 0);
-            addMappings(list, CassandraDataType.LIST.getTypeName(), Types.JAVA_OBJECT, List.class,
+            addMappings(list, CassandraDataType.LIST.getTypeName(), Types.OTHER, List.class,
                     Integer.MAX_VALUE, 0);
-            addMappings(list, CassandraDataType.MAP.getTypeName(), Types.JAVA_OBJECT, Map.class, Integer.MAX_VALUE,
+            addMappings(list, CassandraDataType.MAP.getTypeName(), Types.OTHER, Map.class, Integer.MAX_VALUE,
                     0);
-            addMappings(list, CassandraDataType.SET.getTypeName(), Types.JAVA_OBJECT, Set.class, Integer.MAX_VALUE,
+            addMappings(list, CassandraDataType.SET.getTypeName(), Types.OTHER, Set.class, Integer.MAX_VALUE,
                     0);
             addMappings(list, CassandraDataType.SMALLINT.getTypeName(), Types.SMALLINT, Short.class, 6, 0);
             addMappings(list, CassandraDataType.TEXT.getTypeName(), Types.VARCHAR, String.class, Integer.MAX_VALUE,
                     0);
-            addMappings(list, CassandraDataType.TIME.getTypeName(), Types.TIME, Time.class, 50, 0);
-            addMappings(list, CassandraDataType.TIMESTAMP.getTypeName(), Types.TIMESTAMP, Timestamp.class, 50, 0);
+            addMappings(list, CassandraDataType.TIME.getTypeName(), Types.TIME, LocalTime.class, 50, 0);
+            addMappings(list, CassandraDataType.TIMESTAMP.getTypeName(), Types.TIMESTAMP, LocalDateTime.class, 50, 0);
             addMappings(list, CassandraDataType.TIMEUUID.getTypeName(), Types.VARCHAR, UUID.class, 50, 0);
             addMappings(list, CassandraDataType.TINYINT.getTypeName(), Types.TINYINT, Byte.class, 3, 0);
-            addMappings(list, CassandraDataType.TUPLE.getTypeName(), Types.JAVA_OBJECT, TupleType.class,
+            addMappings(list, CassandraDataType.TUPLE.getTypeName(), Types.OTHER, TupleType.class,
                     Integer.MAX_VALUE, 0);
             addMappings(list, CassandraDataType.UUID.getTypeName(), Types.VARCHAR, UUID.class, 50, 0);
             addMappings(list, CassandraDataType.VARCHAR.getTypeName(), Types.VARCHAR, String.class,
@@ -90,32 +89,42 @@ final class DataStaxDataTypes extends CassandraDataTypeMappings {
             super.init();
 
             // add / override converters
-            addMapping(LocalDate.class, LocalDate.fromMillisSinceEpoch(System.currentTimeMillis()),
-                    new Function<Object, LocalDate>() {
-                        public LocalDate apply(Object input) {
-                            LocalDate date;
+            addMapping(com.datastax.driver.core.LocalDate.class,
+                    com.datastax.driver.core.LocalDate.fromMillisSinceEpoch(System.currentTimeMillis()),
+                    new Function<Object, com.datastax.driver.core.LocalDate>() {
+                        public com.datastax.driver.core.LocalDate apply(Object input) {
+                            com.datastax.driver.core.LocalDate date;
                             if (input instanceof java.util.Date) {
-                                date = LocalDate.fromMillisSinceEpoch(((java.util.Date) input).getTime() - EPOCH_MS);
+                                date = com.datastax.driver.core.LocalDate.fromMillisSinceEpoch(
+                                        ((java.util.Date) input).getTime());
                             } else {
-                                date = LocalDate.fromMillisSinceEpoch(
-                                        Date.valueOf(String.valueOf(input)).getTime() - EPOCH_MS);
+                                date = com.datastax.driver.core.LocalDate.fromMillisSinceEpoch(
+                                        Date.valueOf(String.valueOf(input)).getTime());
                             }
                             return date;
                         }
                     });
+
             // Use DataStax UUIDs to generate time-based UUID
             addMapping(java.util.UUID.class, UUIDs.timeBased(), new Function<Object, UUID>() {
                 public UUID apply(Object input) {
                     return java.util.UUID.fromString(String.valueOf(input));
                 }
             });
+
             // workaround for Date, Time and Timestamp
             addMapping(Date.class, new Date(System.currentTimeMillis()),
                     new Function<Object, Date>() {
                         public Date apply(Object input) {
                             Date date;
-                            if (input instanceof LocalDate) {
-                                date = new Date(((LocalDate) input).getMillisSinceEpoch() + EPOCH_MS);
+                            if (input instanceof com.datastax.driver.core.LocalDate) {
+                                com.datastax.driver.core.LocalDate localDate =
+                                        (com.datastax.driver.core.LocalDate) input;
+                                date = new Date(new LocalDate(
+                                        localDate.getYear(), localDate.getMonth(),
+                                        localDate.getDay()).toDate().getTime());
+                            } else if (input instanceof LocalDate) {
+                                date = new Date(((LocalDate) input).toDate().getTime());
                             } else if (input instanceof java.util.Date) {
                                 date = new Date(((java.util.Date) input).getTime());
                             } else if (input instanceof Number) {
@@ -126,36 +135,51 @@ final class DataStaxDataTypes extends CassandraDataTypeMappings {
                             return date;
                         }
                     });
+            addMapping(LocalTime.class, LocalTime.now(), new Function<Object, LocalTime>() {
+                public LocalTime apply(Object input) {
+                    LocalTime result;
+
+                    if (input instanceof java.util.Date) {
+                        result = new LocalTime(((java.util.Date) input).getTime());
+                    } else if (input instanceof Number) {
+                        // this is a bit tricky as the number usually represents nanoseconds since midnight
+                        // http://docs.datastax.com/en/latest-java-driver/java-driver/reference/javaClass2Cql3Datatypes.html?scroll=cql-java-types__date-section
+                        long possibllyNanoSeconds = ((Number) input).longValue();
+                        // FIXME probably don't need to go this far...
+                        if (possibllyNanoSeconds % 1000000 == 0) {
+                            possibllyNanoSeconds = possibllyNanoSeconds / 1000000;
+                        }
+                        result = new LocalTime(LocalDate.now().toDateTimeAtStartOfDay().getMillis()
+                                + possibllyNanoSeconds);
+                    } else {
+                        result = LocalTime.parse(String.valueOf(input));
+                    }
+
+                    return result;
+                }
+            });
             addMapping(Time.class, new Time(System.currentTimeMillis()),
                     new Function<Object, Time>() {
                         public Time apply(Object input) {
                             Time time;
-                            if (input instanceof LocalDate) {
-                                time = new Time(((LocalDate) input).getMillisSinceEpoch() + EPOCH_MS);
+                            if (input instanceof LocalTime) {
+                                time = new Time(((LocalTime) input).toDateTimeToday().getMillis());
                             } else if (input instanceof java.util.Date) {
                                 time = new Time(((java.util.Date) input).getTime());
                             } else if (input instanceof Number) {
-                                time = new Time(((Number) input).longValue());
+                                // this is a bit tricky as the number usually represents nanoseconds since midnight
+                                // http://docs.datastax.com/en/latest-java-driver/java-driver/reference/javaClass2Cql3Datatypes.html?scroll=cql-java-types__date-section
+                                long possibllyNanoSeconds = ((Number) input).longValue();
+                                // FIXME probably don't need to go this far...
+                                if (possibllyNanoSeconds % 1000000 == 0) {
+                                    possibllyNanoSeconds = possibllyNanoSeconds / 1000000;
+                                }
+                                time = new Time(
+                                        LocalTime.fromMillisOfDay(possibllyNanoSeconds).toDateTimeToday().getMillis());
                             } else {
-                                time = new Time(Time.valueOf(String.valueOf(input)).getTime());
+                                time = new Time(LocalTime.parse(String.valueOf(input)).toDateTimeToday().getMillis());
                             }
                             return time;
-                        }
-                    });
-            addMapping(Timestamp.class, new Timestamp(System.currentTimeMillis()),
-                    new Function<Object, Timestamp>() {
-                        public Timestamp apply(Object input) {
-                            Timestamp timestamp;
-                            if (input instanceof LocalDate) {
-                                timestamp = new Timestamp(((LocalDate) input).getMillisSinceEpoch() + EPOCH_MS);
-                            } else if (input instanceof java.util.Date) {
-                                timestamp = new Timestamp(((java.util.Date) input).getTime());
-                            } else if (input instanceof Number) {
-                                timestamp = new Timestamp(((Number) input).longValue());
-                            } else {
-                                timestamp = Timestamp.valueOf(String.valueOf(input));
-                            }
-                            return timestamp;
                         }
                     });
         }

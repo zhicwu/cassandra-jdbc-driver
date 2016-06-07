@@ -22,6 +22,10 @@ package com.github.cassandra.jdbc.provider.datastax;
 
 import com.datastax.driver.core.LocalDate;
 import com.github.cassandra.jdbc.BaseCassandraTest;
+import com.github.cassandra.jdbc.CassandraDataTypeConverters;
+import com.google.common.collect.Lists;
+import org.joda.time.LocalDateTime;
+import org.joda.time.LocalTime;
 import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
@@ -32,6 +36,7 @@ import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.UUID;
 
 import static org.testng.Assert.*;
@@ -171,7 +176,7 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             s.setObject(1, id);
             ResultSet rs = s.executeQuery();
             rs.next();
-            assertEquals(rs.getDate(1), Date.valueOf(date));
+            assertEquals(rs.getString(1), date);
             rs.close();
             s.close();
 
@@ -215,14 +220,15 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
         String insertCql = "insert into test_drive.basic_data_type(id_uuid, date_time) values(?, ?)";
         String queryCql = "select date_time from test_drive.basic_data_type where id_uuid = ?";
         UUID id = UUID.randomUUID();
-        String time = "15:15:15";
-        long tl = System.currentTimeMillis();
-        Time t = Time.valueOf(time);
+        String time = "13:30:54.234";
+        long tl = 48654234000000L;
+        Time t = new Time(LocalTime.parse(time).toDateTimeToday().getMillis());
+
         try {
             // set time by string
             java.sql.PreparedStatement s = conn.prepareStatement(insertCql);
             s.setObject(1, id);
-            s.setObject(2, Time.valueOf(time));
+            s.setObject(2, time);
             s.execute();
             s.close();
 
@@ -230,7 +236,7 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             s.setObject(1, id);
             ResultSet rs = s.executeQuery();
             rs.next();
-            assertEquals(rs.getTime(1), Time.valueOf(time));
+            assertEquals(rs.getObject(1), tl);
             rs.close();
             s.close();
 
@@ -386,6 +392,86 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             }
 
             rs.close();
+            s.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Error occurred during testing: " + e.getMessage());
+        }
+    }
+
+    @Test(groups = {"unit", "server"})
+    public void testInsertLists() {
+        String cql = "insert into test_drive.list_data_type(id,id_uuid,binary_data,date_date,date_time," +
+                "date_timestamp,id_timeuuid,net_inet,num_big_integer,num_decimal,num_double,num_float,num_int," +
+                "num_small_int,num_tiny_int,num_varint,str_ascii,str_text,str_varchar,true_or_false)\n" +
+                "values(5d19b3b2-a889-4913-81ec-164e5845cf36,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+        try {
+            java.sql.PreparedStatement s = conn.prepareStatement(cql);
+            assertTrue(s instanceof CassandraPreparedStatement);
+
+            CassandraDataTypeConverters c = ((CassandraPreparedStatement) s).getDataTypeConverters();
+            int index = 1;
+            s.setObject(index++, Lists.newArrayList(UUID.randomUUID()));
+            s.setObject(index++, Lists.newArrayList(ByteBuffer.wrap(new byte[]{1, 2, 3})));
+            //s.setObject(index++, Lists.newArrayList("2017-01-01"));
+            s.setObject(index++, Lists.newArrayList(LocalDate.fromMillisSinceEpoch(System.currentTimeMillis())));
+            //s.setObject(index++, Lists.newArrayList("11:50:30"));
+            s.setObject(index++, Lists.newArrayList(LocalTime.now().getMillisOfDay() * 1000000L));
+            //s.setObject(index++, Lists.newArrayList("2017-02-02 11:50:30.123"));
+            s.setObject(index++, Lists.newArrayList(LocalDateTime.now().toDate()));
+            // or you'll likely end up with error like the following:
+            // com.datastax.driver.core.exceptions.InvalidTypeException: xxx is not a Type 1 (time-based) UUID
+            s.setObject(index++, Lists.newArrayList(((CassandraPreparedStatement) s)
+                    .getDataTypeConverters().defaultValueOf(UUID.class)));
+            s.setObject(index++, Lists.newArrayList(InetAddress.getByName("192.168.10.11")));
+            s.setObject(index++, Lists.newArrayList(Long.MAX_VALUE));
+            s.setObject(index++, Lists.newArrayList(new BigDecimal("33333333333333333333333333333333333")));
+            s.setObject(index++, Lists.newArrayList(Double.MAX_VALUE));
+            s.setObject(index++, Lists.newArrayList(Float.MAX_VALUE));
+            s.setObject(index++, Lists.newArrayList(Integer.MAX_VALUE));
+            s.setObject(index++, Lists.newArrayList(Short.MAX_VALUE));
+            s.setObject(index++, Lists.newArrayList(Byte.MAX_VALUE));
+            s.setObject(index++, Lists.newArrayList(new BigInteger("2222222222222222222222222222222222")));
+            s.setObject(index++, Lists.newArrayList("ascii"));
+            s.setObject(index++, Lists.newArrayList("text"));
+            s.setObject(index++, Lists.newArrayList("varchar"));
+            s.setObject(index++, Lists.newArrayList(true));
+
+            assertFalse(s.execute());
+            assertNull(s.getResultSet());
+            assertEquals(s.getUpdateCount(), 1);
+
+            s.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Error occurred during testing: " + e.getMessage());
+        }
+    }
+
+    @Test(groups = {"unit", "server"}, dependsOnMethods = {"testInsertLists"})
+    public void testQueryLists() {
+        String cql = "select id_uuid,binary_data,date_date,date_time,date_timestamp,id_timeuuid," +
+                "net_inet,num_big_integer,num_decimal,num_double,num_float,num_int," +
+                "num_small_int,num_tiny_int,num_varint,str_ascii,str_text,str_varchar,true_or_false\n" +
+                "from test_drive.list_data_type where id = ?";
+
+        try {
+            java.sql.PreparedStatement s = conn.prepareStatement(cql);
+            assertTrue(s instanceof CassandraPreparedStatement);
+
+            CassandraDataTypeConverters c = ((CassandraPreparedStatement) s).getDataTypeConverters();
+
+            s.setObject(1, "5d19b3b2-a889-4913-81ec-164e5845cf36");
+            ResultSet rs = s.executeQuery();
+            assertNotNull(s.getResultSet());
+            assertTrue(rs.next());
+
+            for (int i = 1; i<19; i++) {
+                assertTrue(rs.getObject(i) instanceof List);
+                assertEquals(((List)rs.getObject(i)).size(), 1);
+            }
+
             s.close();
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,10 +1,15 @@
 package com.github.cassandra.jdbc;
 
 import com.google.common.base.Function;
+import com.google.common.base.Splitter;
+import com.google.common.collect.*;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CharStreams;
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Ints;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalDateTime;
+import org.joda.time.LocalTime;
 import org.pmw.tinylog.Logger;
 
 import java.io.IOException;
@@ -18,11 +23,15 @@ import java.sql.Blob;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class CassandraDataTypeConverters {
+    private static final Splitter valueSplitter = Splitter.on(',').trimResults().omitEmptyStrings();
+
+    private static final List emptyList = ImmutableList.builder().build();
+    private static final Set emptySet = ImmutableSet.builder().build();
+    private static final Map emptyMap = ImmutableMap.builder().build();
+
     static final CassandraDataTypeConverters instance = new CassandraDataTypeConverters();
 
     private final Map<String, Object> defaultValues = new HashMap<String, Object>();
@@ -42,6 +51,7 @@ public class CassandraDataTypeConverters {
                 } else {
                     result = String.valueOf(input);
                 }
+
                 return result;
             }
         });
@@ -152,20 +162,128 @@ public class CassandraDataTypeConverters {
 
         addMapping(Date.class, new Date(System.currentTimeMillis()), new Function<Object, Date>() {
             public Date apply(Object input) {
-                return Date.valueOf(String.valueOf(input));
+                Date result;
+                if (input instanceof LocalDate) {
+                    result = new Date(((LocalDate) input).toDate().getTime());
+                } else if (input instanceof java.util.Date) {
+                    result = new Date(((java.util.Date) input).getTime());
+                } else {
+                    result = new Date(LocalDate.parse(String.valueOf(input)).toDate().getTime());
+                }
+                return result;
             }
         });
         addMapping(Time.class, new Time(System.currentTimeMillis()), new Function<Object, Time>() {
             public Time apply(Object input) {
-                return Time.valueOf(String.valueOf(input));
+                Time result;
+                if (input instanceof LocalTime) {
+                    result = new Time(((LocalTime) input).toDateTimeToday().getMillis());
+                } else if (input instanceof java.util.Date) {
+                    result = new Time(((java.util.Date) input).getTime());
+                } else {
+                    result = new Time(LocalTime.parse(String.valueOf(input)).toDateTimeToday().getMillis());
+                }
+                return result;
             }
         });
-        addMapping(Timestamp.class, new Timestamp(System.currentTimeMillis()),
-                new Function<Object, Timestamp>() {
-                    public Timestamp apply(Object input) {
-                        return Timestamp.valueOf(String.valueOf(input));
+        addMapping(Timestamp.class, new Timestamp(System.currentTimeMillis()), new Function<Object, Timestamp>() {
+            public Timestamp apply(Object input) {
+                Timestamp result;
+                if (input instanceof LocalDateTime) {
+                    result = new Timestamp(((LocalDateTime) input).toDate().getTime());
+                } else if (input instanceof java.util.Date) {
+                    result = new Timestamp(((java.util.Date) input).getTime());
+                } else {
+                    result = new Timestamp(LocalDateTime.parse(String.valueOf(input)).toDate().getTime());
+                }
+                return result;
+            }
+        });
+
+        addMapping(LocalDate.class, LocalDate.now(), new Function<Object, LocalDate>() {
+            public LocalDate apply(Object input) {
+                LocalDate result;
+
+                if (input instanceof java.util.Date) {
+                    result = new LocalDate(((java.util.Date) input).getTime());
+                } else if (input instanceof Number) {
+                    result = new LocalDate(((Number) input).longValue());
+                } else {
+                    result = LocalDate.parse(String.valueOf(input));
+                }
+
+                return result;
+            }
+        });
+        addMapping(LocalTime.class, LocalTime.now(), new Function<Object, LocalTime>() {
+            public LocalTime apply(Object input) {
+                LocalTime result;
+
+                if (input instanceof java.util.Date) {
+                    result = new LocalTime(((java.util.Date) input).getTime());
+                } else if (input instanceof Number) {
+                    result = new LocalTime(((Number) input).longValue());
+                } else {
+                    result = LocalTime.parse(String.valueOf(input));
+                }
+
+                return result;
+            }
+        });
+        addMapping(LocalDateTime.class, LocalDateTime.now(), new Function<Object, LocalDateTime>() {
+            public LocalDateTime apply(Object input) {
+                LocalDateTime result;
+
+                if (input instanceof java.util.Date) {
+                    result = new LocalDateTime(((java.util.Date) input).getTime());
+                } else if (input instanceof Number) {
+                    result = new LocalDateTime(((Number) input).longValue());
+                } else {
+                    String dateTime = String.valueOf(input);
+                    if (dateTime.indexOf(' ') == 10) {
+                        dateTime = dateTime.replace(' ', 'T');
                     }
-                });
+                    result = LocalDateTime.parse(dateTime);
+                }
+
+                return result;
+            }
+        });
+
+        // now collections
+        addMapping(List.class, emptyList, new Function<Object, List>() {
+            public List apply(Object input) {
+                List result;
+                if (input instanceof Iterable) {
+                    result = Lists.newArrayList((Iterable) input);
+                } else if (input instanceof Object[]) {
+                    result = Lists.newArrayList((Object[]) input);
+                } else {
+                    result = valueSplitter.splitToList(String.valueOf(input));
+                }
+
+                return result;
+            }
+        });
+        addMapping(Set.class, emptySet, new Function<Object, Set>() {
+            public Set apply(Object input) {
+                Set result;
+                if (input instanceof Iterable) {
+                    result = Sets.newTreeSet((Iterable) input);
+                } else if (input instanceof Object[]) {
+                    result = Sets.newHashSet((Object[]) input);
+                } else {
+                    result = Sets.newTreeSet(valueSplitter.splitToList(String.valueOf(input)));
+                }
+
+                return result;
+            }
+        });
+        addMapping(Set.class, emptyMap, new Function<Object, Map>() {
+            public Map apply(Object input) {
+                return Map.class.cast(input);
+            }
+        });
     }
 
     protected void addMapping(Class clazz, Object defaultValue, Function converter) {
@@ -192,8 +310,8 @@ public class CassandraDataTypeConverters {
         T result;
 
         String key = type.getName();
-        if (replaceNullValue && value == null) {
-            result = (T) defaultValues.get(key);
+        if (value == null) {
+            result = replaceNullValue ? (T) defaultValues.get(key) : null;
         } else if (type.isInstance(value)) {
             result = (T) value;
         } else {

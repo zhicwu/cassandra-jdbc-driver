@@ -58,12 +58,12 @@ public class CassandraColumnDefinition {
         this.name = Strings.nullToEmpty(name);
         this.label = Strings.isNullOrEmpty(label) ? name : label;
         this.cqlType = CassandraDataTypeMappings.instance.cqlTypeFor(type);
-        this.sqlType = CassandraDataTypeMappings.instance.sqlTypeFor(type);
-        this.javaType = CassandraDataTypeMappings.instance.javaTypeFor(type);
+        this.sqlType = CassandraDataTypeMappings.instance.sqlTypeFor(this.cqlType);
+        this.javaType = CassandraDataTypeMappings.instance.javaTypeFor(this.cqlType);
         this.searchable = searchable;
         this.writable = writable;
-        this.precision = CassandraDataTypeMappings.instance.precisionFor(type);
-        this.scale = CassandraDataTypeMappings.instance.scaleFor(type);
+        this.precision = CassandraDataTypeMappings.instance.precisionFor(this.cqlType);
+        this.scale = CassandraDataTypeMappings.instance.scaleFor(this.cqlType);
     }
 
     public String getCatalogName() {

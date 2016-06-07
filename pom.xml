@@ -3,6 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.cassandra</groupId>
     <artifactId>cassandra-jdbc-driver</artifactId>
+    <packaging>jar</packaging>
     <version>0.5.0</version>
     <name>Cassandra JDBC Driver</name>
     <url>http://github.com/zhicwu/cassandra-jdbc-driver</url>
@@ -23,6 +24,7 @@
         <cassandra.version>3.5</cassandra.version>
         <datastax-driver.version>3.0.2</datastax-driver.version>
         <snappy.version>1.0.5</snappy.version>
+        <jodatime.version>2.9.4</jodatime.version>
         <lz4.version>1.2.0</lz4.version>
         <tinylog.version>1.1</tinylog.version>
         <java.version>1.6</java.version>
@@ -61,6 +63,11 @@
             <version>1.7.0</version>
         </dependency>
         -->
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <version>${jodatime.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.tinylog</groupId>
             <artifactId>tinylog</artifactId>
@@ -243,6 +250,10 @@
                                 <relocation>
                                     <pattern>net.sf.jsqlparser</pattern>
                                     <shadedPattern>${shade.base}.jsqlparser</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.joda</pattern>
+                                    <shadedPattern>${shade.base}.joda</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.pmw.tinylog</pattern>
