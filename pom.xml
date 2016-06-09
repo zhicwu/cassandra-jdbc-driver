@@ -37,6 +37,7 @@
         <gpg-plugin.version>1.6</gpg-plugin.version>
         <shade-plugin.version>2.4.3</shade-plugin.version>
         <surefire-plugin.version>2.19.1</surefire-plugin.version>
+        <nexus-plugin.version>1.6.3</nexus-plugin.version>
         <shade.base>com.github.cassandra.jdbc.internal</shade.base>
     </properties>
     <licenses>
@@ -166,10 +167,6 @@
             <id>ossrh</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
     </distributionManagement>
     <build>
         <resources>
@@ -287,11 +284,12 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <outputFile>target/${project.artifactId}-${project.version}-shaded.jar</outputFile>
-                            <createSourcesJar>true</createSourcesJar>
-                            <shadeSourcesContent>true</shadeSourcesContent>
+                            <createSourcesJar>false</createSourcesJar>
+                            <shadeSourcesContent>false</shadeSourcesContent>
                             <dependencyReducedPomLocation>${project.build.directory}/pom.xml
                             </dependencyReducedPomLocation>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>shaded</shadedClassifierName>
                             <relocations>
                                 <relocation>
                                     <pattern>org.yaml.snakeyaml</pattern>
@@ -388,6 +386,17 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>${nexus-plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
             </plugin>
         </plugins>
     </build>
