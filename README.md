@@ -15,16 +15,17 @@ of Cassandra. Having said that, it is NOT recommended to use this for production
 OK, you have been warned :) Now go ahead to download the latest driver and give it a shot!
 
 ## Where we are?
-[0.5.0 Release](https://github.com/zhicwu/cassandra-jdbc-driver/releases/tag/0.5.0) - Beta
+[0.6.0 Release](https://github.com/zhicwu/cassandra-jdbc-driver/releases/tag/0.6.0) - Beta
 
 ## What's next?
-- Advanced types(LOBs, Collections and UDTs) support
+- UDT support and smooth type conversion
 - Multiple ResultSet support
 - Better SQL compatibility(e.g. SELECT INTO, GROUP BY and probably simple table joins and sub-queries)
-- More providers...
+- More providers(and storage?)...
 
 ## How to use?
 #### Hello World
+Preferred to use the shaded jar(e.g. cassandra-jdbc-driver-0.6.0-shared.jar) for simplicity and avoid dependency hell.
 ```java
 ...
 // Driver driver = new com.github.cassandra.jdbc.CassandraDriver();
@@ -33,7 +34,7 @@ props.setProperty("user", "cassandra");
 props.setProperty("password", "cassandra");
 
 // ":datastax" in the URL is optional, it suggests to use DataStax Java driver as the provider to connect to Cassandra
-Connection conn = DriverManager.connect("jdbc:c*:datastax://host1,host2/system_auth?consistencyLevel=one", props);
+Connection conn = DriverManager.connect("jdbc:c*:datastax://host1,host2/system_auth?consistencyLevel=ONE", props);
 // change current keyspace from system_auth to system
 conn.setSchema("system");
 
@@ -73,20 +74,24 @@ select * from xyz
     ![Query Trace](../../raw/master/resources/images/query_trace.png)
 
 ### JMeter
+1. Put the driver in $JMETER_HOME/lib directory
+2. Use JDBC Sampler to access Cassandra
 
 ### Pentaho Data Integration(aka. Kettle)
 1. Put the driver in $KETTLE_HOME/lib directory
 2. Create new connection to Cassandra
+3. Use TableInput / TableOutput steps to query / update Cassandra data
 
 ### Pentaho BI Server
 1. Put the driver in $BISERVER_HOME/tomcat/lib directory
 2. Create new datasource pointing to Cassandra
+3. Use CDA to issue SQL to access Cassandra - Mondrian is not tested and is not supposed to work
 
 ## How to build?
 To build the project on your own, please make sure you have Maven 3 and then follow instructions below:
 ```bash
 $ git clone https://github.com/zhicwu/cassandra-jdbc-driver
 $ cd cassandra-jdbc-driver
-$ mvn -DskipTests clean package
+$ mvn clean package
 $ ls -alF target/*cassandra-jdbc-driver*.jar
 ```
