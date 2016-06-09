@@ -1,3 +1,23 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 package com.github.cassandra.jdbc;
 
 import com.google.common.base.Function;
@@ -7,8 +27,8 @@ import com.google.common.io.ByteStreams;
 import com.google.common.io.CharStreams;
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Ints;
+import org.joda.time.Instant;
 import org.joda.time.LocalDate;
-import org.joda.time.LocalDateTime;
 import org.joda.time.LocalTime;
 import org.pmw.tinylog.Logger;
 
@@ -27,6 +47,8 @@ import java.util.*;
 
 public class CassandraDataTypeConverters {
     private static final Splitter valueSplitter = Splitter.on(',').trimResults().omitEmptyStrings();
+
+    private static final byte[] emptyByteArray = new byte[0];
 
     private static final List emptyList = ImmutableList.builder().build();
     private static final Set emptySet = ImmutableSet.builder().build();
@@ -97,11 +119,26 @@ public class CassandraDataTypeConverters {
                 return blob;
             }
         });
+        addMapping(byte[].class, emptyByteArray, new Function<Object, byte[]>() {
+            public byte[] apply(Object input) {
+                byte[] result;
+
+                if (input instanceof ByteBuffer) {
+                    result = ((ByteBuffer) input).array();
+                } else {
+                    result = String.valueOf(input).getBytes();
+                }
+
+                return result;
+            }
+        });
+        /*
         addMapping(ByteBuffer.class, ByteBuffer.wrap(new byte[0]), new Function<Object, ByteBuffer>() {
             public ByteBuffer apply(Object input) {
                 return ByteBuffer.wrap(input instanceof byte[] ? (byte[]) input : String.valueOf(input).getBytes());
             }
         });
+        */
         addMapping(Boolean.class, Boolean.FALSE, new Function<Object, Boolean>() {
             public Boolean apply(Object input) {
                 return Boolean.valueOf(String.valueOf(input));
@@ -189,63 +226,22 @@ public class CassandraDataTypeConverters {
         addMapping(Timestamp.class, new Timestamp(System.currentTimeMillis()), new Function<Object, Timestamp>() {
             public Timestamp apply(Object input) {
                 Timestamp result;
-                if (input instanceof LocalDateTime) {
-                    result = new Timestamp(((LocalDateTime) input).toDate().getTime());
+                if (input instanceof Instant) {
+                    result = new Timestamp(((Instant) input).toDate().getTime());
                 } else if (input instanceof java.util.Date) {
                     result = new Timestamp(((java.util.Date) input).getTime());
-                } else {
-                    result = new Timestamp(LocalDateTime.parse(String.valueOf(input)).toDate().getTime());
-                }
-                return result;
-            }
-        });
-
-        addMapping(LocalDate.class, LocalDate.now(), new Function<Object, LocalDate>() {
-            public LocalDate apply(Object input) {
-                LocalDate result;
-
-                if (input instanceof java.util.Date) {
-                    result = new LocalDate(((java.util.Date) input).getTime());
                 } else if (input instanceof Number) {
-                    result = new LocalDate(((Number) input).longValue());
-                } else {
-                    result = LocalDate.parse(String.valueOf(input));
-                }
-
-                return result;
-            }
-        });
-        addMapping(LocalTime.class, LocalTime.now(), new Function<Object, LocalTime>() {
-            public LocalTime apply(Object input) {
-                LocalTime result;
-
-                if (input instanceof java.util.Date) {
-                    result = new LocalTime(((java.util.Date) input).getTime());
-                } else if (input instanceof Number) {
-                    result = new LocalTime(((Number) input).longValue());
-                } else {
-                    result = LocalTime.parse(String.valueOf(input));
-                }
-
-                return result;
-            }
-        });
-        addMapping(LocalDateTime.class, LocalDateTime.now(), new Function<Object, LocalDateTime>() {
-            public LocalDateTime apply(Object input) {
-                LocalDateTime result;
-
-                if (input instanceof java.util.Date) {
-                    result = new LocalDateTime(((java.util.Date) input).getTime());
-                } else if (input instanceof Number) {
-                    result = new LocalDateTime(((Number) input).longValue());
+                    result = new Timestamp(((Number) input).longValue());
                 } else {
                     String dateTime = String.valueOf(input);
-                    if (dateTime.indexOf(' ') == 10) {
-                        dateTime = dateTime.replace(' ', 'T');
+                    if (dateTime.indexOf(' ') == 10 && dateTime.indexOf('Z') < 0) {
+                        StringBuilder builder = new StringBuilder(dateTime).append('Z');
+                        builder.setCharAt(10, 'T');
+                        dateTime = builder.toString();
                     }
-                    result = LocalDateTime.parse(dateTime);
-                }
 
+                    result = new Timestamp(Instant.parse(dateTime).toDate().getTime());
+                }
                 return result;
             }
         });

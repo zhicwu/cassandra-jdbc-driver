@@ -20,13 +20,11 @@
  */
 package com.github.cassandra.jdbc;
 
-import org.joda.time.LocalDate;
-import org.joda.time.LocalDateTime;
-import org.joda.time.LocalTime;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.*;
 
@@ -36,7 +34,7 @@ import java.util.*;
  * @author Zhichun Wu
  */
 public class CassandraDataTypeMappings {
-    static final CassandraDataTypeMappings instance = new CassandraDataTypeMappings();
+    public static final CassandraDataTypeMappings instance = new CassandraDataTypeMappings();
 
     private final Map<String, Class<?>> cql2JavaMapping = new HashMap<String, Class<?>>();
     private final Map<String, Integer> cql2JdbcMapping = new HashMap<String, Integer>();
@@ -52,24 +50,24 @@ public class CassandraDataTypeMappings {
         addMappings(list, CassandraDataType.BLOB.getTypeName(), Types.BLOB, byte[].class, Integer.MAX_VALUE, 0);
         addMappings(list, CassandraDataType.BOOLEAN.getTypeName(), Types.BOOLEAN, Boolean.class, 1, 0);
         addMappings(list, CassandraDataType.COUNTER.getTypeName(), Types.BIGINT, Long.class, 20, 0);
-        addMappings(list, CassandraDataType.DATE.getTypeName(), Types.DATE, LocalDate.class, 10, 0);
+        addMappings(list, CassandraDataType.DATE.getTypeName(), Types.DATE, java.sql.Date.class, 10, 0);
         addMappings(list, CassandraDataType.DECIMAL.getTypeName(), Types.DECIMAL, BigDecimal.class,
                 10, 0);
         addMappings(list, CassandraDataType.DOUBLE.getTypeName(), Types.DOUBLE, Double.class, 22, 31);
         addMappings(list, CassandraDataType.FLOAT.getTypeName(), Types.FLOAT, Float.class, 12, 31);
         addMappings(list, CassandraDataType.INET.getTypeName(), Types.VARCHAR, InetAddress.class, 200, 0);
         addMappings(list, CassandraDataType.INT.getTypeName(), Types.INTEGER, Integer.class, 10, 0);
-        addMappings(list, CassandraDataType.LIST.getTypeName(), Types.OTHER, List.class,
+        addMappings(list, CassandraDataType.LIST.getTypeName(), Types.VARCHAR, List.class,
                 Integer.MAX_VALUE, 0);
-        addMappings(list, CassandraDataType.MAP.getTypeName(), Types.OTHER, Map.class, Integer.MAX_VALUE,
+        addMappings(list, CassandraDataType.MAP.getTypeName(), Types.VARCHAR, Map.class, Integer.MAX_VALUE,
                 0);
-        addMappings(list, CassandraDataType.SET.getTypeName(), Types.OTHER, Set.class, Integer.MAX_VALUE,
+        addMappings(list, CassandraDataType.SET.getTypeName(), Types.VARCHAR, Set.class, Integer.MAX_VALUE,
                 0);
         addMappings(list, CassandraDataType.SMALLINT.getTypeName(), Types.SMALLINT, Short.class, 6, 0);
         addMappings(list, CassandraDataType.TEXT.getTypeName(), Types.VARCHAR, String.class, Integer.MAX_VALUE,
                 0);
-        addMappings(list, CassandraDataType.TIME.getTypeName(), Types.TIME, LocalTime.class, 8, 0);
-        addMappings(list, CassandraDataType.TIMESTAMP.getTypeName(), Types.TIMESTAMP, LocalDateTime.class, 19, 0);
+        addMappings(list, CassandraDataType.TIME.getTypeName(), Types.TIME, Time.class, 8, 0);
+        addMappings(list, CassandraDataType.TIMESTAMP.getTypeName(), Types.TIMESTAMP, Timestamp.class, 19, 0);
         addMappings(list, CassandraDataType.TIMEUUID.getTypeName(), Types.CHAR, UUID.class, 36, 0);
         addMappings(list, CassandraDataType.TINYINT.getTypeName(), Types.TINYINT, Byte.class, 4, 0);
         addMappings(list, CassandraDataType.TUPLE.getTypeName(), Types.OTHER, Object.class,

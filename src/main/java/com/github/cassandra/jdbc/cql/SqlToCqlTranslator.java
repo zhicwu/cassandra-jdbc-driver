@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package com.github.cassandra.jdbc.parser;
+package com.github.cassandra.jdbc.cql;
 
 import com.github.cassandra.jdbc.CassandraCqlStmtConfiguration;
 import net.sf.jsqlparser.expression.*;

@@ -43,8 +43,6 @@ public class CassandraUtils {
     public static final String KEY_DB_MAJOR_VERSION = "dbMajorVersion";
     public static final String KEY_DB_MINOR_VERSION = "dbMinorVersion";
 
-    public static final String KEY_DRIVER_MAJOR_VERSION = "driverMajorVersion";
-    public static final String KEY_DRIVER_MINOR_VERSION = "driverMinorVersion";
     public static final String KEY_DRIVER_NAME = "driverName";
     public static final String KEY_DRIVER_VERSION = "driverVersion";
 
@@ -67,18 +65,6 @@ public class CassandraUtils {
     public static final String CURSOR_PREFIX = "cursor@";
     public static final String DEFAULT_DB_MAJOR_VERSION = "2";
     public static final String DEFAULT_DB_MINOR_VERSION = "0";
-    public static final int DEFAULT_DRIVER_MAJOR_VERSION = 0;
-    public static final int DEFAULT_DRIVER_MINOR_VERSION = 2;
-    public static final String DEFAULT_DRIVER_NAME = "Cassandra JDBC Driver";
-
-    public static final int DEFAULT_DRIVER_PATCH_VERSION = 0;
-    public static final String DEFAULT_DRIVER_VERSION = DEFAULT_DRIVER_MAJOR_VERSION
-            + "."
-            + DEFAULT_DRIVER_MINOR_VERSION
-            + "."
-            + DEFAULT_DRIVER_PATCH_VERSION;
-
-    public static final String DRIVER_NAME = "Cassandra JDBC Driver";
 
     public static final String[][] INDEX_COLUMNS = new String[][]{
             {"TABLE_CAT", "text"}, {"TABLE_SCHEM", "text"},

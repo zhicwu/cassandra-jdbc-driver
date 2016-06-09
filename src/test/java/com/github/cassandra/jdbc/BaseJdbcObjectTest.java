@@ -32,7 +32,7 @@ import static org.testng.Assert.*;
 public class BaseJdbcObjectTest {
     private BaseJdbcObject jdbcObj;
 
-    @BeforeClass
+    @BeforeClass(groups = {"unit", "base"})
     public void setUp() throws Exception {
         jdbcObj = new BaseJdbcObject(false) {
             @Override
@@ -47,7 +47,7 @@ public class BaseJdbcObjectTest {
         };
     }
 
-    @AfterClass
+    @AfterClass(groups = {"unit", "base"})
     public void tearDown() throws Exception {
         jdbcObj = null;
     }

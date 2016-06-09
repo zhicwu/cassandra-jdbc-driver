@@ -61,7 +61,15 @@ public class CassandraResultSet extends BaseCassandraResultSet {
         Object rawValue = null;
         T result = null;
         if (_currentRow != null) {
-            rawValue = _currentRow.getObject(columnIndex - 1);
+            String typeName = metadata.getColumnTypeName(columnIndex);
+
+            if (clazz == String.class
+                    && (CassandraDataType.TIME.getTypeName().equals(typeName)
+                    || CassandraDataType.TIMESTAMP.getTypeName().equals(typeName))) {
+                rawValue = _currentRow.getString(columnIndex - 1);
+            } else {
+                rawValue = _currentRow.getObject(columnIndex - 1);
+            }
 
             Logger.trace("Got raw value [{}] from line #{}", rawValue, getRow());
 

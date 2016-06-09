@@ -20,7 +20,8 @@
  */
 package com.github.cassandra.jdbc;
 
-import com.github.cassandra.jdbc.parser.SqlToCqlTranslator;
+import com.github.cassandra.jdbc.cql.CqlSelectFormatter;
+import com.github.cassandra.jdbc.cql.SqlToCqlTranslator;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
@@ -188,9 +189,8 @@ public class CassandraCqlParser {
             stmtConfig = new CassandraCqlStmtConfiguration(config, stmtType, hints);
 
             if (stmtType.isQuery()) {
-                SelectStatement.RawStatement select = (SelectStatement.RawStatement) stmt;
-                // CqlFormatter
-                // select.getLimit()
+                // FIXME replace original CQL with the formatted one(e.g. limit has been applied / removed)
+                String formattedCql = new CqlSelectFormatter().format(stmtConfig, (SelectStatement.RawStatement) stmt);
             }
         } catch (Throwable t) {
             Logger.warn(t, "Not able to parse given CQL - treat it as is\n{}\n", cql);

@@ -26,13 +26,14 @@ import com.google.common.base.Objects;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.joda.time.LocalDate;
-import org.joda.time.LocalDateTime;
 import org.joda.time.LocalTime;
 import org.pmw.tinylog.Logger;
 
-import java.sql.ResultSet;
+import java.nio.ByteBuffer;
+import java.sql.Date;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -97,18 +98,17 @@ public class CassandraPreparedStatement extends CassandraStatement {
         if (javaClass != null) {
             paramValue = getDataTypeConverters().convert(paramValue, javaClass, replaceNullValue);
             // time is mapped by the driver to a primitive long, representing the number of nanoseconds since midnight
-            if (CassandraDataType.TIME.getTypeName().equals(typeName) && paramValue instanceof LocalTime) {
-                LocalTime localTime = (LocalTime) paramValue;
-                paramValue = localTime.getMillisOfDay() * 1000000L;
+            if (CassandraDataType.TIME.getTypeName().equals(typeName) && paramValue instanceof Time) {
+                Time time = (Time) paramValue;
+                paramValue = new LocalTime(time).getMillisOfDay() * 1000000L;
             } else if (CassandraDataType.DATE.getTypeName().equals(typeName)
-                    && paramValue instanceof LocalDate) {
-                LocalDate localDate = (LocalDate) paramValue;
+                    && paramValue instanceof Date) {
+                LocalDate localDate = LocalDate.fromDateFields((Date) paramValue);
                 paramValue = com.datastax.driver.core.LocalDate.fromYearMonthDay(
                         localDate.getYear(), localDate.getMonthOfYear(), localDate.getDayOfMonth());
-            } else if (CassandraDataType.TIMESTAMP.getTypeName().equals(typeName)
-                    && paramValue instanceof LocalDateTime) {
-                LocalDateTime localDateTime = (LocalDateTime) paramValue;
-                paramValue = localDateTime.toDate();
+            } else if (CassandraDataType.BLOB.getTypeName().equals(typeName)
+                    && paramValue instanceof byte[]) {
+                paramValue = ByteBuffer.wrap((byte[]) paramValue);
             }
 
             parameters.put(paramIndex, paramValue);
@@ -119,7 +119,7 @@ public class CassandraPreparedStatement extends CassandraStatement {
 
     protected com.datastax.driver.core.ResultSet executePreparedCql(final String cql, Object... params)
             throws SQLException {
-        Logger.debug("Trying to execute the following CQL:\n", cql);
+        Logger.debug("Trying to execute the following CQL:\n{}", cql);
 
         CassandraCqlStatement parsedStmt = cqlStmt.getCql().equals(cql)
                 ? cqlStmt : CassandraCqlParser.parse(getConfiguration(), cql);
@@ -176,7 +176,7 @@ public class CassandraPreparedStatement extends CassandraStatement {
         return this.execute(this.cqlStmt.getCql());
     }
 
-    public ResultSet executeQuery() throws SQLException {
+    public java.sql.ResultSet executeQuery() throws SQLException {
         return this.executeQuery(this.cqlStmt.getCql());
     }
 
@@ -207,7 +207,7 @@ public class CassandraPreparedStatement extends CassandraStatement {
         return cqlStmt.getConfiguration().getStatementType().isQuery();
     }
 
-    public ResultSet executeQuery(String sql) throws SQLException {
+    public java.sql.ResultSet executeQuery(String sql) throws SQLException {
         if (!execute(sql)) {
             throw CassandraErrors.invalidQueryException(sql);
         }

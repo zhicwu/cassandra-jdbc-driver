@@ -23,13 +23,18 @@ package com.github.cassandra.jdbc.provider.datastax;
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.RoundRobinPolicy;
+import com.datastax.driver.extras.codecs.joda.InstantCodec;
+import com.datastax.driver.extras.codecs.joda.LocalDateCodec;
+import com.datastax.driver.extras.codecs.joda.LocalTimeCodec;
 import com.github.cassandra.jdbc.CassandraConfiguration;
+import com.github.cassandra.jdbc.provider.datastax.codecs.JavaSqlTimeCodec;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+import com.google.common.reflect.ClassPath;
 import org.pmw.tinylog.Logger;
 
 import java.util.concurrent.Callable;
@@ -123,6 +128,24 @@ final class DataStaxSessionFactory {
 
         // set compression
         builder.withCompression(ProtocolOptions.Compression.valueOf(config.getCompression().name()));
+
+        // add custom codecs
+        CodecRegistry registry = new CodecRegistry();
+        registry.register(LocalDateCodec.instance, LocalTimeCodec.instance, InstantCodec.instance);
+        String packageName = JavaSqlTimeCodec.class.getPackage().getName();
+        try {
+            // FIXME one exception will stop loading the rest codecs
+            for (ClassPath.ClassInfo info : ClassPath.from(
+                    DataStaxSessionFactory.class.getClassLoader()).getTopLevelClasses()) {
+                if (packageName.equals(info.getPackageName())) {
+                    Logger.debug("Registering codec: {}", info.getName());
+                    registry.register((TypeCodec) info.load().getField("instance").get(null));
+                }
+            }
+        } catch (Exception e) {
+            Logger.warn(e, "Failed to register codec");
+        }
+        builder.withCodecRegistry(registry);
 
         // FIXME set policies based on configuration
         if (!Strings.isNullOrEmpty(config.getLocalDc())) {

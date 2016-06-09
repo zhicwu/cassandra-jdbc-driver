@@ -97,11 +97,20 @@ public final class CassandraConfiguration {
     }
 
     public static final class YamlConfig {
+        public String version = "0.1.0";
         public Locale locale = Locale.US;
 
         public DriverConfig driver = new DriverConfig();
         public LoggerConfig logger = new LoggerConfig();
     }
+
+    public static final Splitter versionSplitter = Splitter.on('.').omitEmptyStrings().trimResults();
+
+    public static final String DRIVER_NAME = "Cassandra JDBC Driver";
+    public static final String DRIVER_VERSION;
+    public static final int VERSION_MAJOR;
+    public static final int VERSION_MINOR;
+    // static final int VERSION_PATCH;
 
     static final String INVALID_URL = "Invalid connection URL";
 
@@ -156,6 +165,17 @@ public final class CassandraConfiguration {
                 .locale(defaultConfig.locale)
                 .maxStackTraceElements(defaultConfig.logger.stacktrace)
                 .activate();
+
+        DRIVER_VERSION = Strings.isNullOrEmpty(defaultConfig.version) ? "0.1.0" : defaultConfig.version;
+
+        List<String> versions = versionSplitter.splitToList(DRIVER_VERSION);
+        if (versions.size() > 1) {
+            VERSION_MAJOR = Ints.tryParse(versions.get(0));
+            VERSION_MINOR = Ints.tryParse(versions.get(1));
+        } else {
+            VERSION_MAJOR = 0;
+            VERSION_MINOR = 1;
+        }
 
         try {
             DEFAULT = new CassandraConfiguration(defaultConfig.driver);

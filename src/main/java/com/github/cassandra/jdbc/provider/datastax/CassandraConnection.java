@@ -42,7 +42,8 @@ public class CassandraConnection extends BaseCassandraConnection {
     static final Statement CQL_TO_GET_VERSION = new SimpleStatement(
             "select release_version from system.local where key='local' limit 1");
 
-    static final String DRIVER_NAME = "DataStax Java Driver";
+    static final String PROVIDER_NAME = "DataStax Java Driver";
+    static final String DRIVER_NAME = CassandraConfiguration.DRIVER_NAME + " (using " + PROVIDER_NAME + ")";
 
     static {
         CQL_TO_GET_VERSION.setConsistencyLevel(ConsistencyLevel.LOCAL_ONE);
@@ -61,13 +62,15 @@ public class CassandraConnection extends BaseCassandraConnection {
         // populate meta data
         metaData.setProperty(KEY_DRIVER_NAME, DRIVER_NAME);
 
-        String driverVersion = Cluster.getDriverVersion();
-        String[] versions = driverVersion.split(".");
-        metaData.setProperty(KEY_DRIVER_VERSION, driverVersion);
-        if (versions != null && versions.length > 1) {
-            metaData.setProperty(KEY_DRIVER_MAJOR_VERSION, versions[0]);
-            metaData.setProperty(KEY_DRIVER_MINOR_VERSION, versions[1]);
-        }
+        metaData.setProperty(KEY_DRIVER_VERSION, new StringBuilder()
+                .append(CassandraConfiguration.DRIVER_VERSION)
+                .append(' ')
+                .append('(')
+                .append(PROVIDER_NAME)
+                .append(' ')
+                .append(Cluster.getDriverVersion())
+                .append(')')
+                .toString());
     }
 
     private ResultSet buildResultSet(String[][] columns, List<Object[]> list) {

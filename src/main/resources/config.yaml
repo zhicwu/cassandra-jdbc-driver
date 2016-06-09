@@ -1,3 +1,5 @@
+# JDBC driver version
+version: ${version}
 # general configuration
 locale : en_US
 

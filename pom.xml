@@ -1,10 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.github.cassandra</groupId>
+    <groupId>com.github.zhicwu</groupId>
     <artifactId>cassandra-jdbc-driver</artifactId>
     <packaging>jar</packaging>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
     <name>Cassandra JDBC Driver</name>
     <url>http://github.com/zhicwu/cassandra-jdbc-driver</url>
     <description>Type 4 JDBC driver for Apache Cassandra built on top of existing great libs like java driver from
@@ -31,10 +31,32 @@
         <testng.version>6.9.10</testng.version>
         <mockito.version>1.10.19</mockito.version>
         <main.basedir>${project.basedir}</main.basedir>
+        <compiler-plugin.version>3.5.1</compiler-plugin.version>
+        <source-plugin.version>3.0.0</source-plugin.version>
+        <javadoc-plugin.version>2.10.3</javadoc-plugin.version>
+        <gpg-plugin.version>1.6</gpg-plugin.version>
         <shade-plugin.version>2.4.3</shade-plugin.version>
         <surefire-plugin.version>2.19.1</surefire-plugin.version>
         <shade.base>com.github.cassandra.jdbc.internal</shade.base>
     </properties>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Zhichun Wu</name>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git@github.com:zhicwu/cassandra-jdbc-driver.git</connection>
+        <developerConnection>scm:git:git@github.com:zhicwu/cassandra-jdbc-driver.git</developerConnection>
+        <url>https://github.com/zhicwu/cassandra-jdbc-driver</url>
+        <tag>${project.version}</tag>
+    </scm>
     <dependencies>
         <!-- later
         <dependency>
@@ -138,22 +160,74 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <licenses>
-        <license>
-            <name>Apache 2</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>repo</distribution>
-            <comments>Apache License Version 2.0</comments>
-        </license>
-    </licenses>
-    <scm>
-        <connection>scm:git:git@github.com:zhicwu/cassandra-jdbc-driver.git</connection>
-        <developerConnection>scm:git:git@github.com:zhicwu/cassandra-jdbc-driver.git</developerConnection>
-        <url>https://github.com/zhicwu/cassandra-jdbc-driver</url>
-        <tag>HEAD</tag>
-    </scm>
+    <!-- http://central.sonatype.org/pages/apache-maven.html -->
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${compiler-plugin.version}</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>${source-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${javadoc-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>${gpg-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -199,7 +273,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
                 <configuration>
-                    <groups>unit,base</groups>
+                    <groups>base</groups>
                 </configuration>
             </plugin>
             <plugin>
@@ -213,6 +287,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <outputFile>target/${project.artifactId}-${project.version}-shaded.jar</outputFile>
                             <createSourcesJar>true</createSourcesJar>
                             <shadeSourcesContent>true</shadeSourcesContent>
                             <dependencyReducedPomLocation>${project.build.directory}/pom.xml
@@ -316,9 +391,4 @@
             </plugin>
         </plugins>
     </build>
-    <developers>
-        <developer>
-            <name>Zhichun Wu</name>
-        </developer>
-    </developers>
 </project>

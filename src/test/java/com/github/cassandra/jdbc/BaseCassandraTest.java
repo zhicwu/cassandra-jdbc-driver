@@ -31,7 +31,7 @@ import static org.testng.Assert.assertTrue;
 public class BaseCassandraTest {
     protected CassandraConnection conn;
 
-    @BeforeClass
+    @BeforeClass(groups = {"unit", "server"})
     public void setUp() {
         CassandraDriver driver = new CassandraDriver();
 
@@ -43,7 +43,7 @@ public class BaseCassandraTest {
         }
     }
 
-    @AfterClass
+    @AfterClass(groups = {"unit", "server"})
     public void tearDown() {
         if (conn != null) {
             try {

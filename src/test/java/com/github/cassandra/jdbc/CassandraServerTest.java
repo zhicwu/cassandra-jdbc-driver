@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class CassandraServerTest {
-    @BeforeGroups(groups = {"server"})
+    @BeforeGroups(groups = {"unit", "server"})
     public void createKeyspaceAndTables() {
         String scripts = "";
         InputStreamReader reader = new InputStreamReader(getClass().getResourceAsStream("/create.cql"));

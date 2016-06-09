@@ -23,6 +23,7 @@ package com.github.cassandra.jdbc;
 import com.google.common.base.Strings;
 
 import java.sql.*;
+import java.util.List;
 import java.util.Properties;
 
 import static com.github.cassandra.jdbc.CassandraUtils.*;
@@ -86,10 +87,10 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
 
                 if (!Strings.isNullOrEmpty(dbVersion)) {
                     this.setProperty(KEY_PRODUCT_VERSION, dbVersion);
-                    String[] versions = dbVersion.split(".");
-                    if (versions != null && versions.length > 1) {
-                        this.setProperty(KEY_DB_MAJOR_VERSION, versions[0]);
-                        this.setProperty(KEY_DB_MINOR_VERSION, versions[1]);
+                    List<String> versions = CassandraConfiguration.versionSplitter.splitToList(dbVersion);
+                    if (versions.size() > 1) {
+                        this.setProperty(KEY_DB_MAJOR_VERSION, versions.get(0));
+                        this.setProperty(KEY_DB_MINOR_VERSION, versions.get(1));
                     }
                 }
 
@@ -270,23 +271,21 @@ public class CassandraDatabaseMetaData extends BaseJdbcObject implements
     }
 
     public int getDriverMajorVersion() {
-        return CassandraUtils.getPropertyValueAsInt(_props,
-                KEY_DRIVER_MAJOR_VERSION, DEFAULT_DRIVER_MAJOR_VERSION);
+        return CassandraConfiguration.VERSION_MAJOR;
     }
 
     public int getDriverMinorVersion() {
-        return CassandraUtils.getPropertyValueAsInt(_props,
-                KEY_DRIVER_MINOR_VERSION, DEFAULT_DRIVER_MINOR_VERSION);
+        return CassandraConfiguration.VERSION_MINOR;
     }
 
     public String getDriverName() throws SQLException {
         return CassandraUtils.getPropertyValue(_props, KEY_DRIVER_NAME,
-                DEFAULT_DRIVER_NAME);
+                CassandraConfiguration.DRIVER_NAME);
     }
 
     public String getDriverVersion() throws SQLException {
         return CassandraUtils.getPropertyValue(_props, KEY_DRIVER_VERSION,
-                DEFAULT_DRIVER_VERSION);
+                CassandraConfiguration.DRIVER_VERSION);
     }
 
     public ResultSet getExportedKeys(String catalog, String schema, String table)

@@ -35,10 +35,6 @@ import java.util.Properties;
  * @author Zhichun Wu
  */
 public class CassandraDriver implements Driver {
-    public static final int VERSION_MAJOR = 0;
-    public static final int VERSION_MINOR = 5;
-    public static final int VERSION_PATCH = 0;
-
     static final String MSG_PREFIX = "MESSAGE_PROP_";
     static final String MSG_SUFFIX = "_DESCRIPTION";
 
@@ -120,11 +116,11 @@ public class CassandraDriver implements Driver {
     }
 
     public int getMajorVersion() {
-        return VERSION_MAJOR;
+        return CassandraConfiguration.VERSION_MAJOR;
     }
 
     public int getMinorVersion() {
-        return VERSION_MINOR;
+        return CassandraConfiguration.VERSION_MINOR;
     }
 
     public java.util.logging.Logger getParentLogger()

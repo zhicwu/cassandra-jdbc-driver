@@ -20,10 +20,13 @@
  */
 package com.github.cassandra.jdbc.provider.datastax;
 
+import com.beust.jcommander.internal.Maps;
 import com.datastax.driver.core.LocalDate;
 import com.github.cassandra.jdbc.BaseCassandraTest;
 import com.github.cassandra.jdbc.CassandraDataTypeConverters;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import org.joda.time.Instant;
 import org.joda.time.LocalDateTime;
 import org.joda.time.LocalTime;
 import org.testng.annotations.Test;
@@ -37,6 +40,8 @@ import java.sql.ResultSet;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.testng.Assert.*;
@@ -81,6 +86,7 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
 
             int index = 1;
             s.setObject(index++, UUID.randomUUID());
+            // s.setObject(index++, new byte[]{1, 2, 3});
             s.setObject(index++, ByteBuffer.wrap(new byte[]{1, 2, 3}));
             s.setObject(index++, Date.valueOf("2017-01-01"));
             s.setObject(index++, Time.valueOf("11:50:30"));
@@ -162,8 +168,10 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
         String queryCql = "select date_date from test_drive.basic_data_type where id_uuid = ?";
         UUID id = UUID.randomUUID();
         String date = "2015-01-01";
-        LocalDate ld = LocalDate.fromMillisSinceEpoch(System.currentTimeMillis());
+        LocalDate ld = LocalDate.fromYearMonthDay(2015, 1, 1);
         Date d = Date.valueOf(date);
+        org.joda.time.LocalDate jld = org.joda.time.LocalDate.fromDateFields(d);
+
         try {
             // set date by string
             java.sql.PreparedStatement s = conn.prepareStatement(insertCql);
@@ -176,7 +184,9 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             s.setObject(1, id);
             ResultSet rs = s.executeQuery();
             rs.next();
+            assertEquals(rs.getObject(1), ld);
             assertEquals(rs.getString(1), date);
+            assertEquals(rs.getDate(1), d);
             rs.close();
             s.close();
 
@@ -192,6 +202,8 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             rs = s.executeQuery();
             rs.next();
             assertEquals(rs.getObject(1), ld);
+            assertEquals(rs.getString(1), date);
+            assertEquals(rs.getDate(1), d);
             rs.close();
             s.close();
 
@@ -206,6 +218,25 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             s.setObject(1, id);
             rs = s.executeQuery();
             rs.next();
+            assertEquals(rs.getObject(1), ld);
+            assertEquals(rs.getString(1), date);
+            assertEquals(rs.getDate(1), d);
+            rs.close();
+            s.close();
+
+            // by Joda LocalDate
+            s = conn.prepareStatement(insertCql);
+            s.setObject(1, id);
+            s.setObject(2, jld);
+            s.execute();
+            s.close();
+
+            s = conn.prepareStatement(queryCql);
+            s.setObject(1, id);
+            rs = s.executeQuery();
+            rs.next();
+            assertEquals(rs.getObject(1), ld);
+            assertEquals(rs.getString(1), date);
             assertEquals(rs.getDate(1), d);
             rs.close();
             s.close();
@@ -222,7 +253,8 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
         UUID id = UUID.randomUUID();
         String time = "13:30:54.234";
         long tl = 48654234000000L;
-        Time t = new Time(LocalTime.parse(time).toDateTimeToday().getMillis());
+        LocalTime jlt = LocalTime.parse(time);
+        Time t = new Time(jlt.toDateTimeToday().getMillis());
 
         try {
             // set time by string
@@ -236,7 +268,9 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             s.setObject(1, id);
             ResultSet rs = s.executeQuery();
             rs.next();
+            assertEquals(rs.getString(1), time);
             assertEquals(rs.getObject(1), tl);
+            assertEquals(rs.getTime(1), t);
             rs.close();
             s.close();
 
@@ -251,7 +285,9 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             s.setObject(1, id);
             rs = s.executeQuery();
             rs.next();
+            assertEquals(rs.getString(1), time);
             assertEquals(rs.getObject(1), tl);
+            assertEquals(rs.getTime(1), t);
             rs.close();
             s.close();
 
@@ -266,6 +302,25 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             s.setObject(1, id);
             rs = s.executeQuery();
             rs.next();
+            assertEquals(rs.getString(1), time);
+            assertEquals(rs.getObject(1), tl);
+            assertEquals(rs.getTime(1), t);
+            rs.close();
+            s.close();
+
+            // by Joda LocalTime
+            s = conn.prepareStatement(insertCql);
+            s.setObject(1, id);
+            s.setObject(2, jlt);
+            s.execute();
+            s.close();
+
+            s = conn.prepareStatement(queryCql);
+            s.setObject(1, id);
+            rs = s.executeQuery();
+            rs.next();
+            assertEquals(rs.getString(1), time);
+            assertEquals(rs.getObject(1), tl);
             assertEquals(rs.getTime(1), t);
             rs.close();
             s.close();
@@ -280,9 +335,12 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
         String insertCql = "insert into test_drive.basic_data_type(id_uuid, date_timestamp) values(?, ?)";
         String queryCql = "select date_timestamp from test_drive.basic_data_type where id_uuid = ?";
         UUID id = UUID.randomUUID();
-        String timestamp = "2019-02-01 12:12:21";
-        long ts = System.currentTimeMillis();
-        Timestamp t = Timestamp.valueOf(timestamp);
+        String timestamp = "2019-02-01T04:12:21.330Z";
+        String timestamp1 = "2019-02-01 04:12:21.330";
+        Instant instant = Instant.parse(timestamp);
+        long ts = instant.getMillis();
+        Timestamp t = new Timestamp(ts);
+
         try {
             // set time by string
             java.sql.PreparedStatement s = conn.prepareStatement(insertCql);
@@ -295,6 +353,25 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             s.setObject(1, id);
             ResultSet rs = s.executeQuery();
             rs.next();
+            assertEquals(rs.getString(1), timestamp);
+            assertEquals(rs.getObject(1), instant.toDate());
+            assertEquals(rs.getTimestamp(1), t);
+            rs.close();
+            s.close();
+
+            // set time by string in the other format
+            s = conn.prepareStatement(insertCql);
+            s.setObject(1, id);
+            s.setString(2, timestamp1);
+            s.execute();
+            s.close();
+
+            s = conn.prepareStatement(queryCql);
+            s.setObject(1, id);
+            rs = s.executeQuery();
+            rs.next();
+            assertEquals(rs.getString(1), timestamp);
+            assertEquals(rs.getObject(1), instant.toDate());
             assertEquals(rs.getTimestamp(1), t);
             rs.close();
             s.close();
@@ -310,7 +387,9 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             s.setObject(1, id);
             rs = s.executeQuery();
             rs.next();
-            assertEquals(rs.getObject(1), new java.util.Date(ts));
+            assertEquals(rs.getString(1), timestamp);
+            assertEquals(rs.getObject(1), instant.toDate());
+            assertEquals(rs.getTimestamp(1), t);
             rs.close();
             s.close();
 
@@ -325,6 +404,25 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             s.setObject(1, id);
             rs = s.executeQuery();
             rs.next();
+            assertEquals(rs.getString(1), timestamp);
+            assertEquals(rs.getObject(1), instant.toDate());
+            assertEquals(rs.getTimestamp(1), t);
+            rs.close();
+            s.close();
+
+            // by Joda Instant
+            s = conn.prepareStatement(insertCql);
+            s.setObject(1, id);
+            s.setObject(2, instant);
+            s.execute();
+            s.close();
+
+            s = conn.prepareStatement(queryCql);
+            s.setObject(1, id);
+            rs = s.executeQuery();
+            rs.next();
+            assertEquals(rs.getString(1), timestamp);
+            assertEquals(rs.getObject(1), instant.toDate());
             assertEquals(rs.getTimestamp(1), t);
             rs.close();
             s.close();
@@ -413,11 +511,13 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             CassandraDataTypeConverters c = ((CassandraPreparedStatement) s).getDataTypeConverters();
             int index = 1;
             s.setObject(index++, Lists.newArrayList(UUID.randomUUID()));
-            s.setObject(index++, Lists.newArrayList(ByteBuffer.wrap(new byte[]{1, 2, 3})));
+            //s.setObject(index++, Lists.newArrayList(ByteBuffer.wrap(new byte[]{1, 2, 3})));
+            s.setObject(index++, Lists.newArrayList(new byte[]{1, 2, 3}));
             //s.setObject(index++, Lists.newArrayList("2017-01-01"));
             s.setObject(index++, Lists.newArrayList(LocalDate.fromMillisSinceEpoch(System.currentTimeMillis())));
             //s.setObject(index++, Lists.newArrayList("11:50:30"));
-            s.setObject(index++, Lists.newArrayList(LocalTime.now().getMillisOfDay() * 1000000L));
+            //s.setObject(index++, Lists.newArrayList(LocalTime.now().getMillisOfDay() * 1000000L));
+            s.setObject(index++, Lists.newArrayList(new Time(LocalTime.now().toDateTimeToday().getMillis())));
             //s.setObject(index++, Lists.newArrayList("2017-02-02 11:50:30.123"));
             s.setObject(index++, Lists.newArrayList(LocalDateTime.now().toDate()));
             // or you'll likely end up with error like the following:
@@ -467,9 +567,180 @@ public class CassandraPreparedStatementTest extends BaseCassandraTest {
             assertNotNull(s.getResultSet());
             assertTrue(rs.next());
 
-            for (int i = 1; i<19; i++) {
+            for (int i = 1; i < 19; i++) {
                 assertTrue(rs.getObject(i) instanceof List);
-                assertEquals(((List)rs.getObject(i)).size(), 1);
+                assertEquals(((List) rs.getObject(i)).size(), 1);
+            }
+
+            s.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Error occurred during testing: " + e.getMessage());
+        }
+    }
+
+    @Test(groups = {"unit", "server"})
+    public void testInsertSets() {
+        String cql = "insert into test_drive.set_data_type(id,id_uuid,binary_data,date_date,date_time," +
+                "date_timestamp,id_timeuuid,net_inet,num_big_integer,num_decimal,num_double,num_float,num_int," +
+                "num_small_int,num_tiny_int,num_varint,str_ascii,str_text,str_varchar,true_or_false)\n" +
+                "values(5d19b3b2-a889-4913-81ec-164e5845cf36,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+        try {
+            java.sql.PreparedStatement s = conn.prepareStatement(cql);
+            assertTrue(s instanceof CassandraPreparedStatement);
+
+            CassandraDataTypeConverters c = ((CassandraPreparedStatement) s).getDataTypeConverters();
+            int index = 1;
+            s.setObject(index++, Sets.newHashSet(UUID.randomUUID()));
+            //s.setObject(index++, Lists.newArrayList(ByteBuffer.wrap(new byte[]{1, 2, 3})));
+            s.setObject(index++, Sets.newHashSet(new byte[]{1, 2, 3}));
+            //s.setObject(index++, Lists.newArrayList("2017-01-01"));
+            s.setObject(index++, Sets.newHashSet(LocalDate.fromMillisSinceEpoch(System.currentTimeMillis())));
+            //s.setObject(index++, Lists.newArrayList("11:50:30"));
+            //s.setObject(index++, Lists.newArrayList(LocalTime.now().getMillisOfDay() * 1000000L));
+            s.setObject(index++, Sets.newHashSet(new Time(LocalTime.now().toDateTimeToday().getMillis())));
+            //s.setObject(index++, Lists.newArrayList("2017-02-02 11:50:30.123"));
+            s.setObject(index++, Sets.newHashSet(LocalDateTime.now().toDate()));
+            // or you'll likely end up with error like the following:
+            // com.datastax.driver.core.exceptions.InvalidTypeException: xxx is not a Type 1 (time-based) UUID
+            s.setObject(index++, Sets.newHashSet(((CassandraPreparedStatement) s)
+                    .getDataTypeConverters().defaultValueOf(UUID.class)));
+            s.setObject(index++, Sets.newHashSet(InetAddress.getByName("192.168.10.11")));
+            s.setObject(index++, Sets.newHashSet(Long.MAX_VALUE));
+            s.setObject(index++, Sets.newHashSet(new BigDecimal("33333333333333333333333333333333333")));
+            s.setObject(index++, Sets.newHashSet(Double.MAX_VALUE));
+            s.setObject(index++, Sets.newHashSet(Float.MAX_VALUE));
+            s.setObject(index++, Sets.newHashSet(Integer.MAX_VALUE));
+            s.setObject(index++, Sets.newHashSet(Short.MAX_VALUE));
+            s.setObject(index++, Sets.newHashSet(Byte.MAX_VALUE));
+            s.setObject(index++, Sets.newHashSet(new BigInteger("2222222222222222222222222222222222")));
+            s.setObject(index++, Sets.newHashSet("ascii"));
+            s.setObject(index++, Sets.newHashSet("text"));
+            s.setObject(index++, Sets.newHashSet("varchar"));
+            s.setObject(index++, Sets.newHashSet(true));
+
+            assertFalse(s.execute());
+            assertNull(s.getResultSet());
+            assertEquals(s.getUpdateCount(), 1);
+
+            s.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Error occurred during testing: " + e.getMessage());
+        }
+    }
+
+    @Test(groups = {"unit", "server"}, dependsOnMethods = {"testInsertSets"})
+    public void testQuerySets() {
+        String cql = "select id_uuid,binary_data,date_date,date_time,date_timestamp,id_timeuuid," +
+                "net_inet,num_big_integer,num_decimal,num_double,num_float,num_int," +
+                "num_small_int,num_tiny_int,num_varint,str_ascii,str_text,str_varchar,true_or_false\n" +
+                "from test_drive.set_data_type where id = ?";
+
+        try {
+            java.sql.PreparedStatement s = conn.prepareStatement(cql);
+            assertTrue(s instanceof CassandraPreparedStatement);
+
+            CassandraDataTypeConverters c = ((CassandraPreparedStatement) s).getDataTypeConverters();
+
+            s.setObject(1, "5d19b3b2-a889-4913-81ec-164e5845cf36");
+            ResultSet rs = s.executeQuery();
+            assertNotNull(s.getResultSet());
+            assertTrue(rs.next());
+
+            for (int i = 1; i < 19; i++) {
+                assertTrue(rs.getObject(i) instanceof Set);
+                assertEquals(((Set) rs.getObject(i)).size(), 1);
+            }
+
+            s.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Error occurred during testing: " + e.getMessage());
+        }
+    }
+
+    @Test(groups = {"unit", "server"})
+    public void testInsertMaps() {
+        String cql = "insert into test_drive.map_data_type(id,id_uuid,binary_data,date_date,date_time," +
+                "date_timestamp,id_timeuuid,net_inet,num_big_integer,num_decimal,num_double,num_float,num_int," +
+                "num_small_int,num_tiny_int,num_varint,str_ascii,str_text,str_varchar,true_or_false)\n" +
+                "values(5d19b3b2-a889-4913-81ec-164e5845cf36,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+        try {
+            java.sql.PreparedStatement s = conn.prepareStatement(cql);
+            assertTrue(s instanceof CassandraPreparedStatement);
+
+            CassandraDataTypeConverters c = ((CassandraPreparedStatement) s).getDataTypeConverters();
+            int index = 1;
+            s.setObject(index++, Maps.newHashMap(UUID.randomUUID(), UUID.randomUUID()));
+            //s.setObject(index++, Lists.newArrayList(ByteBuffer.wrap(new byte[]{1, 2, 3})));
+            s.setObject(index++, Maps.newHashMap(new byte[]{1, 2, 3}, new byte[]{1, 2, 3}));
+            //s.setObject(index++, Lists.newArrayList("2017-01-01"));
+            s.setObject(index++, Maps.newHashMap(LocalDate.fromMillisSinceEpoch(System.currentTimeMillis()),
+                    LocalDate.fromMillisSinceEpoch(System.currentTimeMillis())));
+            //s.setObject(index++, Lists.newArrayList("11:50:30"));
+            //s.setObject(index++, Lists.newArrayList(LocalTime.now().getMillisOfDay() * 1000000L));
+            s.setObject(index++, Maps.newHashMap(new Time(LocalTime.now().toDateTimeToday().getMillis()),
+                    new Time(LocalTime.now().toDateTimeToday().getMillis())));
+            //s.setObject(index++, Lists.newArrayList("2017-02-02 11:50:30.123"));
+            s.setObject(index++, Maps.newHashMap(LocalDateTime.now().toDate(),
+                    LocalDateTime.now().toDate()));
+            // or you'll likely end up with error like the following:
+            // com.datastax.driver.core.exceptions.InvalidTypeException: xxx is not a Type 1 (time-based) UUID
+            s.setObject(index++, Maps.newHashMap(((CassandraPreparedStatement) s)
+                            .getDataTypeConverters().defaultValueOf(UUID.class),
+                    ((CassandraPreparedStatement) s).getDataTypeConverters().defaultValueOf(UUID.class)));
+            s.setObject(index++, Maps.newHashMap(InetAddress.getByName("192.168.10.11"),
+                    InetAddress.getByName("192.168.10.11")));
+            s.setObject(index++, Maps.newHashMap(Long.MAX_VALUE, Long.MAX_VALUE));
+            s.setObject(index++, Maps.newHashMap(new BigDecimal("33333333333333333333333333333333333"),
+                    new BigDecimal("33333333333333333333333333333333333")));
+            s.setObject(index++, Maps.newHashMap(Double.MAX_VALUE, Double.MAX_VALUE));
+            s.setObject(index++, Maps.newHashMap(Float.MAX_VALUE, Float.MAX_VALUE));
+            s.setObject(index++, Maps.newHashMap(Integer.MAX_VALUE, Integer.MAX_VALUE));
+            s.setObject(index++, Maps.newHashMap(Short.MAX_VALUE, Short.MAX_VALUE));
+            s.setObject(index++, Maps.newHashMap(Byte.MAX_VALUE, Byte.MAX_VALUE));
+            s.setObject(index++, Maps.newHashMap(new BigInteger("2222222222222222222222222222222222"),
+                    new BigInteger("2222222222222222222222222222222222")));
+            s.setObject(index++, Maps.newHashMap("ascii", "ascii"));
+            s.setObject(index++, Maps.newHashMap("text", "text"));
+            s.setObject(index++, Maps.newHashMap("varchar", "varchar"));
+            s.setObject(index++, Maps.newHashMap(true, true));
+
+            assertFalse(s.execute());
+            assertNull(s.getResultSet());
+            assertEquals(s.getUpdateCount(), 1);
+
+            s.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Error occurred during testing: " + e.getMessage());
+        }
+    }
+
+    @Test(groups = {"unit", "server"}, dependsOnMethods = {"testInsertMaps"})
+    public void testQueryMaps() {
+        String cql = "select id_uuid,binary_data,date_date,date_time,date_timestamp,id_timeuuid," +
+                "net_inet,num_big_integer,num_decimal,num_double,num_float,num_int," +
+                "num_small_int,num_tiny_int,num_varint,str_ascii,str_text,str_varchar,true_or_false\n" +
+                "from test_drive.map_data_type where id = ?";
+
+        try {
+            java.sql.PreparedStatement s = conn.prepareStatement(cql);
+            assertTrue(s instanceof CassandraPreparedStatement);
+
+            CassandraDataTypeConverters c = ((CassandraPreparedStatement) s).getDataTypeConverters();
+
+            s.setObject(1, "5d19b3b2-a889-4913-81ec-164e5845cf36");
+            ResultSet rs = s.executeQuery();
+            assertNotNull(s.getResultSet());
+            assertTrue(rs.next());
+
+            for (int i = 1; i < 19; i++) {
+                assertTrue(rs.getObject(i) instanceof Map);
+                assertEquals(((Map) rs.getObject(i)).size(), 1);
             }
 
             s.close();
