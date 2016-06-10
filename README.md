@@ -65,7 +65,7 @@ the following Maven dependency:
 <dependency>
 	<groupId>com.github.zhicwu</groupId>
 	<artifactId>cassandra-jdbc-driver</artifactId>
-	<version>0.6.0</version>
+	<version>0.6.1</version>
 	<!-- comment out the classifier you don't need shaded jar -->
 	<classifier>shaded</classifier>
 </dependency>
@@ -124,13 +124,15 @@ To set read timeout to 120 seconds just for a specific query, you can do it by a
 -- set read_timeout=120
 select * from xyz
 ```
-Please notice that magic comments have to be started with "-- set ", and you can use semicolon as separator
+Please notice that magic comments have to be started with "-- set " or "// set ", and you can use semicolon as separator
 in one line for multiple instructions:
 ```sql
 -- set read_timeout = 120; replace_null_value = true
 -- set no_limit = true
 select * from xyz
 ```
+All supported instructions in magic comments are declared at
+[here](src/main/java/com/github/cassandra/jdbc/CassandraCqlStmtConfiguration.java).
 
 ## HOWTOs
 
@@ -141,7 +143,7 @@ select * from xyz
     ![Configure Alias](../../raw/master/resources/images/configure_alias.png)
 3. Congratulations! You now can to connect to Cassandra
     ![Query Trace](../../raw/master/resources/images/query_trace.png)
-4. To use magic comments, please use "//" instead of "--" as SQuirrel SQL will remove the later automatically
+4. To use magic comments, please use "//" instead of "--" as SQuirrel SQL will remove the latter automatically
 before sending the query to JDBC driver.
 
 #### JMeter
