@@ -4,7 +4,7 @@
     <groupId>com.github.zhicwu</groupId>
     <artifactId>cassandra-jdbc-driver</artifactId>
     <packaging>jar</packaging>
-    <version>0.7.0-SNAPSHOT</version>
+    <version>0.6.1</version>
     <name>Cassandra JDBC Driver</name>
     <url>http://github.com/zhicwu/cassandra-jdbc-driver</url>
     <description>Type 4 JDBC driver for Apache Cassandra built on top of existing great libs like java driver from

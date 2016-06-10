@@ -30,6 +30,7 @@ import org.pmw.tinylog.Logger;
 import org.yaml.snakeyaml.Yaml;
 
 import java.lang.reflect.Field;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -149,12 +150,27 @@ public final class CassandraConfiguration {
     static final CassandraConfiguration DEFAULT;
 
     static {
+        String configUrl = System.getProperty("cassandra.jdbc.driver.config");
+
+        URL url = null;
+        if (!Strings.isNullOrEmpty(configUrl)) {
+            try {
+                url = new URL(configUrl);
+                url.openStream().close(); // catches well-formed but bogus URLs
+            } catch (Exception e) {
+                ClassLoader loader = CassandraConfiguration.class.getClassLoader();
+                url = loader.getResource(configUrl);
+            }
+        }
+
         Yaml yaml = new Yaml();
         YamlConfig defaultConfig = new YamlConfig();
         try {
-            defaultConfig = yaml.loadAs(CassandraConfiguration.class.getResourceAsStream("/config.yaml"),
+            defaultConfig = yaml.loadAs(url != null
+                            ? url.openStream() : CassandraConfiguration.class.getResourceAsStream("/config.yaml"),
                     YamlConfig.class);
         } catch (Throwable t) {
+            // log before configuration is ready...
             Logger.warn(t, "Failed to load default configuration, but that's cool");
         }
 
@@ -165,6 +181,8 @@ public final class CassandraConfiguration {
                 .locale(defaultConfig.locale)
                 .maxStackTraceElements(defaultConfig.logger.stacktrace)
                 .activate();
+
+        Logger.info("Configuration loaded from {}", url == null ? "(embedded)config.yaml" : url.toString());
 
         DRIVER_VERSION = Strings.isNullOrEmpty(defaultConfig.version) ? "0.1.0" : defaultConfig.version;
 
@@ -436,10 +454,6 @@ public final class CassandraConfiguration {
 
     public CassandraEnums.Compression getCompression() {
         return config.compression;
-    }
-
-    public boolean containsAdditionalProperty(String key) {
-        return config.advanced.containsKey(key);
     }
 
     public String getAdditionalProperty(String key, String defaultValue) {
