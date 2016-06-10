@@ -1,4 +1,7 @@
-# cassandra-jdbc-driver
+# JDBC Driver for Apache Cassandra
+
+[![Build Status](https://travis-ci.org/zhicwu/cassandra-jdbc-driver.svg?branch=master)](https://travis-ci.org/zhicwu/cassandra-jdbc-driver)
+
 Cassandra JDBC driver that works with 2.x and above. It intends to provide better SQL compatibility over CQL,
 so that it works well with existing tools like [SQuirreL SQL](http://www.squirrelsql.org/) for SQL development,
 [JMeter](http://jmeter.apache.org) for stress testing, and [Pentaho BI Suite](http://community.pentaho.com/)
