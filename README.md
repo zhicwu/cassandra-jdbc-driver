@@ -1,6 +1,7 @@
 # JDBC Driver for Apache Cassandra
 
 [![Build Status](https://travis-ci.org/zhicwu/cassandra-jdbc-driver.svg?branch=master)](https://travis-ci.org/zhicwu/cassandra-jdbc-driver)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.zhicwu/cassandra-jdbc-driver/badge.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.github.zhicwu%22%20AND%20a%3Acassandra-jdbc-driver)
 
 Type 4 JDBC driver for Apache Cassandra. Building on top of [DataStax Java Driver](https://github.com/datastax/java-driver/)
 and [JSqlParser](https://github.com/JSQLParser/JSqlParser), it intends to provide better SQL compatibility over CQL,
