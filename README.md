@@ -1,7 +1,7 @@
 # JDBC Driver for Apache Cassandra
 
 [![Build Status](https://travis-ci.org/zhicwu/cassandra-jdbc-driver.svg?branch=master)](https://travis-ci.org/zhicwu/cassandra-jdbc-driver)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.zhicwu/cassandra-jdbc-driver/badge.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.github.zhicwu%22%20AND%20a%3Acassandra-jdbc-driver)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.zhicwu/cassandra-jdbc-driver/badge.svg)](https://search.maven.org/remote_content?g=com.github.zhicwu&a=cassandra-jdbc-driver&v=LATEST&c=shaded)
 
 Type 4 JDBC driver for Apache Cassandra. Building on top of [DataStax Java Driver](https://github.com/datastax/java-driver/)
 and [JSqlParser](https://github.com/JSQLParser/JSqlParser), it intends to provide better SQL compatibility over CQL,
@@ -67,7 +67,7 @@ the following Maven dependency:
 	<groupId>com.github.zhicwu</groupId>
 	<artifactId>cassandra-jdbc-driver</artifactId>
 	<version>0.6.1</version>
-	<!-- comment out the classifier you don't need shaded jar -->
+	<!-- comment out the classifier if you don't need shaded jar -->
 	<classifier>shaded</classifier>
 </dependency>
 ```
@@ -164,8 +164,9 @@ before sending the query to JDBC driver.
 
 ## TODOs
 
-* Extract CQL Parser to support JDK 6 and 7
+* Remove CQL Parser to support JDK 6 and 7
 * UDT support and smooth type conversion
 * Multiple ResultSet support, especially when tracing turned on
 * Better SQL compatibility(e.g. SELECT INTO, GROUP BY and probably simple table joins and sub-queries)
+* (Basic)Mondrian support
 * More providers(and storage?)...
