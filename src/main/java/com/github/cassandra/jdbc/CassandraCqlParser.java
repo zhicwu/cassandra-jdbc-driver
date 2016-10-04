@@ -1,4 +1,5 @@
-/*
+/**
+ * Copyright (C) 2015-2016, Zhichun Wu
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,7 +17,6 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 package com.github.cassandra.jdbc;
 
@@ -90,7 +90,8 @@ public class CassandraCqlParser {
     private static CassandraCqlStatement parseSql(CassandraConfiguration config, String sql, Map<String, String> hints) {
         CassandraStatementType stmtType = CassandraStatementType.UNKNOWN;
         if (Strings.isNullOrEmpty(sql)) {
-            return new CassandraCqlStatement(sql, new CassandraCqlStmtConfiguration(config, stmtType, hints));
+            return new CassandraCqlStatement(Strings.nullToEmpty(sql),
+                    new CassandraCqlStmtConfiguration(config, stmtType, hints));
         }
 
         CassandraCqlStatement sqlStmt = null;
@@ -149,8 +150,10 @@ public class CassandraCqlParser {
                                                   Map<String, String> hints) {
         CassandraStatementType stmtType = CassandraStatementType.UNKNOWN;
         if (Strings.isNullOrEmpty(cql)) {
-            return new CassandraCqlStatement(cql, new CassandraCqlStmtConfiguration(config, stmtType, hints));
+            return new CassandraCqlStatement(Strings.nullToEmpty(cql),
+                    new CassandraCqlStmtConfiguration(config, stmtType, hints));
         }
+
 
         CassandraCqlStatement cqlStmt = null;
         CassandraCqlStmtConfiguration stmtConfig = null;
@@ -190,7 +193,7 @@ public class CassandraCqlParser {
 
             if (stmtType.isQuery()) {
                 // FIXME replace original CQL with the formatted one(e.g. limit has been applied / removed)
-                String formattedCql = new CqlSelectFormatter().format(stmtConfig, (SelectStatement.RawStatement) stmt);
+                cql = new CqlSelectFormatter().format(stmtConfig, (SelectStatement.RawStatement) stmt);
             }
         } catch (Throwable t) {
             Logger.warn(t, "Not able to parse given CQL - treat it as is\n{}\n", cql);

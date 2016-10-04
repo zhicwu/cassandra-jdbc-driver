@@ -1,4 +1,5 @@
-/*
+/**
+ * Copyright (C) 2015-2016, Zhichun Wu
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,7 +17,6 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 package com.github.cassandra.jdbc;
 
@@ -113,30 +113,30 @@ public final class CassandraConfiguration {
     public static final int VERSION_MINOR;
     // static final int VERSION_PATCH;
 
+    public static final String KEY_COMPRESSION = "compression";
+
+    public static final String KEY_CONNECTION_TIMEOUT = "connectionTimeout";
+
+    public static final String KEY_CONNECTION_URL = "url";
+
+    public static final String KEY_CONSISTENCY_LEVEL = "consistencyLevel";
+    public static final String KEY_FETCH_SIZE = "fetchSize";
+    public static final String KEY_HOSTS = "hosts";
+    public static final String KEY_PORT = "port";
+    public static final String KEY_KEEP_ALIVE = "keepAlive";
+    public static final String KEY_KEYSPACE = "keyspace";
+    public static final String KEY_LOCAL_DC = "localDc";
+    public static final String KEY_USERNAME = "user";
+    public static final String KEY_PASSWORD = "password";
+    public static final String KEY_PROVIDER = "provider";
+    public static final String KEY_QUERY_TRACE = "queryTrace";
+    public static final String KEY_QUIET = "quiet";
+    public static final String KEY_READ_TIMEOUT = "readTimeout";
+    public static final String KEY_SQL_FRIENDLY = "sqlFriendly";
+
     static final String INVALID_URL = "Invalid connection URL";
 
     static final String DRIVER_PROTOCOL = "jdbc:c*:";
-
-    static final String KEY_COMPRESSION = "compression";
-
-    static final String KEY_CONNECTION_TIMEOUT = "connectionTimeout";
-
-    static final String KEY_CONNECTION_URL = "url";
-
-    static final String KEY_CONSISTENCY_LEVEL = "consistencyLevel";
-    static final String KEY_FETCH_SIZE = "fetchSize";
-    static final String KEY_HOSTS = "hosts";
-    static final String KEY_PORT = "port";
-    static final String KEY_KEEP_ALIVE = "keepAlive";
-    static final String KEY_KEYSPACE = "keyspace";
-    static final String KEY_LOCAL_DC = "localDc";
-    static final String KEY_USERNAME = "user";
-    static final String KEY_PASSWORD = "password";
-    static final String KEY_PROVIDER = "provider";
-    static final String KEY_QUERY_TRACE = "queryTrace";
-    static final String KEY_QUIET = "quiet";
-    static final String KEY_READ_TIMEOUT = "readTimeout";
-    static final String KEY_SQL_FRIENDLY = "sqlFriendly";
 
     static final String TOKEN_KVP_SEPARATOR = "=";
 

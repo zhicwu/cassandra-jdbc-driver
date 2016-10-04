@@ -1,4 +1,5 @@
-/*
+/**
+ * Copyright (C) 2015-2016, Zhichun Wu
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,7 +17,6 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 package com.github.cassandra.jdbc;
 
@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class CassandraServerTest {
-    @BeforeGroups(groups = {"unit", "server"})
+    @BeforeGroups(groups = {"server"})
     public void createKeyspaceAndTables() {
         String scripts = "";
         InputStreamReader reader = new InputStreamReader(getClass().getResourceAsStream("/create.cql"));
@@ -80,7 +80,7 @@ public class CassandraServerTest {
         }
     }
 
-    @Test(groups = {"unit", "server"})
+    @Test(groups = {"server"})
     public void testConnection() {
 
     }

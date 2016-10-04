@@ -1,4 +1,5 @@
-/*
+/**
+ * Copyright (C) 2015-2016, Zhichun Wu
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,7 +17,6 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 package com.github.cassandra.jdbc;
 
@@ -27,6 +27,16 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class CassandraCqlParserTest {
+    @DataProvider(name = "cql-scripts")
+    public Object[][] createTestCql() {
+        return new Object[][]{
+                {"select * from a where status='NEW' allow filtering",
+                        "select * from a where status='NEW' allow filtering", CassandraStatementType.SELECT},
+                {"select * from a where id=1 and (s=2 or status='NEW') allow filtering",
+                        "select * from a where id=1 and (s=2 or status='NEW') allow filtering", CassandraStatementType.SELECT},
+        };
+    }
+
     @DataProvider(name = "sql-scripts")
     public Object[][] createTestSql() {
         return new Object[][]{
@@ -75,6 +85,18 @@ public class CassandraCqlParserTest {
                         CassandraStatementType.DELETE
                 }
         };
+    }
+
+    @Test(groups = {"unit", "base"}, dataProvider = "cql-scripts")
+    public void testParseCql(String cql, String expectedCql, CassandraStatementType expectedType) {
+        try {
+            CassandraCqlStatement stmt = CassandraCqlParser.parse(CassandraConfiguration.DEFAULT, cql);
+
+            assertEquals(stmt.getCql(), expectedCql);
+            assertEquals(stmt.getConfiguration().getStatementType(), expectedType);
+        } catch (Exception e) {
+            fail("Failed", e);
+        }
     }
 
     @Test(groups = {"unit", "base"}, dataProvider = "sql-scripts")

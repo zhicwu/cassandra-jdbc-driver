@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<license-lookup xmlns="https://source.jasig.org/schemas/maven-notice-plugin/license-lookup"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="https://source.jasig.org/schemas/maven-notice-plugin/license-lookup https://source.jasig.org/schemas/maven-notice-plugin/license-lookup/license-lookup-v1.0.xsd">
+    <artifact>
+        <groupId>commons-discovery</groupId>
+        <artifactId>commons-discovery</artifactId>
+        <version>0.2</version>
+        <license>The Apache Software License, Version 2.0</license>
+    </artifact>
+    <artifact>
+        <groupId>javacup</groupId>
+        <artifactId>javacup</artifactId>
+        <version>10k</version>
+        <license>GPL-Compatible License(http://www2.cs.tum.edu/projects/cup/licence.php)</license>
+    </artifact>
+    <artifact>
+        <groupId>org.olap4j</groupId>
+        <artifactId>olap4j</artifactId>
+        <version>1.2.0</version>
+        <license>The Apache Software License, Version 2.0</license>
+    </artifact>
+    <artifact>
+        <groupId>pentaho</groupId>
+        <artifactId>mondrian</artifactId>
+        <version>3.12.0.1-196</version>
+        <license>Eclipse Public License, Version 1.0</license>
+    </artifact>
+    <artifact>
+        <groupId>sun</groupId>
+        <artifactId>jlfgr</artifactId>
+        <version>1.0</version>
+        <license>sun-jlfgr 1.0</license>
+    </artifact>
+</license-lookup>

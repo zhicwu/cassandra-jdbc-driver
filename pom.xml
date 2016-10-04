@@ -4,7 +4,7 @@
     <groupId>com.github.zhicwu</groupId>
     <artifactId>cassandra-jdbc-driver</artifactId>
     <packaging>jar</packaging>
-    <version>0.6.1</version>
+    <version>0.7.0-SNAPSHOT</version>
     <name>Cassandra JDBC Driver</name>
     <url>http://github.com/zhicwu/cassandra-jdbc-driver</url>
     <description>Type 4 JDBC driver for Apache Cassandra built on top of existing great libs like java driver from
@@ -12,6 +12,7 @@
     </description>
     <inceptionYear>2015</inceptionYear>
     <properties>
+        <project.current.year>2016</project.current.year>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!--
         <fastutil.version>7.0.12</fastutil.version>
@@ -27,10 +28,13 @@
         <jodatime.version>2.9.4</jodatime.version>
         <lz4.version>1.2.0</lz4.version>
         <tinylog.version>1.1</tinylog.version>
+        <mondrian.version>3.12.0.1-196</mondrian.version>
         <java.version>1.6</java.version>
         <testng.version>6.9.10</testng.version>
         <mockito.version>1.10.19</mockito.version>
         <main.basedir>${project.basedir}</main.basedir>
+        <license-plugin.version>2.11</license-plugin.version>
+        <notice-plugin.version>1.0.6.1</notice-plugin.version>
         <compiler-plugin.version>3.5.1</compiler-plugin.version>
         <source-plugin.version>3.0.0</source-plugin.version>
         <javadoc-plugin.version>2.10.3</javadoc-plugin.version>
@@ -160,6 +164,18 @@
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>pentaho</groupId>
+            <artifactId>mondrian</artifactId>
+            <version>${mondrian.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
     <!-- http://central.sonatype.org/pages/apache-maven.html -->
     <distributionManagement>
@@ -168,6 +184,36 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
+    <repositories>
+        <repository>
+            <id>pentaho.resolve.repo</id>
+            <name>Pentaho Group Resolve Repository</name>
+            <url>http://nexus.pentaho.org/content/groups/omni/</url>
+            <releases>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </releases>
+            <snapshots>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </snapshots>
+        </repository>
+        <!--
+        <repository>
+            <id>pentaho.resolve.repo2</id>
+            <name>Pentaho Group Resolve Repository2</name>
+            <url>http://repo.pentaho.org/artifactory/repo</url>
+            <releases>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </releases>
+            <snapshots>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </snapshots>
+        </repository>
+        -->
+    </repositories>
     <profiles>
         <profile>
             <id>release</id>
@@ -236,6 +282,57 @@
             </resource>
         </resources>
         <plugins>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>${license-plugin.version}</version>
+                <configuration>
+                    <header>misc/license-header.template</header>
+                    <properties>
+                        <inceptionYear>${project.inceptionYear}</inceptionYear>
+                        <latestYearOfContribution>${project.current.year}</latestYearOfContribution>
+                    </properties>
+                    <includes>
+                        <include>src/**/*.java</include>
+                        <include>src/**/*.yaml</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/src/test/resources/*.cql</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>check-license</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jasig.maven</groupId>
+                <artifactId>maven-notice-plugin</artifactId>
+                <version>${notice-plugin.version}</version>
+                <configuration>
+                    <noticeTemplate>misc/NOTICE.template</noticeTemplate>
+                    <licenseMapping>
+                        <param>https://source.jasig.org/licenses/license-mappings.xml</param>
+                        <param>misc/license-mappings.xml</param>
+                    </licenseMapping>
+                    <generateChildNotices>false</generateChildNotices>
+                    <includeChildDependencies>false</includeChildDependencies>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>check-license</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

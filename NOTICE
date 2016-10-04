@@ -1,0 +1,109 @@
+cassandra-jdbc-driver
+Copyright 2015-2016, Zhichun Wu.
+
+This project includes software developed by Zhichun Wu.
+https://github.com/zhicwu
+
+Licensed under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at:
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on
+an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied. See the License for the
+specific language governing permissions and limitations
+under the License.
+
+This project includes:
+  ant-launcher under Apache License, Version 2.0
+  ANTLR 3 Runtime under BSD licence
+  ANTLR 3 Tool under BSD licence
+  Apache Cassandra under The Apache Software License, Version 2.0
+  Apache Commons Collections under Apache License, Version 2.0
+  Apache Commons VFS Core under Apache License, Version 2.0
+  Apache Thrift under The Apache Software License, Version 2.0
+  Bean Validation API under Apache License, Version 2.0
+  BeanShell under GNU LESSER GENERAL PUBLIC LICENSE
+  Cassandra JDBC Driver under Apache License, Version 2.0
+  CLI under The Apache Software License, Version 2.0
+  Codec under Apache License, Version 2.0
+  Commons DBCP under The Apache Software License, Version 2.0
+  Commons IO under The Apache Software License, Version 2.0
+  Commons Lang under The Apache Software License, Version 2.0
+  Commons Logging under The Apache Software License, Version 2.0
+  Commons Math under The Apache Software License, Version 2.0
+  Commons Pool under The Apache Software License, Version 2.0
+  Concurrent-Trees under The Apache Software License, Version 2.0
+  ConcurrentLinkedHashMap under The Apache Software License, Version 2.0
+  Data Mapper for Jackson under The Apache Software License, Version 2.0
+  DataStax Java Driver for Apache Cassandra - Core under Apache 2
+  DataStax Java Driver for Apache Cassandra - Extras under Apache 2
+  Discovery under The Apache Software License, Version 2.0
+  Disruptor Framework under The Apache Software License, Version 2.0
+  dom4j under BSD License
+  Eclipse ECJ under Eclipse Public License v1.0
+  eigenbase-properties under Apache 2
+  eigenbase-resgen under Apache 2
+  eigenbase-xom under Apache 2
+  fastutil under Apache License, Version 2.0
+  Guava: Google Core Libraries for Java under The Apache Software License, Version 2.0
+  Hibernate Validator Engine under Apache License, Version 2.0
+  high-scale-lib under MIT License
+  HPPC Collections under The Apache Software License, Version 2.0
+  HttpClient under Apache License
+  HttpCore under Apache License
+  Jackson under The Apache Software License, Version 2.0
+  Java Agent for Memory Measurements under The Apache Software License, Version 2.0
+  Java Native Access under LGPL, version 2.1 or ASL, version 2
+  JavaCC under Berkeley Software Distribution (BSD) License
+  javacup under GPL-Compatible License(http://www2.cs.tum.edu/projects/cup/licence.php)
+  jbcrypt under ISC/BSD License
+  JBoss Logging 3 under GNU Lesser General Public License, version 2.1
+  JCL 1.1.1 implemented over SLF4J under MIT License
+  JCommander under The Apache Software License, Version 2.0
+  JFlex under BSD
+  jlfgr under sun-jlfgr 1.0
+  Joda-Time under Apache 2
+  JSON.simple under The Apache Software License, Version 2.0
+  jsp-api under Apache License, Version 2.0
+  JSQLParser library under GNU Library or Lesser General Public License (LGPL) V2.1 or The Apache Software License, Version 2.0
+  JUnit under Common Public License Version 1.0
+  Log4j under The Apache Software License, Version 2.0
+  Log4j Implemented Over SLF4J under Apache Software Licenses
+  Logback Classic Module under Eclipse Public License - v 1.0 or GNU Lesser General Public License
+  Logback Core Module under Eclipse Public License - v 1.0 or GNU Lesser General Public License
+  LZ4 and xxHash under The Apache Software License, Version 2.0
+  Math under The Apache Software License, Version 2.0
+  Metrics Core under Apache License 2.0
+  metrics reporter config 3.x under Apache License, Version 2.0
+  metrics reporter config base under Apache License, Version 2.0
+  Mockito under The MIT License
+  mondrian under Eclipse Public License, Version 1.0
+  Netty/All-in-One under Apache License, Version 2.0
+  Netty/Buffer under Apache License, Version 2.0
+  Netty/Codec under Apache License, Version 2.0
+  Netty/Common under Apache License, Version 2.0
+  Netty/Handler under Apache License, Version 2.0
+  Netty/Transport under Apache License, Version 2.0
+  Ning-compress-LZF under Apache License 2.0
+  OHC core under Apache 2
+  olap4j under The Apache Software License, Version 2.0
+  org.apache.tools.ant under Apache License, Version 2.0
+  Primitive under GNU General Public License, version 2, with the Classpath Exception
+  servlet-api under Commons Development and Distribution License, Version 1.0
+  sigar under The Apache Software License, Version 2.0
+  SLF4J API Module under MIT License
+  SnakeYAML under Apache License, Version 2.0
+  Snappy for Java under The Apache Software License, Version 2.0
+  snowball-stemmer under BSD License
+  stream-lib under Apache License, Version 2.0
+  StringTemplate 4 under BSD licence
+  testng under Apache  Version 2.0, January 2004
+  Thrift Server implementation backed by LMAX Disruptor under Apache 2
+  tinylog under The Apache Software License, Version 2.0
+  Xerces2 Java Parser under The Apache Software License, Version 2.0
+  XML Commons External Components XML APIs under The Apache Software License, Version 2.0
+
