@@ -37,9 +37,9 @@ public class CqlSelectFormatter {
         }
         builder.append("FROM ").append(select.columnFamily());
         if (select.whereClause.expressions.size() > 0 || select.whereClause.relations.size() > 0) {
-            builder.append("WHERE ");
+            builder.append(" WHERE ");
 
-
+            //builder.append(select.)
 
             if (select.parameters.allowFiltering) {
                 builder.append("ALLOW FILTERING");

@@ -30,6 +30,8 @@ public class CassandraCqlParserTest {
     @DataProvider(name = "cql-scripts")
     public Object[][] createTestCql() {
         return new Object[][]{
+                {"select a1,a2,a3 from a where status='NEW' allow filtering",
+                        "select a1,a2,a3 from a where status='NEW' allow filtering", CassandraStatementType.SELECT},
                 {"select * from a where status='NEW' allow filtering",
                         "select * from a where status='NEW' allow filtering", CassandraStatementType.SELECT},
                 {"select * from a where id=1 and (s=2 or status='NEW') allow filtering",

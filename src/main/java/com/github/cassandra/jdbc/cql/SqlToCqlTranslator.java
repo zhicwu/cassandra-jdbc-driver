@@ -308,6 +308,12 @@ public class SqlToCqlTranslator implements SelectVisitor, FromItemVisitor,
 
     }
 
+    public void visit(TimeKeyExpression timeKeyExpression) {
+    }
+
+    public void visit(DateTimeLiteralExpression literal) {
+    }
+
     public void visit(SelectExpressionItem selectExpressionItem) {
         selectExpressionItem.getExpression().accept(this);
     }

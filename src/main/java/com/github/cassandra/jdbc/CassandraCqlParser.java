@@ -191,10 +191,12 @@ public class CassandraCqlParser {
 
             stmtConfig = new CassandraCqlStmtConfiguration(config, stmtType, hints);
 
+            /* until there's better way to do that...
             if (stmtType.isQuery()) {
                 // FIXME replace original CQL with the formatted one(e.g. limit has been applied / removed)
                 cql = new CqlSelectFormatter().format(stmtConfig, (SelectStatement.RawStatement) stmt);
             }
+            */
         } catch (Throwable t) {
             Logger.warn(t, "Not able to parse given CQL - treat it as is\n{}\n", cql);
         }

@@ -25,8 +25,14 @@ This project includes:
   Apache Commons Collections under Apache License, Version 2.0
   Apache Commons VFS Core under Apache License, Version 2.0
   Apache Thrift under The Apache Software License, Version 2.0
+  ASM Analysis under BSD
+  ASM Commons under BSD
+  ASM Core under BSD
+  ASM Tree under BSD
+  ASM Util under BSD
   Bean Validation API under Apache License, Version 2.0
   BeanShell under GNU LESSER GENERAL PUBLIC LICENSE
+  Caffeine cache under The Apache Software License, Version 2.0
   Cassandra JDBC Driver under Apache License, Version 2.0
   CLI under The Apache Software License, Version 2.0
   Codec under Apache License, Version 2.0
@@ -64,13 +70,18 @@ This project includes:
   JBoss Logging 3 under GNU Lesser General Public License, version 2.1
   JCL 1.1.1 implemented over SLF4J under MIT License
   JCommander under The Apache Software License, Version 2.0
+  jffi under The Apache Software License, Version 2.0
   JFlex under BSD
   jlfgr under sun-jlfgr 1.0
+  jnr-constants under The Apache Software License, Version 2.0
+  jnr-ffi under The Apache Software License, Version 2.0
+  jnr-posix under Common Public License - v 1.0 or GNU General Public License Version 2 or GNU Lesser General Public License Version 2.1
+  jnr-x86asm under MIT License
   Joda-Time under Apache 2
   JSON.simple under The Apache Software License, Version 2.0
   jsp-api under Apache License, Version 2.0
   JSQLParser library under GNU Library or Lesser General Public License (LGPL) V2.1 or The Apache Software License, Version 2.0
-  JUnit under Common Public License Version 1.0
+  JVM Integration for Metrics under Apache License 2.0
   Log4j under The Apache Software License, Version 2.0
   Log4j Implemented Over SLF4J under Apache Software Licenses
   Logback Classic Module under Eclipse Public License - v 1.0 or GNU Lesser General Public License
@@ -97,7 +108,7 @@ This project includes:
   sigar under The Apache Software License, Version 2.0
   SLF4J API Module under MIT License
   SnakeYAML under Apache License, Version 2.0
-  Snappy for Java under The Apache Software License, Version 2.0
+  snappy-java under The Apache Software License, Version 2.0
   snowball-stemmer under BSD License
   stream-lib under Apache License, Version 2.0
   StringTemplate 4 under BSD licence
