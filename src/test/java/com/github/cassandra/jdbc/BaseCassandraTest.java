@@ -55,6 +55,7 @@ public class BaseCassandraTest {
     }
 
     protected void validateObjectType(Object value, Class clazz) {
+        clazz = CassandraTestHelper.getInstance().replaceDataType(clazz, value);
         assertTrue(value == null || clazz.isInstance(value), value + " is not instance of " + clazz);
     }
 }

@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS test_drive.basic_data_type (
 	str_varchar varchar,
 	num_varint varint
 );
+-- the secondary index below is required when testing against Cassandra 2.2
+CREATE INDEX IF NOT EXISTS str_text_idx ON test_drive.basic_data_type (str_text);
 TRUNCATE TABLE test_drive.basic_data_type;
 
 CREATE TABLE IF NOT EXISTS test_drive.static_data_type (

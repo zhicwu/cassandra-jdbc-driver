@@ -20,7 +20,6 @@
  */
 package com.github.cassandra.jdbc;
 
-import com.github.cassandra.jdbc.cql.CqlSelectFormatter;
 import com.github.cassandra.jdbc.cql.SqlToCqlTranslator;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;

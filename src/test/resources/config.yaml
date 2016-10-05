@@ -28,11 +28,11 @@ driver :
   # DataStax Java driver as primary, and possiblly astyanax for Cassandra 2.0.x later
   provider : datastax
   # comma separated hosts(port is optional there and only the first one will be considered)
-  hosts : localhost
+  hosts : 192.168.99.100
   # non-positive port implies the default port will be used in the provider, which is datastax in this case
-  port : -1
+  port : 32800
   # by default everyone has access to system_auth keyspace
-  keyspace : system_auth
+  keyspace : system_traces
   user : cassandra
   password : cassandra
 

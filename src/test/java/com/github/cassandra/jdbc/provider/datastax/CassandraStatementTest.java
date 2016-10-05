@@ -22,6 +22,7 @@ package com.github.cassandra.jdbc.provider.datastax;
 
 import com.datastax.driver.core.LocalDate;
 import com.github.cassandra.jdbc.BaseCassandraTest;
+import com.github.cassandra.jdbc.CassandraTestHelper;
 import com.github.cassandra.jdbc.CassandraUtils;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -91,11 +92,11 @@ public class CassandraStatementTest extends BaseCassandraTest {
             java.sql.Statement s = conn.createStatement();
             assertTrue(s instanceof CassandraStatement);
 
-            int result = s.executeUpdate(sql);
+            int result = s.executeUpdate(CassandraTestHelper.getInstance().replaceStatement(sql));
             assertEquals(result, 1);
             assertNull(s.getResultSet());
 
-            assertFalse(s.execute(sql));
+            assertFalse(s.execute(CassandraTestHelper.getInstance().replaceStatement(sql)));
             assertNull(s.getResultSet());
 
             s.close();
@@ -181,7 +182,7 @@ public class CassandraStatementTest extends BaseCassandraTest {
 
     @Test(groups = {"unit", "server"})
     public void testSimpleQuery() {
-        String cql = "select * from system.peers limit 1";
+        String cql = "select * from system.local limit 1";
 
         try {
             java.sql.Statement s = conn.createStatement();

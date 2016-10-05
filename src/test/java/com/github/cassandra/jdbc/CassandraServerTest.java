@@ -23,6 +23,7 @@ package com.github.cassandra.jdbc;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.VersionNumber;
 import com.google.common.base.Splitter;
 import com.google.common.io.CharStreams;
 import org.pmw.tinylog.Logger;
@@ -64,6 +65,11 @@ public class CassandraServerTest {
             }
             cluster = builder.withCredentials(conf.getUserName(), conf.getPassword()).build();
             Session session = cluster.newSession();
+
+            VersionNumber cassandraVersion = cluster.getMetadata().getAllHosts().iterator().next().getCassandraVersion();
+            CassandraTestHelper.init(cassandraVersion.getMajor(), cassandraVersion.getMinor());
+            scripts = CassandraTestHelper.getInstance().replaceScript(scripts);
+
             for (String cql : Splitter.on(';').trimResults().omitEmptyStrings().split(scripts)) {
                 Logger.debug("Executing:\n{}\n", cql);
                 session.execute(cql);
