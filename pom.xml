@@ -220,6 +220,29 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.jasig.maven</groupId>
+                        <artifactId>maven-notice-plugin</artifactId>
+                        <version>${notice-plugin.version}</version>
+                        <configuration>
+                            <noticeTemplate>misc/NOTICE.template</noticeTemplate>
+                            <licenseMapping>
+                                <param>https://source.jasig.org/licenses/license-mappings.xml</param>
+                                <param>misc/license-mappings.xml</param>
+                            </licenseMapping>
+                            <generateChildNotices>false</generateChildNotices>
+                            <includeChildDependencies>false</includeChildDependencies>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>check-license</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
                         <version>${source-plugin.version}</version>
@@ -299,29 +322,6 @@
                     <excludes>
                         <exclude>**/src/test/resources/*.cql</exclude>
                     </excludes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>check-license</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.jasig.maven</groupId>
-                <artifactId>maven-notice-plugin</artifactId>
-                <version>${notice-plugin.version}</version>
-                <configuration>
-                    <noticeTemplate>misc/NOTICE.template</noticeTemplate>
-                    <licenseMapping>
-                        <param>https://source.jasig.org/licenses/license-mappings.xml</param>
-                        <param>misc/license-mappings.xml</param>
-                    </licenseMapping>
-                    <generateChildNotices>false</generateChildNotices>
-                    <includeChildDependencies>false</includeChildDependencies>
                 </configuration>
                 <executions>
                     <execution>
