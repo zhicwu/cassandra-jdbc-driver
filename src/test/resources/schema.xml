@@ -1,0 +1,60 @@
+<Schema name="SimpleCube">
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Date">
+    <Hierarchy visible="true" hasAll="true" primaryKey="date_id">
+      <Table schema="test_drive" name="dim_date">
+      </Table>
+      <Level name="Year" visible="true" column="year" type="Integer" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+      </Level>
+      <Level name="Month" visible="true" column="month" type="Integer" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+      </Level>
+      <Level name="Day" visible="true" column="date_id" nameColumn="day_of_month" type="Integer" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension visible="true" highCardinality="false" name="Company">
+    <Hierarchy visible="true" hasAll="true" primaryKey="company_id">
+      <Table schema="test_drive" name="dim_company">
+      </Table>
+	  <Level name="Name" visible="true" column="company_id" nameColumn="company_name" type="Integer" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+      </Level>
+    </Hierarchy>
+	<Hierarchy name="H" visible="true" hasAll="true" primaryKey="company_id">
+      <Table schema="test_drive" name="dim_company">
+      </Table>
+	  <Level name="Type" visible="true" column="company_type" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+      </Level>
+	  <Level name="Name" visible="true" column="company_id" nameColumn="company_name" type="Integer" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Cube name="Transaction" visible="true" cache="false" enabled="true">
+    <Table schema="test_drive" name="fact_transactions">
+    </Table>
+    <DimensionUsage source="Date" name="StartDate" label="StartDate" visible="true" foreignKey="start_date_id" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Date" name="EndDate" label="EndDate" visible="true" foreignKey="end_date_id" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Company" name="FromCompany" label="FromCompany" visible="true" foreignKey="from_company" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Company" name="ToCompany" label="ToCompany" visible="true" foreignKey="to_company" highCardinality="false">
+    </DimensionUsage>
+	
+    <Measure name="Fact Count" column="tx_id" datatype="Numeric" formatString="#,###" aggregator="count">
+    </Measure>
+	<Measure name="Start Date Count" column="start_date_id" datatype="Numeric" formatString="#,###" aggregator="distinct-count">
+    </Measure>
+    <Measure name="End Date Count" column="end_date_id" datatype="Numeric" formatString="#,###" aggregator="distinct-count">
+    </Measure>
+    <Measure name="From Company Count" column="from_company_id" datatype="Numeric" formatString="#,###" aggregator="distinct-count">
+    </Measure>
+	<Measure name="To Company Count" column="to_company_id" datatype="Numeric" formatString="#,###" aggregator="distinct-count">
+    </Measure>
+    
+    <Measure name="Total Amount" column="amount" datatype="Numeric" formatString="#,##0.0" aggregator="sum">
+    </Measure>
+	<Measure name="Avg Amount" column="amount" datatype="Numeric" formatString="#,##0.0" aggregator="avg">
+    </Measure>
+  </Cube>
+</Schema>
