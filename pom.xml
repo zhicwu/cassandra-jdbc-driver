@@ -164,18 +164,6 @@
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>pentaho</groupId>
-            <artifactId>mondrian</artifactId>
-            <version>${mondrian.version}</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
     <!-- http://central.sonatype.org/pages/apache-maven.html -->
     <distributionManagement>
@@ -184,36 +172,6 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
-    <repositories>
-        <repository>
-            <id>pentaho.resolve.repo</id>
-            <name>Pentaho Group Resolve Repository</name>
-            <url>http://nexus.pentaho.org/content/groups/omni/</url>
-            <releases>
-                <updatePolicy>always</updatePolicy>
-                <checksumPolicy>fail</checksumPolicy>
-            </releases>
-            <snapshots>
-                <updatePolicy>always</updatePolicy>
-                <checksumPolicy>fail</checksumPolicy>
-            </snapshots>
-        </repository>
-        <!--
-        <repository>
-            <id>pentaho.resolve.repo2</id>
-            <name>Pentaho Group Resolve Repository2</name>
-            <url>http://repo.pentaho.org/artifactory/repo</url>
-            <releases>
-                <updatePolicy>always</updatePolicy>
-                <checksumPolicy>fail</checksumPolicy>
-            </releases>
-            <snapshots>
-                <updatePolicy>always</updatePolicy>
-                <checksumPolicy>fail</checksumPolicy>
-            </snapshots>
-        </repository>
-        -->
-    </repositories>
     <profiles>
         <profile>
             <id>release</id>

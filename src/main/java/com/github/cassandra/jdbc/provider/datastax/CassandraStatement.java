@@ -21,7 +21,6 @@
 package com.github.cassandra.jdbc.provider.datastax;
 
 import com.datastax.driver.core.*;
-import com.datastax.driver.core.QueryTrace.Event;
 import com.github.cassandra.jdbc.*;
 import com.google.common.base.Strings;
 import org.pmw.tinylog.Level;
@@ -166,7 +165,7 @@ public class CassandraStatement extends BaseCassandraPreparedStatement {
                     .append("(microseconds), params=")
                     .append(q.getParameters()).append(" ]");
 
-            for (Event e : q.getEvents()) {
+            for (QueryTrace.Event e : q.getEvents()) {
                 trace.append("\n* event=[").append(e.getDescription())
                         .append("], location=[").append(e.getThreadName())
                         .append("@").append(e.getSource()).append("], time=[")

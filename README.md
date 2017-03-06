@@ -162,6 +162,13 @@ before sending the query to JDBC driver.
 2. Create new datasource pointing to Cassandra
 3. Use CDA to issue SQL to access Cassandra - Mondrian is not tested and is not supposed to work
 
+### Build
+```bash
+$ mvn -Prelease notice:generate
+$ mvn license:format
+$ mvn clean package
+```
+
 ## TODOs
 
 * Remove CQL Parser to support JDK 6 and 7

@@ -44,7 +44,8 @@ import java.util.concurrent.ExecutionException;
  *
  * @author Zhichun Wu
  */
-public class CassandraPreparedStatement extends CassandraStatement {
+public class CassandraPreparedStatement extends CassandraStatement
+        implements java.sql.PreparedStatement {
     protected final Cache<String, PreparedStatement> preparedStmtCache;
 
     protected CassandraPreparedStatement(CassandraConnection conn,
@@ -55,7 +56,9 @@ public class CassandraPreparedStatement extends CassandraStatement {
         preparedStmtCache = CacheBuilder.newBuilder().maximumSize(50).build();
 
         // FIXME convert given string(sql or cql) to CassandraCqlStatement and put in a cache for further usage
-        updateParameterMetaData(this.cqlStmt, true);
+        if (conn != null) { // connection might be null in unit tests
+            updateParameterMetaData(this.cqlStmt, true);
+        }
     }
 
 

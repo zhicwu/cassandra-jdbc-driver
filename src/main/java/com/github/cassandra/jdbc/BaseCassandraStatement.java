@@ -20,6 +20,8 @@
  */
 package com.github.cassandra.jdbc;
 
+import com.google.common.base.Objects;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -34,8 +36,7 @@ import static com.github.cassandra.jdbc.CassandraUtils.CURSOR_PREFIX;
  *
  * @author Zhichun Wu
  */
-public abstract class BaseCassandraStatement extends BaseJdbcObject implements
-        Statement {
+public abstract class BaseCassandraStatement extends BaseJdbcObject implements Statement {
     private boolean _closeOnCompletion;
     private BaseCassandraConnection _connection;
     private String _cursorName;
@@ -58,10 +59,12 @@ public abstract class BaseCassandraStatement extends BaseJdbcObject implements
         _closeOnCompletion = false;
         _connection = conn;
         _cursorName = new StringBuilder().append(CURSOR_PREFIX)
-                .append(conn.hashCode()).append('/').append(hashCode())
+                .append(Objects.hashCode(conn)).append('/').append(hashCode())
                 .toString();
 
-        fetchSize = conn.getConfiguration().getFetchSize();
+        if (conn != null) {
+            fetchSize = conn.getConfiguration().getFetchSize();
+        }
     }
 
     protected CassandraConfiguration getConfiguration() {

@@ -38,8 +38,7 @@ import java.util.TreeMap;
  *
  * @author Zhichun Wu
  */
-public abstract class BaseCassandraPreparedStatement extends
-        BaseCassandraStatement implements PreparedStatement {
+public abstract class BaseCassandraPreparedStatement extends BaseCassandraStatement {
     protected final CassandraParameterMetaData parameterMetaData;
     protected final SortedMap<Integer, Object> parameters = new TreeMap<Integer, Object>();
     protected CassandraCqlStatement cqlStmt;
@@ -47,7 +46,7 @@ public abstract class BaseCassandraPreparedStatement extends
     protected BaseCassandraPreparedStatement(BaseCassandraConnection conn, String cql) {
         super(conn);
 
-        this.cqlStmt = CassandraCqlParser.parse(conn.getConfiguration(), cql);
+        this.cqlStmt = conn == null ? null : CassandraCqlParser.parse(conn.getConfiguration(), cql);
         parameterMetaData = new CassandraParameterMetaData(conn);
     }
 
