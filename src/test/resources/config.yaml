@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015-2016, Zhichun Wu
+# Copyright (C) 2015-2017, Zhichun Wu
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -30,7 +30,7 @@ driver :
   # comma separated hosts(port is optional there and only the first one will be considered)
   hosts : 192.168.99.100
   # non-positive port implies the default port will be used in the provider, which is datastax in this case
-  port : 32800
+  port : 32805
   # by default everyone has access to system_auth keyspace
   keyspace : system_traces
   user : cassandra
