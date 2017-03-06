@@ -28,7 +28,7 @@ import org.pmw.tinylog.Logger;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public final class DataStaxSessionWrapper implements AutoCloseable {
+final class DataStaxSessionWrapper implements AutoCloseable {
     private final AtomicInteger references = new AtomicInteger(0);
 
     private Session session;
