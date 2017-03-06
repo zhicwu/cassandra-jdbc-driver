@@ -38,9 +38,11 @@ import static com.github.cassandra.jdbc.CassandraUtils.EMPTY_STRING;
  *
  * @author Zhichun Wu
  */
-public class CassandraStatement extends BaseCassandraStatement {
+public class CassandraStatement extends BaseCassandraPreparedStatement {
+    private static final Level LOG_LEVEL = Logger.getLevel(CassandraStatement.class);
 
-
+    protected CassandraResultSet currentResultSet;
+    protected DataStaxSessionWrapper session;
 
     protected CassandraStatement(CassandraConnection conn,
                                  DataStaxSessionWrapper session) {
@@ -50,8 +52,7 @@ public class CassandraStatement extends BaseCassandraStatement {
     protected CassandraStatement(CassandraConnection conn,
                                  DataStaxSessionWrapper session,
                                  String cql) {
-        super(conn);
-        this.cqlStmt = CassandraCqlParser.parse(conn.getConfiguration(), cql);
+        super(conn, cql);
         this.session = session;
     }
 
@@ -65,9 +66,49 @@ public class CassandraStatement extends BaseCassandraStatement {
         return DataStaxDataTypes.converters;
     }
 
+    protected void configureStatement(Statement stmt, CassandraCqlStmtConfiguration config) throws SQLException {
+        stmt.setConsistencyLevel(ConsistencyLevel.valueOf(config.getConsistencyLevel()));
+        String scl = config.getSerialConsistencyLevel();
+        if (!Strings.isNullOrEmpty(scl)) {
+            stmt.setSerialConsistencyLevel(ConsistencyLevel.valueOf(scl));
+        }
+        stmt.setFetchSize(config.hasSetFetchSize() ? config.getFetchSize() : this.getFetchSize());
 
+        if (config.tracingEnabled()) {
+            stmt.enableTracing();
+        }
 
+        stmt.setReadTimeoutMillis(config.getReadTimeout());
 
+        // TODO: for prepared statement, we'd better set routing key as hints for token-aware load-balancing policy
+        // http://www.cyanicautomation.com/cassandra-routing-keys-datastax-c-driver/
+    }
+
+    protected void postStatementExecution(CassandraCqlStatement parsedStmt, ResultSet rs) {
+        if (LOG_LEVEL.compareTo(Level.DEBUG) >= 0 && rs != null) {
+            List<ExecutionInfo> list = rs.getAllExecutionInfo();
+            int size = list == null ? 0 : list.size();
+
+            if (size > 0) {
+                int index = 1;
+
+                for (ExecutionInfo info : rs.getAllExecutionInfo()) {
+                    Logger.debug(getExecutionInfoAsString(info, index, size));
+
+                    QueryTrace q = info.getQueryTrace();
+                    if (parsedStmt.getConfiguration().tracingEnabled() && q != null) {
+                        Logger.debug(getQueryTraceAsString(q, index, size));
+                    }
+
+                    index++;
+                }
+
+                Logger.debug("Executed successfully with results: {}", !rs.isExhausted());
+            }
+        }
+
+        replaceCurrentResultSet(parsedStmt, rs);
+    }
 
     protected ResultSet executeCql(String cql) throws SQLException {
         Logger.debug("Trying to execute the following CQL:\n{}", cql);
@@ -91,6 +132,101 @@ public class CassandraStatement extends BaseCassandraStatement {
         postStatementExecution(parsedStmt, rs);
 
         return rs;
+    }
+
+    protected String getExecutionInfoAsString(ExecutionInfo info, int index,
+                                              int size) {
+        StringBuilder builder = new StringBuilder();
+
+        if (info != null) {
+            builder.append("Execution Info ").append(index).append(" of ")
+                    .append(size).append(":\n* schema agreement: ")
+                    .append(info.isSchemaInAgreement())
+                    .append("\n* achieved consistency level: ")
+                    .append(info.getAchievedConsistencyLevel())
+                    .append("\n* queried host: ").append(info.getQueriedHost())
+                    .append("\n* tried hosts: ").append(info.getTriedHosts())
+                    .append("\n* paging state: ").append(info.getPagingState());
+        }
+
+        return builder.toString();
+    }
+
+    protected String getQueryTraceAsString(QueryTrace q, int index, int size) {
+        StringBuilder trace = new StringBuilder();
+
+        if (q != null) {
+            trace.append("Query Trace ").append(index).append(" of ")
+                    .append(size).append(": \n[ id=").append(q.getTraceId())
+                    .append(", coordinator=").append(q.getCoordinator())
+                    .append(", requestType=").append(q.getRequestType())
+                    .append(", startAt=")
+                    .append(new java.sql.Timestamp(q.getStartedAt()))
+                    .append(", duration=").append(q.getDurationMicros())
+                    .append("(microseconds), params=")
+                    .append(q.getParameters()).append(" ]");
+
+            for (Event e : q.getEvents()) {
+                trace.append("\n* event=[").append(e.getDescription())
+                        .append("], location=[").append(e.getThreadName())
+                        .append("@").append(e.getSource()).append("], time=[")
+                        .append(new java.sql.Timestamp(e.getTimestamp()))
+                        .append("], elapsed=[")
+                        .append(e.getSourceElapsedMicros())
+                        .append("(microseconds)]");
+            }
+        }
+
+        return trace.toString();
+    }
+
+    protected void replaceCurrentResultSet(CassandraCqlStatement parsedStmt, ResultSet resultSet) {
+        this.cqlStmt = parsedStmt;
+
+        if (currentResultSet != null) {
+            try {
+                if (!currentResultSet.isClosed()) {
+                    currentResultSet.close();
+                }
+            } catch (Throwable t) {
+                Logger.warn(t, "Not able to close the old result set: {}", currentResultSet);
+            }
+        }
+
+        currentResultSet = new CassandraResultSet(this, parsedStmt, resultSet);
+    }
+
+    @Override
+    protected SQLException tryClose() {
+        SQLException e = null;
+
+        try {
+            if (currentResultSet != null && !currentResultSet.isClosed()) {
+                currentResultSet.close();
+            }
+        } catch (Throwable t) {
+            Logger.warn(t, "Not able to close the current result set: {}", currentResultSet);
+            e = new SQLException(t);
+        } finally {
+            currentResultSet = null;
+        }
+
+        return e;
+    }
+
+    @Override
+    protected Object unwrap() {
+        return session;
+    }
+
+    @Override
+    protected void validateState() throws SQLException {
+        super.validateState();
+
+        if (session == null || session.isClosed()) {
+            session = null;
+            throw CassandraErrors.statementClosedException();
+        }
     }
 
     public int[] executeBatch() throws SQLException {
