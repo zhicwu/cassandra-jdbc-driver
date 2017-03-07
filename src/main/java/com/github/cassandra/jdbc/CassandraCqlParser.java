@@ -21,7 +21,6 @@
 package com.github.cassandra.jdbc;
 
 import com.github.cassandra.jdbc.cql.SqlToCqlTranslator;
-import com.github.cassandra.jdbc.provider.datastax.CassandraStatement;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
