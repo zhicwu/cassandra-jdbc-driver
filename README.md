@@ -162,7 +162,7 @@ before sending the query to JDBC driver.
 2. Create new datasource pointing to Cassandra
 3. Use CDA to issue SQL to access Cassandra - Mondrian is not tested and is not supposed to work
 
-### Build
+## Build
 ```bash
 $ mvn -Prelease notice:generate
 $ mvn license:format
@@ -171,9 +171,9 @@ $ mvn clean package
 
 ## TODOs
 
-* Remove CQL Parser to support JDK 6 and 7
-* UDT support and smooth type conversion
-* Multiple ResultSet support, especially when tracing turned on
-* Better SQL compatibility(e.g. SELECT INTO, GROUP BY and probably simple table joins and sub-queries)
-* (Basic)Mondrian support
-* More providers(and storage?)...
+- [ ] Remove CQL Parser to support JDK 6 and 7
+- [ ] UDT support and smooth type conversion
+- [ ] Multiple ResultSet support, especially when tracing turned on
+- [ ] Better SQL compatibility(e.g. SELECT INTO, GROUP BY and probably simple table joins and sub-queries)
+- [ ] (Basic)Mondrian support
+- [ ] More providers(and storage?)...
