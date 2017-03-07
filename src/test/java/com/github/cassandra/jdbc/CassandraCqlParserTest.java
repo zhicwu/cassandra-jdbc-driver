@@ -119,6 +119,8 @@ public class CassandraCqlParserTest {
                 "-- set no_limit=true ; tracing = true\n" +
                 "-- set read_timeout = 51\n" +
                 "-- set replace_null_value = true  ; sql_parser = true; \n" +
+                "/* set replace_null_value = false ; sql_parser = false; \n" +
+                "   set replace_null_value = false ; sql_parser = false; */\n" +
                 "// set no_wait = true\n" +
                 "select * from system.local";
 

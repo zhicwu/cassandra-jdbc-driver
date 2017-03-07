@@ -21,6 +21,7 @@
 package com.github.cassandra.jdbc;
 
 import com.github.cassandra.jdbc.cql.SqlToCqlTranslator;
+import com.github.cassandra.jdbc.provider.datastax.CassandraStatement;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
@@ -28,11 +29,6 @@ import com.google.common.cache.CacheBuilder;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.Select;
-import org.antlr.runtime.ANTLRStringStream;
-import org.antlr.runtime.CommonTokenStream;
-import org.apache.cassandra.cql3.CqlLexer;
-import org.apache.cassandra.cql3.CqlParser;
-import org.apache.cassandra.cql3.statements.*;
 import org.pmw.tinylog.Logger;
 
 import java.util.HashMap;
@@ -42,6 +38,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.github.cassandra.jdbc.CassandraUtils.EMPTY_STRING;
 
 /**
  * This represents a parsed SQL statement including its parameters.
@@ -57,6 +55,8 @@ public class CassandraCqlParser {
 
     private static final Pattern MAGIC_COMMENT_PATTERN = Pattern
             .compile("(?i)^(//|--)\\s+set\\s+(.*)$", Pattern.MULTILINE);
+    private static final Pattern CQL_COMMENTS_PATTERN
+            = Pattern.compile("(/\\*(.|[\\r\\n])*?\\*/)|(--(.*|[\\r\\n]))|(//(.*|[\\r\\n]))", Pattern.MULTILINE);
 
     private static final Splitter PARAM_SPLITTER = Splitter.on(';').trimResults().omitEmptyStrings();
     private static final Splitter KVP_SPLITTER = Splitter.on('=').trimResults().limit(2);
@@ -157,35 +157,12 @@ public class CassandraCqlParser {
         CassandraCqlStatement cqlStmt = null;
         CassandraCqlStmtConfiguration stmtConfig = null;
         try {
-            ANTLRStringStream input = new ANTLRStringStream(cql);
-            CqlLexer lexer = new CqlLexer(input);
-            CommonTokenStream token = new CommonTokenStream(lexer);
-            CqlParser parser = new CqlParser(token);
-            ParsedStatement stmt = parser.query();
-
-            Class stmtClass = stmt.getClass().getDeclaringClass();
-            if (stmtClass == null) {
-                stmtClass = stmt.getClass();
-            }
-            String stmtClassName = stmtClass.getSimpleName();
-
-            if (ModificationStatement.class.isAssignableFrom(stmtClass)) {
-                stmtType = CassandraStatementType.INSERT;
-                if (stmtClass == UpdateStatement.class) {
-                    stmtType = CassandraStatementType.UPDATE;
-                } else if (stmtClass == DeleteStatement.class) {
-                    stmtType = CassandraStatementType.DELETE;
-                } else if (stmtClass == TruncateStatement.class) {
-                    stmtType = CassandraStatementType.TRUNCATE;
-                }
-            } else if (stmtClass == SelectStatement.class) {
-                stmtType = CassandraStatementType.SELECT;
-            } else if (stmtClassName.startsWith(HINT_ALTER)) {
-                stmtType = CassandraStatementType.ALTER;
-            } else if (stmtClassName.startsWith(HINT_CREATE)) {
-                stmtType = CassandraStatementType.CREATE;
-            } else if (stmtClassName.startsWith(HINT_DROP)) {
-                stmtType = CassandraStatementType.DROP;
+            // FIXME unfortunately not working all the time...
+            Matcher matcher = CQL_COMMENTS_PATTERN.matcher(cql);
+            String modifiedCql = matcher.replaceAll(EMPTY_STRING).trim();
+            int firstWs = modifiedCql.indexOf(' ');
+            if (firstWs > 0) {
+                stmtType = Enum.valueOf(CassandraStatementType.class, modifiedCql.substring(0, firstWs).toUpperCase());
             }
 
             stmtConfig = new CassandraCqlStmtConfiguration(config, stmtType, hints);
@@ -197,7 +174,7 @@ public class CassandraCqlParser {
             }
             */
         } catch (Throwable t) {
-            Logger.warn(t, "Not able to parse given CQL - treat it as is\n{}\n", cql);
+            Logger.debug(t, "Not able to parse given CQL - treat it as is\n{}\n", cql);
         }
 
         if (cqlStmt == null) {
