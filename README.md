@@ -55,9 +55,7 @@ select l.* from logs l
 * Possibly support alternative storage (e.g. [HBase](http://hbase.apache.org/) just for fun)
 
 ## Get Started
-
-Before you start, please make sure you have JDK 8 - this is a known issue at the moment. However, I will fix this after
-extracting CQL parser from [cassandra-all](http://mvnrepository.com/artifact/org.apache.cassandra/cassandra-all/3.5).
+Before you start, please make sure you have JDK 7 or above - JDK 6 is not supported.
 
 #### Get the driver
 The last release of the driver is available on Maven Central. You can install it in your application using
@@ -162,7 +160,7 @@ before sending the query to JDBC driver.
 2. Create new datasource pointing to Cassandra
 3. Use CDA to issue SQL to access Cassandra - Mondrian is not tested and is not supposed to work
 
-### Build
+## Build
 ```bash
 $ mvn -Prelease notice:generate
 $ mvn license:format
@@ -170,10 +168,9 @@ $ mvn clean package
 ```
 
 ## TODOs
-
-* Remove CQL Parser to support JDK 6 and 7
-* UDT support and smooth type conversion
-* Multiple ResultSet support, especially when tracing turned on
-* Better SQL compatibility(e.g. SELECT INTO, GROUP BY and probably simple table joins and sub-queries)
-* (Basic)Mondrian support
-* More providers(and storage?)...
+- [x] ~~Remove CQL Parser to support JDK 7~~
+- [ ] UDT support and smooth type conversion
+- [ ] Multiple ResultSet support, especially when tracing turned on
+- [ ] Better SQL compatibility(e.g. SELECT INTO, GROUP BY and probably simple table joins and sub-queries)
+- [ ] (Basic)Mondrian support
+- [ ] More providers(and storage?)...
