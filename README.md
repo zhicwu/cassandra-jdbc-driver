@@ -64,7 +64,7 @@ the following Maven dependency:
 <dependency>
 	<groupId>com.github.zhicwu</groupId>
 	<artifactId>cassandra-jdbc-driver</artifactId>
-	<version>0.6.1</version>
+	<version>0.6.2</version>
 	<!-- comment out the classifier if you don't need shaded jar -->
 	<classifier>shaded</classifier>
 </dependency>
@@ -161,10 +161,47 @@ before sending the query to JDBC driver.
 3. Use CDA to issue SQL to access Cassandra - Mondrian is not tested and is not supposed to work
 
 ## Build
+
+```bash
+$ git clone https://github.com/zhicwu/cassandra-jdbc-driver
+$ cd cassandra-jdbc-driver
+$ mvn clean package
+$ ls -alF target/cassandra-jdbc-driver-*-shaded.jar
+```
+
+## Release
+
+To release new version to maven central, create ~/.m2/settings.xml like below:
+```xml
+<settings>
+  <servers>
+    <server>
+      <id>ossrh</id>
+      <username>xxx</username>
+      <password>***</password>
+    </server>
+  </servers>
+  <profiles>
+    <profile>
+      <id>ossrh</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <gpg.executable>gpg2</gpg.executable>
+        <gpg.passphrase>***</gpg.passphrase>
+      </properties>
+    </profile>
+  </profiles>
+</settings>
+```
+And then issue the following commands:
+
 ```bash
 $ mvn -Prelease notice:generate
 $ mvn license:format
-$ mvn clean package
+$ mvn -Prelease verify
+$ mvn -Prelease deploy
 ```
 
 ## TODOs
@@ -172,5 +209,5 @@ $ mvn clean package
 - [ ] UDT support and smooth type conversion
 - [ ] Multiple ResultSet support, especially when tracing turned on
 - [ ] Better SQL compatibility(e.g. SELECT INTO, GROUP BY and probably simple table joins and sub-queries)
-- [ ] (Basic)Mondrian support
+- [ ] Basic Mondrian support
 - [ ] More providers(and storage?)...

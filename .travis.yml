@@ -6,12 +6,38 @@ jdk:
   - oraclejdk7
   - oraclejdk8
 
+env:
+  - CASSANDRA_VERSION=2.1
+  - CASSANDRA_VERSION=2.2
+  - CASSANDRA_VERSION=3.0
+  - CASSANDRA_VERSION=3.1
+  - CASSANDRA_VERSION=3.2
+  - CASSANDRA_VERSION=3.3
+  - CASSANDRA_VERSION=3.4
+  - CASSANDRA_VERSION=3.7
+  - CASSANDRA_VERSION=3.9
+  - CASSANDRA_VERSION=3.10
+
 cache:
   directories:
-  - $HOME/.m2
+    - $HOME/.m2
 
 services:
   - docker
+
+before_install:
+  - docker info
+  - docker pull cassandra:$CASSANDRA_VERSION
+  - docker run -d --name cassi -v $HOME/wait_cassandra.sh:/wait_cassandra.sh -p 9042:9042 cassandra:$CASSANDRA_VERSION
+  - docker ps -a
+
+script:
+  - docker exec -it cassi sh /wait_cassandra.sh
+  - mvn -Dgroups=base,server test
+
+after_script:
+  - docker stop cassi || true
+  - docker rm cassi || true
 
 notifications:
   email:
