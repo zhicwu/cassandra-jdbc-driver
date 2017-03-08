@@ -77,7 +77,7 @@ and Maven installed:
 ```bash
 $ git clone https://github.com/zhicwu/cassandra-jdbc-driver
 $ cd cassandra-jdbc-driver
-$ mvn clean package
+$ mvn -DskipTests=true clean package
 $ ls -alF target/cassandra-jdbc-driver-*-shaded.jar
 ```
 
@@ -165,7 +165,7 @@ before sending the query to JDBC driver.
 ```bash
 $ git clone https://github.com/zhicwu/cassandra-jdbc-driver
 $ cd cassandra-jdbc-driver
-$ mvn clean package
+$ mvn -Dgroups=base clean package
 $ ls -alF target/cassandra-jdbc-driver-*-shaded.jar
 ```
 
@@ -200,8 +200,8 @@ And then issue the following commands:
 ```bash
 $ mvn -Prelease notice:generate
 $ mvn license:format
-$ mvn -Prelease verify
-$ mvn -Prelease deploy
+$ mvn -Dgroups=base -Prelease verify
+$ mvn -Dgroups=base -Prelease deploy
 ```
 
 ## TODOs

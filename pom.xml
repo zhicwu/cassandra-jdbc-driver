@@ -313,9 +313,11 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
+                <!-- in order to make 'mvn -Dgroups=... test' working...
                 <configuration>
                     <groups>base</groups>
                 </configuration>
+                -->
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
