@@ -4,7 +4,7 @@
     <groupId>com.github.zhicwu</groupId>
     <artifactId>cassandra-jdbc-driver</artifactId>
     <packaging>jar</packaging>
-    <version>0.6.2</version>
+    <version>0.6.3-SNAPSHOT</version>
     <name>Cassandra JDBC Driver</name>
     <url>http://github.com/zhicwu/cassandra-jdbc-driver</url>
     <description>Type 4 JDBC driver for Apache Cassandra built on top of existing great libs like java driver from
@@ -313,9 +313,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
-                <configuration>
-                    <groups>base</groups>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
