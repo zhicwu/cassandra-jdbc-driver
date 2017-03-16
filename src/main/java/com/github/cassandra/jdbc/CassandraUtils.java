@@ -47,8 +47,8 @@ public class CassandraUtils {
     public static final String KEY_DRIVER_VERSION = "driverVersion";
 
     public static final String EMPTY_STRING = "";
-    public static final String[][] SCHEMA_COLUMNS = new String[][]{{
-            "TABLE_CAT", "text"}};
+    public static final String[][] SCHEMA_COLUMNS = new String[][]{
+            {"TABLE_SCHEM", "text"}, {"TABLE_CATALOG", "text"}};
     public static final String[][] COLUMN_COLUMNS = new String[][]{
             {"TABLE_CAT", "text"}, {"TABLE_SCHEM", "text"},
             {"TABLE_NAME", "text"}, {"COLUMN_NAME", "text"},

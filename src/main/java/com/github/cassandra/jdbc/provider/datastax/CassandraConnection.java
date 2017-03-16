@@ -27,6 +27,7 @@ import org.pmw.tinylog.Logger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -109,7 +110,7 @@ public class CassandraConnection extends BaseCassandraConnection {
                 null, // SCOPE_CATALOG
                 null, // SCOPE_SCHEMA
                 null, // SCOPE_TABLE
-                null, // SOURCE_DATA_TYPE
+                Types.NULL, // SOURCE_DATA_TYPE
                 "NO", // IS_AUTOINCREMENT
                 "NO" // IS_GENERATEDCOLUMN
         };
@@ -223,7 +224,7 @@ public class CassandraConnection extends BaseCassandraConnection {
         switch (objectType) {
             case KEYSPACE: {
                 List<KeyspaceMetadata> keyspaces = m.getKeyspaces();
-                String[][] data = new String[keyspaces.size()][1];
+                String[][] data = new String[keyspaces.size()][2];
                 int index = 0;
                 for (KeyspaceMetadata km : keyspaces) {
                     data[index++][0] = km.getName();
