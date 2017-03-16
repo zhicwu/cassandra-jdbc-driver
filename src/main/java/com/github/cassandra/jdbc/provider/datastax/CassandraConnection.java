@@ -27,6 +27,7 @@ import org.pmw.tinylog.Logger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -109,7 +110,7 @@ public class CassandraConnection extends BaseCassandraConnection {
                 null, // SCOPE_CATALOG
                 null, // SCOPE_SCHEMA
                 null, // SCOPE_TABLE
-                null, // SOURCE_DATA_TYPE
+                Types.NULL, // SOURCE_DATA_TYPE
                 "NO", // IS_AUTOINCREMENT
                 "NO" // IS_GENERATEDCOLUMN
         };

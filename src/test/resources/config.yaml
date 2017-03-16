@@ -65,6 +65,6 @@ driver :
 
 # logging configuration for tinylog(http://www.tinylog.org/configuration)
 logger :
-  level : DEBUG
+  level : INFO
   stacktrace : -1
   format : "{date:yyyy-MM-dd HH:mm:ss} [{thread}] {class_name}.{method}({line}) {level}: {message}"
