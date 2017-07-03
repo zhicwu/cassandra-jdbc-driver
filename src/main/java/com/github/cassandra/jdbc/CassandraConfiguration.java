@@ -28,6 +28,7 @@ import org.pmw.tinylog.Configurator;
 import org.pmw.tinylog.Level;
 import org.pmw.tinylog.Logger;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.representer.Representer;
 
 import java.lang.reflect.Field;
 import java.net.URL;
@@ -284,7 +285,9 @@ public final class CassandraConfiguration {
             builder.append(key).append(YAML_KVP_SEPARATOR).append(entry.getValue()).append('\n');
         }
 
-        return new Yaml().loadAs(builder.toString().trim(), DriverConfig.class);
+        Representer representer = new Representer();
+        representer.getPropertyUtils().setSkipMissingProperties(true);
+        return new Yaml(representer).loadAs(builder.toString().trim(), DriverConfig.class);
     }
 
     static String buildSimplifiedConnectionUrl(DriverConfig config) {

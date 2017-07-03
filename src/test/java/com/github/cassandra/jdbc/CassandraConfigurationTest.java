@@ -29,7 +29,7 @@ import static org.testng.Assert.*;
 
 public class CassandraConfigurationTest {
     @Test(groups = {"unit", "base"})
-    public void testextractDriverConfig() {
+    public void testExtractDriverConfig() {
         Properties props = new Properties();
         props.setProperty("hosts", "host1.test.com,host2.test.com,host3.test.com");
         props.setProperty("port", "999");
@@ -85,6 +85,23 @@ public class CassandraConfigurationTest {
             assertEquals("10", props.getProperty(KEY_CONNECTION_TIMEOUT));
             assertEquals("50", props.getProperty(KEY_READ_TIMEOUT));
             assertEquals("DD", props.getProperty(KEY_LOCAL_DC));
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Exception happened during test: " + e.getMessage());
+        }
+    }
+
+    @Test(groups = {"unit", "base"})
+    public void testUnrecognizedProperties() {
+        String url = "jdbc:c*://test/keyspace1?consistencyLevel=ONE";
+
+        try {
+            Properties props = CassandraConfiguration.parseConnectionURL(url);
+            props.setProperty("url", url);
+            props.setProperty("a", "1");
+            props.setProperty("b", "b");
+            DriverConfig config = CassandraConfiguration.generateDriverConfig(props);
+            assertNotNull(config);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Exception happened during test: " + e.getMessage());
