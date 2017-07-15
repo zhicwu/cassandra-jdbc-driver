@@ -38,6 +38,7 @@
         <shade-plugin.version>2.4.3</shade-plugin.version>
         <surefire-plugin.version>2.20</surefire-plugin.version>
         <nexus-plugin.version>1.6.3</nexus-plugin.version>
+        <surefire.groups>base</surefire.groups>
         <shade.base>com.github.cassandra.jdbc.internal</shade.base>
     </properties>
     <licenses>
@@ -189,6 +190,7 @@
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
+                                <phase>package</phase>
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
@@ -313,6 +315,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
+                <configuration>
+                    <groups>${surefire.groups}</groups>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

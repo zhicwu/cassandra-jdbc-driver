@@ -64,7 +64,7 @@ the following Maven dependency:
 <dependency>
 	<groupId>com.github.zhicwu</groupId>
 	<artifactId>cassandra-jdbc-driver</artifactId>
-	<version>0.6.1</version>
+	<version>0.6.4</version>
 	<!-- comment out the classifier if you don't need shaded jar -->
 	<classifier>shaded</classifier>
 </dependency>
@@ -165,6 +165,8 @@ before sending the query to JDBC driver.
 $ mvn -Prelease notice:generate
 $ mvn license:format
 $ mvn clean package
+$ mvn -Dsurefires.groups=base,server -Prelease verify
+$ mvn -Prelease deploy
 ```
 
 ## TODOs
