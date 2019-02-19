@@ -86,15 +86,20 @@ final class DataStaxSessionWrapper implements AutoCloseable {
         return session == null || session.isClosed();
     }
 
+     /***
+     * https://www.datastax.com/dev/blog/4-simple-rules-when-using-the-datastax-drivers-for-cassandra
+     */
     public void close() throws Exception {
         if (session == null || references.decrementAndGet() <= 0) {
             if (session != null) {
                 Cluster cluster = session.getCluster();
                 if (DataStaxClusterHelper.hasLiveSessions(cluster)) {
-                    cluster.closeAsync().force();
-                    Logger.info("Closing cluster@{} and all sessions underneath", cluster.hashCode());
+                    Logger.info("Having Live Sesssions : " + DataStaxClusterHelper.hasLiveSessions(cluster));
+                    //cluster.closeAsync().force();
+                    //Logger.info("Closing cluster@{} and all sessions underneath", cluster.hashCode());
                 } else {
                     session.close();
+                    cluster.closeAsync().force();
                     Logger.info("Session@{} is closed", session.hashCode());
                 }
                 session = null;
